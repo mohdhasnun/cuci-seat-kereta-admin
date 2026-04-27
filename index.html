@@ -724,41 +724,134 @@
       box-shadow: 0 8px 24px rgba(0,0,0,.2);
     }
     .wa-toast.show { opacity: 1; }
+    /* ── PROFESSIONAL RECEIPT ── */
     .receipt-page {
       background: #fff;
-      color: #111827;
-      padding: 34px;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.2);
+      color: #1a1a2e;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: 0 24px 64px rgba(0,0,0,.18);
+      overflow: hidden;
+      font-family: 'Plus Jakarta Sans', sans-serif;
     }
-    .receipt-top { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #111827; padding-bottom: 16px; }
-    .receipt-page h1 { margin: 0; font-size: 25px; }
-    .receipt-page h2 { margin: 14px 0 10px; font-size: 15px; }
-    .receipt-page p { margin: 3px 0; font-size: 13px; line-height: 1.45; }
-    .receipt-meta { text-align: right; min-width: 190px; }
-    .receipt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
-    .receipt-box { border: 1px solid #d1d5db; padding: 12px; min-height: 112px; border-radius: 6px; }
-    .receipt-label { color: #6b7280; font-size: 11px; text-transform: uppercase; font-weight: 700; }
-    .receipt-value { font-size: 15px; font-weight: 700; margin-bottom: 9px; }
-    .receipt-total { display: flex; justify-content: flex-end; margin-top: 14px; }
-    .receipt-total table { width: 310px; margin: 0; }
-    .receipt-footer { margin-top: 28px; display: flex; justify-content: space-between; gap: 20px; align-items: flex-end; }
-    .receipt-note { color: #6b7280; font-size: 12px; }
-    .receipt-paid-stamp {
-      font-size: 15px;
+    /* Header band */
+    .rcp-header {
+      background: linear-gradient(135deg, #0c1a34 0%, #1e3a6e 60%, #2563eb 100%);
+      padding: 28px 36px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+    }
+    .rcp-brand-name {
+      color: #fff;
+      font-size: 19px;
       font-weight: 800;
-      letter-spacing: .06em;
-      padding: 8px 20px;
-      border-radius: 8px;
-      border: 3px solid;
-      text-align: center;
-      min-width: 160px;
-      transform: rotate(-2deg);
+      line-height: 1.2;
+      margin: 0 0 3px;
+      letter-spacing: -.01em;
     }
-    .receipt-paid-stamp.paid { color: #15803d; border-color: #15803d; background: #f0fdf4; }
-    .receipt-paid-stamp.deposit { color: #b45309; border-color: #b45309; background: #fffbeb; }
-    .receipt-paid-stamp.unpaid { color: #b91c1c; border-color: #b91c1c; background: #fef2f2; }
+    .rcp-brand-tagline {
+      color: #93c5fd;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin: 0 0 8px;
+    }
+    .rcp-brand-info { color: rgba(255,255,255,.7); font-size: 11.5px; line-height: 1.6; margin: 0; }
+    .rcp-header-right { text-align: right; flex-shrink: 0; }
+    .rcp-title {
+      color: #fff;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      margin: 0 0 10px;
+    }
+    .rcp-meta-row { display: flex; gap: 6px; align-items: baseline; justify-content: flex-end; margin-bottom: 3px; }
+    .rcp-meta-label { color: #93c5fd; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+    .rcp-meta-val { color: #fff; font-size: 13px; font-weight: 700; }
+    /* Gold accent strip */
+    .rcp-strip { height: 4px; background: linear-gradient(90deg, #f59e0b, #fbbf24, #f59e0b); }
+    /* Body */
+    .rcp-body { padding: 24px 36px 28px; }
+    .rcp-section-title {
+      font-size: 10px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .1em; color: #1e3a6e;
+      border-bottom: 2px solid #1e3a6e;
+      padding-bottom: 5px; margin: 18px 0 12px;
+    }
+    .rcp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .rcp-box {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: #f8fafc;
+    }
+    .rcp-box-label { color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 4px; }
+    .rcp-box-val { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+    .rcp-box-sub-label { color: #94a3b8; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
+    .rcp-box-sub-val { font-size: 13px; color: #334155; }
+    /* Service table */
+    .rcp-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+    .rcp-table thead tr { background: #1e3a6e; }
+    .rcp-table thead th { color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 9px 12px; text-align: left; }
+    .rcp-table thead th.amt { text-align: right; }
+    .rcp-table tbody tr { border-bottom: 1px solid #f1f5f9; }
+    .rcp-table tbody tr:last-child { border-bottom: none; }
+    .rcp-table tbody td { padding: 10px 12px; font-size: 13px; color: #1e293b; }
+    .rcp-table tbody td.amt { text-align: right; font-weight: 600; }
+    /* Total section */
+    .rcp-total-wrap { display: flex; justify-content: flex-end; margin-top: 10px; }
+    .rcp-total-box { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 16px 20px; min-width: 260px; box-shadow: 0 4px 16px rgba(30,58,110,.08); }
+    .rcp-total-row { display: flex; justify-content: space-between; gap: 20px; align-items: center; padding: 5px 0; }
+    .rcp-total-row-label { color: #64748b; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+    .rcp-total-row-val { color: #1e293b; font-size: 13px; font-weight: 600; }
+    .rcp-total-main { border-top: 2px solid #1e3a6e; margin-top: 10px; padding-top: 10px; }
+    .rcp-total-main .rcp-total-row-label { color: #1e3a6e; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+    .rcp-total-main .rcp-total-row-val { color: #1e3a6e; font-size: 20px; font-weight: 900; }
+    /* Footer */
+    .rcp-footer { margin-top: 24px; padding-top: 18px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; }
+    .rcp-footer-note { font-size: 11px; color: #94a3b8; line-height: 1.5; max-width: 240px; }
+    .rcp-footer-note strong { color: #475569; }
+    /* Professional stamp */
+    /* Professional round stamp */
+    .rcp-stamp {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 4px solid;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transform: rotate(-12deg);
+      box-shadow: inset 0 0 0 2px currentColor, 0 2px 12px rgba(0,0,0,.12);
+      flex-shrink: 0;
+    }
+    .rcp-stamp::before {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      border: 1.5px solid currentColor;
+      opacity: .4;
+    }
+    .rcp-stamp-icon { font-size: 22px; margin-bottom: 2px; line-height: 1; }
+    .rcp-stamp-inner { font-size: 11px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; line-height: 1.2; }
+    .rcp-stamp-sub { font-size: 7.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .7; margin-top: 3px; }
+    .rcp-stamp.paid { color: #15803d; border-color: #15803d; background: rgba(240,253,244,.9); }
+    .rcp-stamp.deposit { color: #b45309; border-color: #b45309; background: rgba(255,251,235,.9); }
+    .rcp-stamp.unpaid { color: #b91c1c; border-color: #b91c1c; background: rgba(254,242,242,.9); }
+    /* Watermark */
+    .rcp-watermark {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-30deg);
+      font-size: 72px; font-weight: 900; opacity: .04; pointer-events: none; white-space: nowrap;
+      color: #0c1a34; letter-spacing: .1em;
+    }
 
     /* ── STATUS SUMMARY CARDS ── */
     .status-grid {
@@ -1551,7 +1644,7 @@
       if (event) event.preventDefault();
       const booking = readBookingForm();
       if (!booking.name) { alert('Sila isi Nama Customer!'); return; }
-      if (!booking.phone) { alert('Sila isi No. Telefon!'); return; }
+      if (!booking.phone) { alert('Sila isi Phone No.!'); return; }
       if (!booking.car) { alert('Sila isi Model Kereta!'); return; }
       if (!booking.price) { alert('Sila isi Harga!'); return; }
       const existingId = Number(document.getElementById('booking-id').value);
@@ -1686,7 +1779,7 @@
         '👤 *Nama:* ' + (booking.name || '-'),
         '📱 *Tel:* ' + (booking.phone || '-'),
         '🚗 *Kereta:* ' + (booking.car || '-'),
-        booking.plate ? '🔢 *No. Plat:* ' + booking.plate : '',
+        booking.plate ? '🔢 *Plate No.:* ' + booking.plate : '',
         '',
         '━━━━━━━━━━━━━━━━━━━━━━',
         '*BUTIRAN SERVIS*',
@@ -1732,75 +1825,117 @@
           <td class="amount">${rm(booking.price)}</td>
         </tr>
       `;
+      const stampClass = booking.paymentStatus === 'Sudah Bayar' ? 'paid' : booking.paymentStatus === 'Deposit' ? 'deposit' : 'unpaid';
+      const stampText = booking.paymentStatus === 'Sudah Bayar' ? 'SUDAH\nBAYAR' : booking.paymentStatus === 'Deposit' ? 'DEPOSIT' : 'BELUM\nBAYAR';
+      const stampSub = booking.paymentStatus === 'Sudah Bayar' ? 'PAYMENT RECEIVED' : booking.paymentStatus === 'Deposit' ? 'PARTIAL PAYMENT' : 'AWAITING PAYMENT';
+      const watermark = booking.paymentStatus === 'Sudah Bayar' ? 'PAID' : booking.paymentStatus === 'Deposit' ? 'DEPOSIT' : 'UNPAID';
       const html = `
-  <div class="receipt-page">
-    <div class="receipt-top">
+  <div class="receipt-page" style="position:relative">
+    <div class="rcp-watermark">${watermark}</div>
+
+    <!-- Header -->
+    <div class="rcp-header">
       <div>
-        <h1>OFFICIAL RECEIPT</h1>
-        <p><strong>Northern Hope Enterprise</strong></p>
-        <p>Co. Reg. No.: 003746411-A</p>
-        <p>Blok D-00-01, Pangsapuri Mawar, Jln KP 4/4,<br>Taman Kota Perdana Shop, 43300 Seri Kembangan, Selangor</p>
-        <p>Tel: 017-699 3876 | Website: cuciseatkereta.com</p>
+        <p class="rcp-brand-name">Cuci Seat, Kusyen, Karpet Kereta</p>
+        <p class="rcp-brand-tagline">Pakar Hygiene Dalaman Kereta</p>
+        <p class="rcp-brand-info">
+          Northern Hope Enterprise (003746411-A)<br>
+          Blok D-00-01, Pangsapuri Mawar, Jln KP 4/4<br>
+          Taman Kota Perdana, 43300 Seri Kembangan, Selangor<br>
+          📞 017-699 3876 &nbsp;|&nbsp; 🌐 cuciseatkereta.com
+        </p>
       </div>
-      <div class="receipt-meta">
-        <p class="receipt-label">Receipt No.</p>
-        <p class="receipt-value">${receiptNo}</p>
-        <p class="receipt-label">Date</p>
-        <p class="receipt-value">${displayDate(booking.date || today())}</p>
-      </div>
-    </div>
-
-    <div class="receipt-grid">
-      <div class="receipt-box">
-        <p class="receipt-label">Received From</p>
-        <p class="receipt-value">${esc(booking.name || '-')}</p>
-        <p class="receipt-label">Phone</p>
-        <p>${esc(booking.phone || '-')}</p>
-      </div>
-      <div class="receipt-box">
-        <p class="receipt-label">Vehicle</p>
-        <p class="receipt-value">${esc(booking.car || '-')}</p>
-        <p class="receipt-label">Plate No.</p>
-        <p>${esc(booking.plate || '-')}</p>
+      <div class="rcp-header-right">
+        <p class="rcp-title">OFFICIAL RECEIPT</p>
+        <div class="rcp-meta-row"><span class="rcp-meta-label">Receipt No.</span><span class="rcp-meta-val">${receiptNo}</span></div>
+        <div class="rcp-meta-row"><span class="rcp-meta-label">Date</span><span class="rcp-meta-val">${displayDate(booking.date || today())}</span></div>
+        <div class="rcp-meta-row"><span class="rcp-meta-label">Time</span><span class="rcp-meta-val">${esc(booking.time || '-')}</span></div>
       </div>
     </div>
+    <div class="rcp-strip"></div>
 
-    <h2>Service Information</h2>
-    <table>
-      <thead>
-        <tr><th style="width:60px">No.</th><th>Service</th><th style="width:150px" class="amount">Amount</th></tr>
-      </thead>
-      <tbody>${serviceRows}</tbody>
-    </table>
+    <!-- Body -->
+    <div class="rcp-body">
 
-    <div class="receipt-total">
-      <table>
-        <tr><th>Total</th><td class="amount"><strong>${rm(booking.price)}</strong></td></tr>
-        <tr><th>Payment Mode</th><td class="amount">${esc(booking.paymentMethod || '-')}</td></tr>
-        <tr><th>Payment Status</th><td class="amount">${esc(booking.paymentStatus || '-')}</td></tr>
+      <!-- Customer & Vehicle -->
+      <div class="rcp-section-title">Customer &amp; Vehicle Information</div>
+      <div class="rcp-grid">
+        <div class="rcp-box">
+          <div class="rcp-box-label">Name</div>
+          <div class="rcp-box-val">${esc(booking.name || '-')}</div>
+          <div class="rcp-box-sub-label">Phone No.</div>
+          <div class="rcp-box-sub-val">${esc(booking.phone || '-')}</div>
+        </div>
+        <div class="rcp-box">
+          <div class="rcp-box-label">Vehicle</div>
+          <div class="rcp-box-val">${esc(booking.car || '-')}</div>
+          <div class="rcp-box-sub-label">Plate No.</div>
+          <div class="rcp-box-sub-val">${esc(booking.plate || '-') || '—'}</div>
+        </div>
+      </div>
+
+      <!-- Services -->
+      <div class="rcp-section-title">SERVICE DETAILS</div>
+      <table class="rcp-table">
+        <thead>
+          <tr>
+            <th style="width:48px">Bil.</th>
+            <th>Servis</th>
+            <th class="amt" style="width:120px">Amaun</th>
+          </tr>
+        </thead>
+        <tbody>${serviceRows.replace(/class="amount"/g, 'class="amt"')}</tbody>
       </table>
-    </div>
 
-    <div class="receipt-footer">
-      <p class="receipt-note">Computer generated receipt. No signature required.</p>
-      <div class="receipt-paid-stamp ${booking.paymentStatus === 'Sudah Bayar' ? 'paid' : booking.paymentStatus === 'Deposit' ? 'deposit' : 'unpaid'}">
-        ${booking.paymentStatus === 'Sudah Bayar' ? '✅ SUDAH DIBAYAR' : booking.paymentStatus === 'Deposit' ? '⏳ DEPOSIT' : '⚠️ BELUM BAYAR'}
+      <!-- Total -->
+      <div class="rcp-total-wrap">
+        <div class="rcp-total-box">
+          <div class="rcp-total-row">
+            <span class="rcp-total-row-label">Payment Method</span>
+            <span class="rcp-total-row-val">${esc(booking.paymentMethod || '-')}</span>
+          </div>
+          <div class="rcp-total-row">
+            <span class="rcp-total-row-label">Payment Status</span>
+            <span class="rcp-total-row-val">${esc(booking.paymentStatus || '-')}</span>
+          </div>
+          <div class="rcp-total-row rcp-total-main">
+            <span class="rcp-total-row-label">TOTAL</span>
+            <span class="rcp-total-row-val">${rm(booking.price)}</span>
+          </div>
+        </div>
       </div>
+
+      <!-- Footer -->
+      <div class="rcp-footer">
+        <div class="rcp-footer-note">
+          <strong>Terima kasih kerana memilih perkhidmatan kami!</strong><br>
+          Cuci Seat, Kusyen, Karpet Kereta | Pakar Hygiene Dalaman Kereta<br>
+          <span style="color:#cbd5e1">Resit ini dijana secara digital. Tiada tandatangan diperlukan.<br>
+          Simpan resit ini sebagai bukti pembayaran anda.</span>
+        </div>
+        <div class="rcp-stamp ${stampClass}">
+          <div class="rcp-stamp-icon">${booking.paymentStatus === 'Sudah Bayar' ? '✓' : booking.paymentStatus === 'Deposit' ? '½' : '!'}</div>
+          <div class="rcp-stamp-inner">${stampText}</div>
+          <div class="rcp-stamp-sub">${stampSub}</div>
+        </div>
+      </div>
+
     </div>
   </div>`;
       document.getElementById('receipt-preview').innerHTML = html;
       document.getElementById('receipt-modal').classList.add('active');
     }
 
+    let _isPrinting = false;
     function savePDF() {
+      if (_isPrinting) return;
       const receiptEl = document.getElementById('receipt-preview');
       if (!receiptEl || !receiptEl.innerHTML.trim()) {
         showWAToast('Sila buka resit dahulu!'); return;
       }
-      // window.print() works universally — print CSS hides everything except receipt
-      // User selects "Save as PDF" in the browser print dialog
-      showWAToast('📄 Pilih "Save as PDF" dalam dialog print...');
-      setTimeout(() => window.print(), 400);
+      _isPrinting = true;
+      window.print();
+      setTimeout(() => { _isPrinting = false; }, 2000);
     }
 
 
@@ -2103,7 +2238,7 @@
           + 'Terima kasih kerana berminat dengan perkhidmatan kami.\n\n'
           + 'Ini adalah peringatan bahawa slot anda masih menunggu pengesahan:\n'
           + sep + '\n'
-          + '🚗 Kenderaan : ' + (b.car || '-') + '\n'
+          + '🚗 Vehicle : ' + (b.car || '-') + '\n'
           + '💺 Servis    : ' + (b.service || '-') + '\n'
           + '📅 Tarikh    : ' + (displayDate(b.date) || 'TBD') + '\n'
           + '🕐 Masa      : ' + (b.time || 'TBD') + '\n'
@@ -2121,7 +2256,7 @@
       return 'Assalamualaikum ' + greeting + ',\n\n'
         + 'Kami ingin membuat susulan berkenaan temujanji anda yang akan datang:\n'
         + sep + '\n'
-        + '🚗 Kenderaan : ' + (b.car || '-') + '\n'
+        + '🚗 Vehicle : ' + (b.car || '-') + '\n'
         + '💺 Servis    : ' + (b.service || '-') + '\n'
         + '📅 Tarikh    : ' + (displayDate(b.date) || 'TBD') + '\n'
         + '🕐 Masa      : ' + (b.time || 'TBD') + '\n'
@@ -2142,7 +2277,7 @@
       return 'Assalamualaikum ' + customerGreeting(b.name) + ',\n\n'
         + 'Tempahan anda telah berjaya disahkan. Berikut adalah butiran perkhidmatan anda:\n'
         + sep + '\n'
-        + '🚗 Kenderaan : ' + (b.car || '-') + '\n'
+        + '🚗 Vehicle : ' + (b.car || '-') + '\n'
         + '💺 Servis    : ' + (b.service || '-') + '\n'
         + '📅 Tarikh    : ' + (displayDate(b.date) || '-') + '\n'
         + '🕐 Masa      : ' + (b.time || '-') + '\n'
