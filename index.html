@@ -190,28 +190,52 @@
     .mobile-page-header p{font-size:11.5px;color:var(--muted);margin-top:1px}
     .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:linear-gradient(160deg,#0e1e3e 0%,#091528 100%);border-top:1px solid rgba(255,255,255,.08);z-index:50;padding:6px 0 max(10px,env(safe-area-inset-bottom))}
     .bottom-nav-inner{display:flex;justify-content:space-around;align-items:center}
-    .bnav-btn{background:transparent;border:none;color:#4a6080;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 10px;border-radius:10px;font-size:10px;font-weight:600;min-width:52px;transition:color .15s}
-    .bnav-btn .bnav-icon{font-size:20px;line-height:1}
+    .bnav-btn{background:transparent;border:none;color:#4a6080;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 10px;border-radius:10px;font-size:10px;font-weight:600;min-width:52px;transition:all .15s;letter-spacing:.01em}
+    .bnav-btn .bnav-icon{font-size:22px;line-height:1;transition:transform .15s}
     .bnav-btn.active{color:#60a5fa}
+    .bnav-btn.active .bnav-icon{transform:translateY(-1px)}
     @media(min-width:769px){.mobile-topbar,.mobile-page-header,.bottom-nav{display:none!important}.topbar{display:flex}}
     @media(max-width:768px){
       .side{display:none!important}.topbar{display:none!important}
       .mobile-topbar{display:flex!important}.mobile-page-header{display:block!important}.bottom-nav{display:block!important}
-      .app{grid-template-columns:1fr}.main{padding:12px 14px 90px;min-width:0}
+      .app{grid-template-columns:1fr}.main{padding:14px 14px 92px;min-width:0}
       .grid.kpi{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
-      .kpi-card{padding:13px 14px;min-height:90px}.kpi-card .value{font-size:19px}
-      .status-grid{grid-template-columns:repeat(3,1fr);gap:8px}.status-card .s-value{font-size:22px}
+      .kpi-card{padding:14px;min-height:96px;border-radius:12px}
+      .kpi-card .value{font-size:20px}.kpi-card .label{font-size:11px}.kpi-card .hint{font-size:10.5px}
+      .status-grid{grid-template-columns:repeat(3,1fr);gap:8px}.status-card .s-value{font-size:20px}
+      .status-card{padding:10px 12px}
       .grid.two{grid-template-columns:1fr;gap:12px}
       .form-grid{grid-template-columns:1fr 1fr;gap:10px}
       .field.span-2,.field.span-4{grid-column:1/-1}
-      .table-wrap{max-height:55vh}
-      th,td{padding:10px;font-size:12px}
-      .toolbar input,.toolbar select{max-width:none;flex:1}.toolbar{gap:7px}
-      .btn{min-height:44px;padding:10px 16px;font-size:13px}
+      .table-wrap{max-height:60vh}
+      th{padding:10px 8px;font-size:11px}td{padding:10px 8px;font-size:12.5px}
+      .toolbar input,.toolbar select{max-width:none;flex:1;min-width:0}.toolbar{gap:7px}
+      .btn{min-height:44px;padding:10px 14px;font-size:13px}
       input,select,textarea{min-height:44px;font-size:15px}
       .service-options{grid-template-columns:1fr}
+      .panel{padding:16px;border-radius:14px}
+      .section-title{font-size:11px;margin-bottom:12px}
+      .mini-actions{gap:6px}
+      .mini-actions button,.mini-actions a{min-height:36px;font-size:11.5px;padding:6px 10px}
+      .receipt-modal{padding:12px}
+      .receipt-actions{gap:6px;margin-bottom:10px}
+      .btn-wa-receipt,.btn-pdf-receipt,.btn-copy-receipt{padding:10px 14px;font-size:13px;border-radius:10px}
+      .rcp-header{padding:20px 20px 18px;flex-direction:column;gap:14px}
+      .rcp-header-right{text-align:left}
+      .rcp-title{font-size:18px;margin-bottom:8px}
+      .rcp-body{padding:16px 20px 20px}
+      .rcp-grid{grid-template-columns:1fr}
+      .rcp-total-box{min-width:unset;width:100%}
+      .rcp-total-wrap{justify-content:stretch}
+      .rcp-footer{flex-direction:column;align-items:center;gap:16px;text-align:center}
+      .rcp-stamp{transform:none}
     }
-    @media(max-width:420px){.grid.kpi{grid-template-columns:repeat(2,1fr);gap:8px}.form-grid{grid-template-columns:1fr}.main{padding:10px 12px 88px}}
+    @media(max-width:420px){
+      .grid.kpi{grid-template-columns:repeat(2,1fr);gap:8px}
+      .form-grid{grid-template-columns:1fr}
+      .main{padding:10px 12px 92px}
+      .status-grid{grid-template-columns:repeat(2,1fr)}
+    }
     @media print{
       @page{margin:12mm;size:A4 portrait}
       *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
@@ -272,7 +296,7 @@
         </div>
         <div class="mobile-topbar-right">
           <div class="mobile-clock" id="mobile-clock">—</div>
-          <button class="mobile-add-btn" onclick="go('new-booking')">➕ Add</button>
+          <button class="mobile-add-btn" onclick="go('new-booking')">➕ Add Booking</button>
         </div>
       </div>
       <div class="topbar">
@@ -445,8 +469,8 @@
       <div class="receipt-actions">
         <button class="btn" type="button" onclick="closeReceipt()">✕ Close</button>
         <button class="btn-copy-receipt" type="button" onclick="copyResit()">&#x1F4CB; Copy Text</button>
-        <button class="btn-pdf-receipt" type="button" onclick="savePDF()">&#x1F4E5; Simpan PDF</button>
-        <button class="btn-wa-receipt" type="button" onclick="sendWAResit()">&#x1F4F2; Send via WhatsApp</button>
+        <button class="btn-pdf-receipt" type="button" onclick="savePDF()">&#x1F4E5; Save PDF</button>
+        <button class="btn-wa-receipt" type="button" onclick="sendWAResit()">&#x1F4F2; Send WhatsApp</button>
       </div>
       <div class="wa-toast" id="wa-toast"></div>
       <div id="receipt-preview"></div>
@@ -648,20 +672,26 @@
       document.getElementById('receipt-modal').classList.add('active');
     }
     let _isPrinting=false;
+    function isMobile(){return/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);}
     function savePDF(){
       if(_isPrinting)return;
       const receiptEl=document.getElementById('receipt-preview');
-      if(!receiptEl||!receiptEl.innerHTML.trim()){showWAToast('Sila buka resit dahulu!');return;}
-      if(typeof html2pdf==='undefined'){showWAToast('Library belum load. Cuba semula.');return;}
+      if(!receiptEl||!receiptEl.innerHTML.trim()){showWAToast('Please open a receipt first!');return;}
+      if(isMobile()){
+        showWAToast('Opening print dialog — choose Save as PDF');
+        setTimeout(()=>window.print(),400);
+        return;
+      }
+      if(typeof html2pdf==='undefined'){showWAToast('Library not loaded. Please try again.');return;}
       _isPrinting=true;
       const btn=document.querySelector('.btn-pdf-receipt');
       if(btn){btn.textContent='⏳ Generating...';btn.disabled=true;}
       const booking=state.bookings.find(b=>b.id===_currentReceiptBookingId);
-      const filename='Resit-'+(booking?booking.name.replace(/\s+/g,'-'):'Cuci-Seat')+'-'+new Date().toISOString().slice(0,10)+'.pdf';
+      const filename='Receipt-'+(booking?booking.name.replace(/\s+/g,'-'):'Cuci-Seat')+'-'+new Date().toISOString().slice(0,10)+'.pdf';
       const opt={margin:[8,8,8,8],filename,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},pagebreak:{mode:'avoid-all'}};
       html2pdf().set(opt).from(receiptEl).save()
-        .then(()=>{showWAToast('✅ PDF berjaya disimpan!');if(btn){btn.innerHTML='&#x1F4E5; Simpan PDF';btn.disabled=false;}_isPrinting=false;})
-        .catch(()=>{showWAToast('Gagal generate PDF. Cuba semula.');if(btn){btn.innerHTML='&#x1F4E5; Simpan PDF';btn.disabled=false;}_isPrinting=false;});
+        .then(()=>{showWAToast('✅ PDF saved!');if(btn){btn.innerHTML='&#x1F4E5; Save PDF';btn.disabled=false;}_isPrinting=false;})
+        .catch(()=>{showWAToast('Failed to generate PDF. Try again.');if(btn){btn.innerHTML='&#x1F4E5; Save PDF';btn.disabled=false;}_isPrinting=false;});
     }
     function openLink(url){const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener noreferrer';document.body.appendChild(a);a.click();setTimeout(()=>document.body.removeChild(a),500);}
     function normalizePhone(raw){
