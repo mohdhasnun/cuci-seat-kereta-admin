@@ -1316,6 +1316,7 @@
               <div class="status-card" style="background:#dbeafe;border-color:#bfdbfe;color:#1d4ed8"><div class="s-label">Postponed</div><div class="s-value" id="s-postponed">0</div></div>
               <div class="status-card" style="background:#ccfbf1;border-color:#99f6e4;color:#0f766e"><div class="s-label">Complete</div><div class="s-value" id="s-complete">0</div></div>
               <div class="status-card" style="background:#fee2e2;border-color:#fecaca;color:#b91c1c"><div class="s-label">Cancelled</div><div class="s-value" id="s-cancelled">0</div></div>
+              <div class="status-card" style="background:#1f2937;border-color:#374151;color:#f9fafb"><div class="s-label">No-Show</div><div class="s-value" id="s-no-show">0</div></div>
             </div>
           </div>
           <div class="panel">
@@ -2808,7 +2809,8 @@
     }
 
     function setText(id, value) {
-      document.getElementById(id).textContent = value;
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
     }
 
     function today() {
