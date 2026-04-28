@@ -2399,13 +2399,14 @@
         return (!q || hay.includes(q)) && (status === 'all' || b.status === status) && (payment === 'all' || b.paymentStatus === payment);
       }).sort((a, b) => (b.date + ' ' + b.time).localeCompare(a.date + ' ' + a.time));
 
-      // Mobile cards — use string concat to avoid nested template literal bugs
+      // Mobile cards
       const mobileList = document.getElementById('booking-mobile-cards');
       if (mobileList) {
         if (!rows.length) {
           mobileList.innerHTML = '<div class="empty" style="padding:30px;text-align:center">No bookings found.</div>';
         } else {
-          mobileList.innerHTML = rows.map(function(b) {
+          var cards = '';
+          rows.forEach(function(b) {
             var payOpts = paymentStatuses.map(function(s) {
               return '<option' + (s === b.paymentStatus ? ' selected' : '') + '>' + s + '</option>';
             }).join('');
@@ -2413,42 +2414,42 @@
               return '<option' + (s === b.status ? ' selected' : '') + '>' + s + '</option>';
             }).join('');
             var depRow = b.depositAmount > 0
-              ? '<div class="bk-row"><span class="bk-label">💰 Deposit</span><span class="bk-val">' + rm(b.depositAmount) + '</span></div>'
+              ? '<div class="bk-row"><span class="bk-label">Deposit</span><span class="bk-val">' + rm(b.depositAmount) + '</span></div>'
               : '';
             var notesRow = (b.notes || '').trim()
-              ? '<div class="bk-notes">📝 ' + esc(b.notes) + '</div>'
+              ? '<div class="bk-notes">' + esc(b.notes) + '</div>'
               : '';
-            var plateInfo = b.plate ? ' · ' + esc(b.plate) : '';
-            return '<div class="bk-card">'
+            var plateInfo = b.plate ? ' &middot; ' + esc(b.plate) : '';
+            cards += '<div class="bk-card" data-id="' + b.id + '">'
               + '<div class="bk-card-top">'
-              +   '<div><div class="bk-name">' + esc(b.name) + '</div><div style="font-size:12px;color:var(--muted)">' + esc(b.phone) + '</div></div>'
-              +   '<div class="bk-date"><div>' + esc(displayDate(b.date)) + '</div><div>' + esc(b.time) + '</div></div>'
+              + '<div><div class="bk-name">' + esc(b.name) + '</div>'
+              + '<div style="font-size:12px;color:var(--muted)">' + esc(b.phone) + '</div></div>'
+              + '<div class="bk-date"><div>' + esc(displayDate(b.date)) + '</div><div>' + esc(b.time) + '</div></div>'
               + '</div>'
-              + '<div class="bk-service">💺 ' + esc(b.service) + '</div>'
-              + '<div class="bk-row"><span class="bk-label">🚗 Kenderaan</span><span class="bk-val">' + esc(b.car) + plateInfo + '</span></div>'
+              + '<div class="bk-service">' + esc(b.service) + '</div>'
+              + '<div class="bk-row"><span class="bk-label">Kenderaan</span>'
+              + '<span class="bk-val">' + esc(b.car) + plateInfo + '</span></div>'
               + depRow + notesRow
-              + '<div class="bk-price-row"><span class="bk-label">Jumlah</span><div class="bk-price">' + rm(b.price) + '</div></div>'
+              + '<div class="bk-price-row"><span class="bk-label">Jumlah</span>'
+              + '<div class="bk-price">' + rm(b.price) + '</div></div>'
               + '<div class="bk-selects">'
-              +   '<select onchange="updateStatus(' + b.id + ','paymentStatus',this.value)">' + payOpts + '</select>'
-              +   '<select onchange="updateStatus(' + b.id + ','status',this.value)">' + stOpts + '</select>'
+              + '<select data-id="' + b.id + '" data-field="paymentStatus" onchange="updateStatus(Number(this.dataset.id),this.dataset.field,this.value)">' + payOpts + '</select>'
+              + '<select data-id="' + b.id + '" data-field="status" onchange="updateStatus(Number(this.dataset.id),this.dataset.field,this.value)">' + stOpts + '</select>'
               + '</div>'
               + '<div class="bk-actions">'
-              +   '<button class="btn wa full" onclick="confirmAndWhatsApp(' + b.id + ')">✅ Confirm WA</button>'
-              +   '<button class="btn btn-ready" onclick="notifyCarReady(' + b.id + ')">🚗 Siap</button>'
-              +   '<button class="btn" onclick="openWaFromList(' + b.id + ')">💬 Follow-up</button>'
-              +   '<button class="btn" onclick="generateReceipt(' + b.id + ')">🧾 Receipt</button>'
-              +   '<button class="btn" onclick="fillBookingForm(' + b.id + ')">✏️ Edit</button>'
-              +   '<button class="btn danger" onclick="deleteBooking(' + b.id + ')">🗑️ Delete</button>'
+              + '<button class="btn wa full" data-id="' + b.id + '" onclick="confirmAndWhatsApp(Number(this.dataset.id))">Confirm WA</button>'
+              + '<button class="btn btn-ready" data-id="' + b.id + '" onclick="notifyCarReady(Number(this.dataset.id))">Siap</button>'
+              + '<button class="btn" data-id="' + b.id + '" onclick="openWaFromList(Number(this.dataset.id))">Follow-up</button>'
+              + '<button class="btn" data-id="' + b.id + '" onclick="generateReceipt(Number(this.dataset.id))">Receipt</button>'
+              + '<button class="btn" data-id="' + b.id + '" onclick="fillBookingForm(Number(this.dataset.id))">Edit</button>'
+              + '<button class="btn danger" data-id="' + b.id + '" onclick="deleteBooking(Number(this.dataset.id))">Delete</button>'
               + '</div>'
               + '</div>';
-          }).join('');
+          });
+          mobileList.innerHTML = cards;
         }
       }
 
-      document.getElementById('booking-rows').innerHTML = rows.length ? rows.map(b => `
-        <tr>
-          <td>${esc(displayDate(b.date))}</td>
-          <td>${esc(b.time)}</td>
           <td><strong>${esc(b.name)}</strong><br><span style="color:var(--muted)">${esc(b.phone)}</span></td>
           <td>${esc(b.car)}<br><span style="color:var(--muted)">${esc(b.plate || b.source || '')}</span></td>
           <td>${esc(b.service)}<br><span style="color:var(--muted)">${esc(b.notes || '')}</span></td>
