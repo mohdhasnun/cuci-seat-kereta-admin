@@ -2395,53 +2395,54 @@
       const status = val('filter-status');
       const payment = val('filter-payment');
       const rows = state.bookings.filter(b => {
-        const hay = `${b.name} ${b.phone} ${b.car} ${b.service} ${b.notes}`.toLowerCase();
+        const hay = (b.name + ' ' + b.phone + ' ' + b.car + ' ' + b.service + ' ' + (b.notes||'')).toLowerCase();
         return (!q || hay.includes(q)) && (status === 'all' || b.status === status) && (payment === 'all' || b.paymentStatus === payment);
-      }).sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
-      // Mobile cards
+      }).sort((a, b) => (b.date + ' ' + b.time).localeCompare(a.date + ' ' + a.time));
+
+      // Mobile cards — use string concat to avoid nested template literal bugs
       const mobileList = document.getElementById('booking-mobile-cards');
       if (mobileList) {
-        mobileList.innerHTML = rows.length ? rows.map(b => `
-          <div class="bk-card">
-            <div class="bk-card-top">
-              <div>
-                <div class="bk-name">${esc(b.name)}</div>
-                <div style="font-size:12px;color:var(--muted)">${esc(b.phone)}</div>
-              </div>
-              <div class="bk-date">
-                <div>${esc(displayDate(b.date))}</div>
-                <div>${esc(b.time)}</div>
-              </div>
-            </div>
-            <div class="bk-service">💺 ${esc(b.service)}</div>
-            <div class="bk-row">
-              <span class="bk-label">🚗 Kenderaan</span>
-              <span class="bk-val">${esc(b.car)}${b.plate ? ' · ' + esc(b.plate) : ''}</span>
-            </div>
-            ${b.depositAmount > 0 ? `<div class="bk-row"><span class="bk-label">💰 Deposit</span><span class="bk-val">${rm(b.depositAmount)}</span></div>` : ''}
-            ${(b.notes||'').trim() ? `<div class="bk-notes">📝 ${esc(b.notes)}</div>` : ''}
-            <div class="bk-price-row">
-              <div><span class="bk-label">Jumlah</span></div>
-              <div class="bk-price">${rm(b.price)}</div>
-            </div>
-            <div class="bk-selects">
-              <select onchange="updateStatus(${b.id}, 'paymentStatus', this.value)">
-                ${paymentStatuses.map(s => `<option ${s === b.paymentStatus ? 'selected' : ''}>${s}</option>`).join('')}
-              </select>
-              <select onchange="updateStatus(${b.id}, 'status', this.value)">
-                ${statuses.map(s => `<option ${s === b.status ? 'selected' : ''}>${s}</option>`).join('')}
-              </select>
-            </div>
-            <div class="bk-actions">
-              <button class="btn wa full" type="button" onclick="confirmAndWhatsApp(${b.id})">✅ Confirm WA</button>
-              <button class="btn btn-ready" type="button" onclick="notifyCarReady(${b.id})">🚗 Siap</button>
-              <button class="btn" type="button" onclick="openWaFromList(${b.id})">💬 Follow-up</button>
-              <button class="btn" type="button" onclick="generateReceipt(${b.id})">🧾 Receipt</button>
-              <button class="btn" type="button" onclick="fillBookingForm(${b.id})">✏️ Edit</button>
-              <button class="btn danger" type="button" onclick="deleteBooking(${b.id})">🗑️ Delete</button>
-            </div>
-          </div>
-        `).join('') : '<div class="empty" style="padding:30px;text-align:center">No bookings found.</div>';
+        if (!rows.length) {
+          mobileList.innerHTML = '<div class="empty" style="padding:30px;text-align:center">No bookings found.</div>';
+        } else {
+          mobileList.innerHTML = rows.map(function(b) {
+            var payOpts = paymentStatuses.map(function(s) {
+              return '<option' + (s === b.paymentStatus ? ' selected' : '') + '>' + s + '</option>';
+            }).join('');
+            var stOpts = statuses.map(function(s) {
+              return '<option' + (s === b.status ? ' selected' : '') + '>' + s + '</option>';
+            }).join('');
+            var depRow = b.depositAmount > 0
+              ? '<div class="bk-row"><span class="bk-label">💰 Deposit</span><span class="bk-val">' + rm(b.depositAmount) + '</span></div>'
+              : '';
+            var notesRow = (b.notes || '').trim()
+              ? '<div class="bk-notes">📝 ' + esc(b.notes) + '</div>'
+              : '';
+            var plateInfo = b.plate ? ' · ' + esc(b.plate) : '';
+            return '<div class="bk-card">'
+              + '<div class="bk-card-top">'
+              +   '<div><div class="bk-name">' + esc(b.name) + '</div><div style="font-size:12px;color:var(--muted)">' + esc(b.phone) + '</div></div>'
+              +   '<div class="bk-date"><div>' + esc(displayDate(b.date)) + '</div><div>' + esc(b.time) + '</div></div>'
+              + '</div>'
+              + '<div class="bk-service">💺 ' + esc(b.service) + '</div>'
+              + '<div class="bk-row"><span class="bk-label">🚗 Kenderaan</span><span class="bk-val">' + esc(b.car) + plateInfo + '</span></div>'
+              + depRow + notesRow
+              + '<div class="bk-price-row"><span class="bk-label">Jumlah</span><div class="bk-price">' + rm(b.price) + '</div></div>'
+              + '<div class="bk-selects">'
+              +   '<select onchange="updateStatus(' + b.id + ','paymentStatus',this.value)">' + payOpts + '</select>'
+              +   '<select onchange="updateStatus(' + b.id + ','status',this.value)">' + stOpts + '</select>'
+              + '</div>'
+              + '<div class="bk-actions">'
+              +   '<button class="btn wa full" onclick="confirmAndWhatsApp(' + b.id + ')">✅ Confirm WA</button>'
+              +   '<button class="btn btn-ready" onclick="notifyCarReady(' + b.id + ')">🚗 Siap</button>'
+              +   '<button class="btn" onclick="openWaFromList(' + b.id + ')">💬 Follow-up</button>'
+              +   '<button class="btn" onclick="generateReceipt(' + b.id + ')">🧾 Receipt</button>'
+              +   '<button class="btn" onclick="fillBookingForm(' + b.id + ')">✏️ Edit</button>'
+              +   '<button class="btn danger" onclick="deleteBooking(' + b.id + ')">🗑️ Delete</button>'
+              + '</div>'
+              + '</div>';
+          }).join('');
+        }
       }
 
       document.getElementById('booking-rows').innerHTML = rows.length ? rows.map(b => `
