@@ -2449,7 +2449,10 @@
           mobileList.innerHTML = cards;
         }
       }
-
+      document.getElementById('booking-rows').innerHTML = rows.length ? rows.map(b => `
+        <tr>
+          <td>${esc(displayDate(b.date))}</td>
+          <td>${esc(b.time)}</td>
           <td><strong>${esc(b.name)}</strong><br><span style="color:var(--muted)">${esc(b.phone)}</span></td>
           <td>${esc(b.car)}<br><span style="color:var(--muted)">${esc(b.plate || b.source || '')}</span></td>
           <td>${esc(b.service)}<br><span style="color:var(--muted)">${esc(b.notes || '')}</span></td>
