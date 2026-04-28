@@ -1160,6 +1160,60 @@
       border: none !important;
     }
     .btn-ready:hover { background: linear-gradient(135deg, #047857, #065f46) !important; }
+
+    /* Mobile booking cards */
+    @media (max-width: 767px) {
+      .booking-table-wrap { display: none !important; }
+      .booking-mobile-list { display: block !important; }
+    }
+    @media (min-width: 768px) {
+      .booking-table-wrap { display: block !important; }
+      .booking-mobile-list { display: none !important; }
+    }
+    .booking-mobile-list { display: none; }
+    .bk-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+    .bk-card-top {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .bk-name { font-size: 15px; font-weight: 700; color: var(--text); }
+    .bk-date { font-size: 12px; color: var(--muted); text-align: right; }
+    .bk-row { display: flex; justify-content: space-between; align-items: center; margin: 5px 0; }
+    .bk-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+    .bk-val { font-size: 13px; color: var(--text); font-weight: 600; text-align: right; }
+    .bk-service { 
+      background: rgba(96,165,250,.1); border: 1px solid rgba(96,165,250,.2);
+      border-radius: 8px; padding: 6px 10px; margin: 8px 0;
+      font-size: 13px; color: #93c5fd; font-weight: 600;
+    }
+    .bk-selects { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0; }
+    .bk-selects select { 
+      width: 100%; padding: 6px 8px; border-radius: 8px;
+      background: var(--input); border: 1px solid var(--border);
+      color: var(--text); font-size: 12px;
+    }
+    .bk-actions { 
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px;
+      padding-top: 10px; border-top: 1px solid var(--border);
+    }
+    .bk-actions .btn { font-size: 12px; padding: 8px 4px; text-align: center; width: 100%; }
+    .bk-actions .btn.full { grid-column: span 2; }
+    .bk-price-row { 
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 0; border-top: 1px solid var(--border); margin-top: 6px;
+    }
+    .bk-price { font-size: 16px; font-weight: 800; color: var(--text); }
+    .bk-notes { 
+      font-size: 12px; color: var(--muted); font-style: italic;
+      margin-top: 4px; padding: 4px 8px; background: rgba(255,255,255,.03);
+      border-radius: 6px; border-left: 2px solid var(--border);
+    }
   </style>
 </head>
 <body>
@@ -1329,7 +1383,7 @@
           </select>
           <button class="btn" type="button" onclick="exportBookingsCSV()">Export Booking CSV</button>
         </div>
-        <div class="card table-wrap">
+        <div class="card table-wrap booking-table-wrap">
           <table>
             <thead>
               <tr>
@@ -1347,6 +1401,8 @@
             <tbody id="booking-rows"></tbody>
           </table>
         </div>
+        <!-- Mobile card list -->
+        <div class="booking-mobile-list" id="booking-mobile-cards"></div>
       </section>
 
       <section id="calendar" class="page">
@@ -2342,6 +2398,52 @@
         const hay = `${b.name} ${b.phone} ${b.car} ${b.service} ${b.notes}`.toLowerCase();
         return (!q || hay.includes(q)) && (status === 'all' || b.status === status) && (payment === 'all' || b.paymentStatus === payment);
       }).sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
+      // Mobile cards
+      const mobileList = document.getElementById('booking-mobile-cards');
+      if (mobileList) {
+        mobileList.innerHTML = rows.length ? rows.map(b => `
+          <div class="bk-card">
+            <div class="bk-card-top">
+              <div>
+                <div class="bk-name">${esc(b.name)}</div>
+                <div style="font-size:12px;color:var(--muted)">${esc(b.phone)}</div>
+              </div>
+              <div class="bk-date">
+                <div>${esc(displayDate(b.date))}</div>
+                <div>${esc(b.time)}</div>
+              </div>
+            </div>
+            <div class="bk-service">💺 ${esc(b.service)}</div>
+            <div class="bk-row">
+              <span class="bk-label">🚗 Kenderaan</span>
+              <span class="bk-val">${esc(b.car)}${b.plate ? ' · ' + esc(b.plate) : ''}</span>
+            </div>
+            ${b.depositAmount > 0 ? `<div class="bk-row"><span class="bk-label">💰 Deposit</span><span class="bk-val">${rm(b.depositAmount)}</span></div>` : ''}
+            ${(b.notes||'').trim() ? `<div class="bk-notes">📝 ${esc(b.notes)}</div>` : ''}
+            <div class="bk-price-row">
+              <div><span class="bk-label">Jumlah</span></div>
+              <div class="bk-price">${rm(b.price)}</div>
+            </div>
+            <div class="bk-selects">
+              <select onchange="updateStatus(${b.id}, 'paymentStatus', this.value)">
+                ${paymentStatuses.map(s => `<option ${s === b.paymentStatus ? 'selected' : ''}>${s}</option>`).join('')}
+              </select>
+              <select onchange="updateStatus(${b.id}, 'status', this.value)">
+                ${statuses.map(s => `<option ${s === b.status ? 'selected' : ''}>${s}</option>`).join('')}
+              </select>
+            </div>
+            <div class="bk-actions">
+              <button class="btn wa full" type="button" onclick="confirmAndWhatsApp(${b.id})">✅ Confirm WA</button>
+              <button class="btn btn-ready" type="button" onclick="notifyCarReady(${b.id})">🚗 Siap</button>
+              <button class="btn" type="button" onclick="openWaFromList(${b.id})">💬 Follow-up</button>
+              <button class="btn" type="button" onclick="generateReceipt(${b.id})">🧾 Receipt</button>
+              <button class="btn" type="button" onclick="fillBookingForm(${b.id})">✏️ Edit</button>
+              <button class="btn danger" type="button" onclick="deleteBooking(${b.id})">🗑️ Delete</button>
+            </div>
+          </div>
+        `).join('') : '<div class="empty" style="padding:30px;text-align:center">No bookings found.</div>';
+      }
+
       document.getElementById('booking-rows').innerHTML = rows.length ? rows.map(b => `
         <tr>
           <td>${esc(displayDate(b.date))}</td>
