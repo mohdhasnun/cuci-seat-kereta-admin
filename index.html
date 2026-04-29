@@ -820,29 +820,32 @@
     /* Professional stamp */
     /* Stamp - simplified for PDF rendering */
     .rcp-stamp {
-      width: 130px;
-      height: 130px;
+      position: relative;
+      width: 110px;
+      height: 110px;
       border-radius: 50%;
-      border: 5px solid;
+      border: 4px solid;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      transform: rotate(0deg);
       flex-shrink: 0;
-      padding: 10px;
     }
     .rcp-stamp-ring {
-      width: 110px;
-      height: 110px;
-      border-radius: 50%;
-      border: 2px solid;
-      border-color: inherit;
-      opacity: 0.4;
       position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 85%;
+      height: 85%;
+      border-radius: 50%;
+      border: 1.5px solid currentColor;
+      opacity: 0.35;
     }
     .rcp-stamp-content {
+      position: relative;
+      z-index: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -2198,8 +2201,8 @@
           <span style="color:#cbd5e1">Resit ini dijana secara digital. Tiada tandatangan diperlukan.<br>
           Simpan resit ini sebagai bukti pembayaran anda.</span>
         </div>
-        <div class="rcp-stamp ${stampClass}" style="position:relative">
-          <div class="rcp-stamp-ring" style="position:absolute;inset:8px;border-radius:50%;border:2px solid currentColor;opacity:0.35"></div>
+        <div class="rcp-stamp ${stampClass}">
+          <div class="rcp-stamp-ring"></div>
           <div class="rcp-stamp-content">
             <div class="rcp-stamp-icon">${booking.paymentStatus === 'Sudah Bayar' ? '✓' : booking.paymentStatus === 'Deposit' ? '◑' : '✕'}</div>
             <div class="rcp-stamp-inner">${booking.paymentStatus === 'Sudah Bayar' ? 'PAID' : booking.paymentStatus === 'Deposit' ? 'DEPOSIT' : 'UNPAID'}</div>
