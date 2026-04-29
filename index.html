@@ -1342,7 +1342,7 @@
               <div class="field"><label>Car Model</label><input id="car" required placeholder="Perodua Bezza" /></div>
               <div class="field"><label>Plate No.</label><input id="plate" placeholder="AGX 1592" /></div>
               <div class="field span-2"><label>Services</label><div class="service-options" id="service-options"></div></div>
-              <div class="field"><label>Price (RM)</label><input id="price" type="number" min="0" step="1" required /></div>
+              <div class="field"><label>Price (RM) <span style="font-weight:400;color:var(--muted);font-size:11px">— auto-kira dari servis</span></label><input id="price" type="number" min="0" step="1" required readonly style="background:rgba(59,130,246,.07);color:var(--accent);font-weight:700;cursor:default" /></div>
               <div class="field"><label>Material Cost (RM)</label><input id="material" type="number" min="0" step="1" value="25" /></div>
               <div class="field"><label>Payment Method</label><select id="paymentMethod"></select></div>
               <div class="field"><label>Payment Status</label><select id="paymentStatus"></select></div>
@@ -1745,7 +1745,7 @@
           <span style="flex:1;font-size:14px">${esc(item)}</span>
           <div class="svc-price-wrap" style="${index === 0 ? '' : 'display:none'}">
             <span style="font-size:12px;color:var(--muted)">RM</span>
-            <input type="number" class="svc-price-input" data-service="${esc(item)}" min="0" step="1" value="${index === 0 ? '' : '0'}" placeholder="0" style="width:70px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--input);color:var(--text);font-size:13px;font-weight:700">
+            <input type="number" class="svc-price-input" data-service="${esc(item)}" min="0" step="1" value="${index === 0 ? '' : '0'}" placeholder="0" oninput="autoTotalPrice();updateDepositHint();updateWhatsAppPreview()" style="width:70px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--input);color:var(--text);font-size:13px;font-weight:700">
           </div>
         </label>
       `).join('');
@@ -1754,8 +1754,23 @@
     function toggleServicePrice(checkbox) {
       const wrap = checkbox.closest('label').querySelector('.svc-price-wrap');
       if (wrap) wrap.style.display = checkbox.checked ? '' : 'none';
+      if (!checkbox.checked) {
+        const inp = checkbox.closest('label').querySelector('.svc-price-input');
+        if (inp) { inp.value = 0; }
+      }
+      autoTotalPrice();
       updateWhatsAppPreview();
     }
+
+    function autoTotalPrice() {
+      let total = 0;
+      document.querySelectorAll('.svc-price-input').forEach(function(inp) {
+        total += Number(inp.value) || 0;
+      });
+      const priceField = document.getElementById('price');
+      if (priceField) priceField.value = total > 0 ? total : 0;
+    }
+
 
     function bind() {
       // Handle both nav groups via event delegation on the whole sidebar
