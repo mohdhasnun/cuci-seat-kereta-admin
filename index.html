@@ -814,7 +814,7 @@
     .rcp-total-main .rcp-total-row-label { color: #1e3a6e; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
     .rcp-total-main .rcp-total-row-val { color: #1e3a6e; font-size: 20px; font-weight: 900; }
     /* Footer */
-    .rcp-footer { margin-top: 24px; padding-top: 18px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; }
+    .rcp-footer { margin-top: 24px; padding-top: 18px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
     .rcp-footer-note { font-size: 11px; color: #94a3b8; line-height: 1.5; max-width: 240px; }
     .rcp-footer-note strong { color: #475569; }
     /* Professional stamp */
@@ -1339,14 +1339,23 @@
               <div class="field"><label>Car Model</label><input id="car" required placeholder="Perodua Bezza" /></div>
               <div class="field"><label>Plate No.</label><input id="plate" placeholder="AGX 1592" /></div>
               <div class="field span-2"><label>Services</label><div class="service-options" id="service-options"></div></div>
-              <div class="field"><label>Price (RM)</label><input id="price" type="number" min="0" step="1" required oninput="autoCalcDeposit()" /></div>
+              <div class="field"><label>Price (RM)</label><input id="price" type="number" min="0" step="1" required /></div>
               <div class="field"><label>Material Cost (RM)</label><input id="material" type="number" min="0" step="1" value="25" /></div>
               <div class="field"><label>Payment Method</label><select id="paymentMethod"></select></div>
               <div class="field"><label>Payment Status</label><select id="paymentStatus"></select></div>
-              <div class="field" id="deposit-field" style="border:2px solid #f59e0b;border-radius:10px;padding:8px 10px;background:#fffbeb">
-                <label style="color:#92400e;font-weight:700">💰 Deposit 30% (RM)</label>
-                <input id="depositAmount" type="number" min="0" step="0.01" value="0" placeholder="Auto-kira atau tukar manual" style="border:none;background:transparent;width:100%;font-size:16px;font-weight:700;color:#92400e" oninput="this.dataset.auto='false';autoCalcDeposit()" />
-                <div id="deposit-balance-hint" style="font-size:11px;color:#b45309;margin-top:2px"></div>
+              <div class="field" id="deposit-field">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:0">
+                  <input type="checkbox" id="deposit-toggle" onchange="toggleDeposit()" style="width:16px;height:16px;accent-color:#f59e0b;cursor:pointer" />
+                  <span style="font-weight:700;color:var(--text)">💰 Require Deposit</span>
+                </label>
+                <div id="deposit-input-wrap" style="display:none;margin-top:10px;border:2px solid #f59e0b;border-radius:10px;padding:8px 10px;background:#fffbeb">
+                  <label style="color:#92400e;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em">Deposit Amount (RM)</label>
+                  <input id="depositAmount" type="number" min="0" step="0.01" value="0" placeholder="Enter deposit amount" style="border:none;background:transparent;width:100%;font-size:16px;font-weight:700;color:#92400e" oninput="updateDepositHint()" />
+                  <div style="display:flex;justify-content:space-between;margin-top:4px">
+                    <div id="deposit-balance-hint" style="font-size:11px;color:#b45309"></div>
+                    <button type="button" onclick="setDeposit30()" style="font-size:11px;color:#92400e;background:none;border:1px solid #f59e0b;border-radius:5px;padding:2px 8px;cursor:pointer">Set 30%</button>
+                  </div>
+                </div>
               </div>
               <div class="field"><label>Service Status</label><select id="status"></select></div>
               <div class="field"><label>Source</label><select id="source"></select></div>
@@ -1668,36 +1677,36 @@
       ]
     };
 
-    function autoCalcDeposit() {
+    function toggleDeposit() {
+      const on = document.getElementById('deposit-toggle').checked;
+      const wrap = document.getElementById('deposit-input-wrap');
+      const depInput = document.getElementById('depositAmount');
+      wrap.style.display = on ? 'block' : 'none';
+      if (!on) { depInput.value = 0; }
+      else { setDeposit30(); }
+      updateDepositHint();
+    }
+
+    function setDeposit30() {
       const price = Number(document.getElementById('price')?.value || 0);
       const depInput = document.getElementById('depositAmount');
-      const hint = document.getElementById('deposit-balance-hint');
-      if (!depInput) return;
-      const dep30 = Math.round(price * 0.30 * 100) / 100;
-      // Only auto-fill if user hasn't manually changed it
-      if (price > 0 && (Number(depInput.value) === 0 || depInput.dataset.auto === 'true')) {
-        depInput.value = dep30;
-        depInput.dataset.auto = 'true';
-      }
-      const dep = Number(depInput.value || 0);
-      const balance = price - dep;
-      if (hint) {
-        if (dep > 0 && price > 0) {
-          hint.textContent = 'Baki: RM' + balance.toFixed(2) + ' | ' + Math.round(dep/price*100) + '% dari harga';
-        } else if (price > 0) {
-          hint.textContent = '30% = RM' + dep30.toFixed(2);
-        } else {
-          hint.textContent = '';
-        }
-      }
-      // Auto-set payment status to Deposit if deposit > 0 and < full price
-      const statusEl = document.getElementById('paymentStatus');
-      if (statusEl && dep > 0 && dep < price) {
-        statusEl.value = 'Deposit';
-      } else if (statusEl && dep >= price && price > 0) {
-        statusEl.value = 'Sudah Bayar';
-      }
+      if (price > 0) { depInput.value = Math.round(price * 0.30 * 100) / 100; }
+      updateDepositHint();
     }
+
+    function updateDepositHint() {
+      const price = Number(document.getElementById('price')?.value || 0);
+      const dep = Number(document.getElementById('depositAmount')?.value || 0);
+      const hint = document.getElementById('deposit-balance-hint');
+      if (hint && price > 0 && dep > 0) {
+        hint.textContent = 'Baki: RM' + (price - dep).toFixed(2) + ' (' + Math.round(dep/price*100) + '%)';
+      } else if (hint) { hint.textContent = ''; }
+      const statusEl = document.getElementById('paymentStatus');
+      if (statusEl && dep > 0 && dep < price) statusEl.value = 'Deposit';
+      else if (statusEl && dep >= price && price > 0) statusEl.value = 'Sudah Bayar';
+    }
+
+    function autoCalcDeposit() { updateDepositHint(); }
 
     async function init() {
       hydrateSelect('time', times);
@@ -1924,8 +1933,11 @@
       setSelectedServices(b.service);
       setVal('price', b.price);
       setVal('material', b.material);
+      const hasDep = Number(b.depositAmount || 0) > 0;
+      document.getElementById('deposit-toggle').checked = hasDep;
+      document.getElementById('deposit-input-wrap').style.display = hasDep ? 'block' : 'none';
       setVal('depositAmount', b.depositAmount || 0);
-      autoCalcDeposit();
+      updateDepositHint();
       setVal('paymentMethod', b.paymentMethod);
       setVal('paymentStatus', b.paymentStatus);
       setVal('status', b.status);
@@ -2000,7 +2012,7 @@
         + '📞 Tel  : 017-699 3876\n'
         + '🌐 Web  : cuciseatkereta.com\n'
         + sep + '\n\n'
-        + 'Terima kasih kerana mempercayakan kebersihan dalaman kenderaan anda kepada kami. Anda sudah boleh datang mengambilnya bila-bila masa. 😊';
+        + 'Terima kasih kerana mempercayakan kebersihan dalaman kenderaan anda kepada kami. 😊';
 
       openWA(booking.phone, msg);
     }
@@ -2605,7 +2617,7 @@
       const sep = '─────────────────';
 
       if (isPostponed) {
-        return 'Assalamualaikum ' + greeting + ',\n\n'
+        return 'Hi ' + greeting + ',\n\n'
           + 'Kami memahami bahawa anda perlu menangguhkan temujanji anda bersama kami.\n\n'
           + 'Slot berikut telah kami kosongkan:\n'
           + sep + '\n'
@@ -2622,7 +2634,7 @@
       }
 
       if (isPending) {
-        return 'Assalamualaikum ' + greeting + ',\n\n'
+        return 'Hi ' + greeting + ',\n\n'
           + 'Terima kasih kerana berminat dengan perkhidmatan kami.\n\n'
           + 'Ini adalah peringatan bahawa slot anda masih menunggu pengesahan:\n'
           + sep + '\n'
@@ -2641,15 +2653,15 @@
       }
 
       // Default follow-up
-      return 'Assalamualaikum ' + greeting + ',\n\n'
-        + 'Kami ingin membuat susulan berkenaan temujanji anda yang akan datang:\n'
+      return 'Hi ' + greeting + ',\n\n'
+        + 'Sekadar menyemak berkaitan temujanji anda yang lepas.\n'
         + sep + '\n'
         + '🚗 Vehicle : ' + (b.car || '-') + '\n'
         + '💺 Servis    : ' + (b.service || '-') + '\n'
         + '📅 Tarikh    : ' + (displayDate(b.date) || 'TBD') + '\n'
         + '🕐 Masa      : ' + (b.time || 'TBD') + '\n'
         + sep + '\n\n'
-        + 'Adakah anda masih akan hadir? Sila maklumkan kepada kami supaya slot dapat kami sediakan.\n\n'
+        + 'Tiada masalah, kami faham ada perkara yang tidak dapat dielakkan. Sila hubungi kami untuk menetapkan semula temujanji anda pada waktu yang sesuai.\n\n'
         + sep + '\n'
         + '📍 Lokasi kami:\n'
         + '🗺️ Google Maps : ' + googleLocationUrl + '\n'
@@ -2676,7 +2688,7 @@
       const notesLine = (b.notes || '').trim()
         ? '\n📝 *Nota*      : ' + b.notes.trim() + '\n'
         : '';
-      return 'Assalamualaikum ' + customerGreeting(b.name) + ',\n\n'
+      return 'Hi ' + customerGreeting(b.name) + ',\n\n'
         + 'Tempahan anda telah berjaya disahkan! ✅ Berikut adalah butiran perkhidmatan anda:\n'
         + sep + '\n'
         + '🚗 Vehicle   : ' + (b.car || '-') + '\n'
