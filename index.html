@@ -1740,11 +1740,21 @@
 
     function hydrateServices() {
       document.getElementById('service-options').innerHTML = services.map((item, index) => `
-        <label>
-          <input type="checkbox" name="service" value="${esc(item)}" ${index === 0 ? 'checked' : ''}>
-          <span>${esc(item)}</span>
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+          <input type="checkbox" name="service" value="${esc(item)}" ${index === 0 ? 'checked' : ''} onchange="toggleServicePrice(this)">
+          <span style="flex:1;font-size:14px">${esc(item)}</span>
+          <div class="svc-price-wrap" style="${index === 0 ? '' : 'display:none'}">
+            <span style="font-size:12px;color:var(--muted)">RM</span>
+            <input type="number" class="svc-price-input" data-service="${esc(item)}" min="0" step="1" value="${index === 0 ? '' : '0'}" placeholder="0" style="width:70px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--input);color:var(--text);font-size:13px;font-weight:700">
+          </div>
         </label>
       `).join('');
+    }
+
+    function toggleServicePrice(checkbox) {
+      const wrap = checkbox.closest('label').querySelector('.svc-price-wrap');
+      if (wrap) wrap.style.display = checkbox.checked ? '' : 'none';
+      updateWhatsAppPreview();
     }
 
     function bind() {
@@ -1957,6 +1967,19 @@
       document.getElementById('date').value = today();
       document.getElementById('material').value = 25;
       setSelectedServices(services[0]);
+      // Restore individual service prices
+      setTimeout(function() {
+        if (b.servicePrices) {
+          document.querySelectorAll('input[name="service"]:checked').forEach(function(c) {
+            var priceInput = c.closest('label').querySelector('.svc-price-input');
+            if (priceInput && b.servicePrices[c.value] !== undefined) {
+              priceInput.value = b.servicePrices[c.value];
+              var wrap = c.closest('label').querySelector('.svc-price-wrap');
+              if (wrap) wrap.style.display = '';
+            }
+          });
+        }
+      }, 100);
       updateWhatsAppPreview();
     }
 
@@ -2100,13 +2123,17 @@
       if (!booking) return;
       const receiptNo = `RCP${String(booking.id).slice(-6)}`;
       const services = String(booking.service || '').split(',').map(item => item.trim()).filter(Boolean);
-      const serviceRows = services.length ? services.map((service, index) => `
+      const serviceRows = services.length ? services.map((service, index) => {
+        const sp = booking.servicePrices || {};
+        const svcPrice = sp[service] !== undefined ? sp[service] : (index === 0 ? booking.price : 0);
+        const priceDisplay = svcPrice > 0 ? rm(svcPrice) : 'FOC';
+        return `
         <tr>
           <td>${index + 1}</td>
           <td>${esc(service)}</td>
-          <td class="amount">${index === 0 ? rm(booking.price) : 'FOC'}</td>
-        </tr>
-      `).join('') : `
+          <td class="amount">${priceDisplay}</td>
+        </tr>`;
+      }).join('') : `
         <tr>
           <td>1</td>
           <td>${esc(booking.service || 'Service')}</td>
