@@ -814,8 +814,8 @@
     .rcp-total-main .rcp-total-row-label { color: #1e3a6e; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
     .rcp-total-main .rcp-total-row-val { color: #1e3a6e; font-size: 20px; font-weight: 900; }
     /* Footer */
-    .rcp-footer { margin-top: 24px; padding-top: 18px; border-top: 1px dashed #cbd5e1; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
-    .rcp-footer-note { font-size: 11px; color: #94a3b8; line-height: 1.5; max-width: 100%; }
+    .rcp-footer { margin-top: 24px; padding-top: 18px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+    .rcp-footer-note { font-size: 11px; color: #94a3b8; line-height: 1.5; max-width: 200px; }
     .rcp-footer-note strong { color: #475569; }
     /* Professional stamp */
     /* Stamp - simplified for PDF rendering */
@@ -843,12 +843,12 @@
       position: absolute;
     }
     .rcp-stamp-content {
-      position: relative;
-      z-index: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 2px;
+      justify-content: center;
+      text-align: center;
+      width: 100%;
     }
     .rcp-stamp-icon { font-size: 24px; line-height: 1; }
     .rcp-stamp-inner { font-size: 12px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; line-height: 1.3; }
@@ -2661,7 +2661,7 @@
         + '📅 Tarikh    : ' + (displayDate(b.date) || 'TBD') + '\n'
         + '🕐 Masa      : ' + (b.time || 'TBD') + '\n'
         + sep + '\n\n'
-        + 'Tiada masalah, kami faham ada perkara yang tidak dapat dielakkan. Sila hubungi kami untuk menetapkan semula temujanji anda pada waktu yang sesuai.\n\n'
+        + 'Adakah anda akan hadir? Sila maklumkan kepada kami supaya slot dapat kami sediakan.\n\n'
         + sep + '\n'
         + '📍 Lokasi kami:\n'
         + '🗺️ Google Maps : ' + googleLocationUrl + '\n'
@@ -2699,7 +2699,7 @@
         + notesLine
         + sep + depositLine + '\n\n'
         + 'Sila pastikan anda hadir pada tarikh dan masa yang ditetapkan.\n'
-        + '⚠️ *Jika tidak dapat hadir, sila maklumkan sekurang-kurangnya 24 jam lebih awal.*\n\n'
+
         + sep + '\n'
         + '📍 Lokasi kami:\n'
         + '🗺️ Google Maps : ' + googleLocationUrl + '\n'
