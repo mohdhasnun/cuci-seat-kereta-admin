@@ -1944,7 +1944,15 @@
         status: val('status'),
         source: val('source'),
         review: val('review'),
-        notes: val('notes')
+        notes: val('notes'),
+        servicePrices: (function() {
+          var prices = {};
+          document.querySelectorAll('input[name="service"]').forEach(function(c) {
+            var inp = c.closest('label').querySelector('.svc-price-input');
+            prices[c.value] = inp ? (Number(inp.value) || 0) : 0;
+          });
+          return prices;
+        })()
       };
     }
 
@@ -2131,6 +2139,114 @@
     }
 
     let _currentReceiptBookingId = null;
+
+    function generateQuotation(id) {
+      _currentReceiptBookingId = id;
+      const booking = state.bookings.find(item => item.id === id);
+      if (!booking) return;
+      const quoteNo = `QUO${String(booking.id).slice(-6)}`;
+      const services = String(booking.service || '').split(',').map(item => item.trim()).filter(Boolean);
+      const serviceRows = services.length ? services.map((service, index) => {
+        const sp = booking.servicePrices || {};
+        const svcPrice = sp[service] !== undefined ? sp[service] : (index === 0 ? booking.price : 0);
+        const priceDisplay = svcPrice > 0 ? rm(svcPrice) : 'FOC';
+        return `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${esc(service)}</td>
+          <td class="amount">${priceDisplay}</td>
+        </tr>`;
+      }).join('') : `
+        <tr>
+          <td>1</td>
+          <td>${esc(booking.service || 'Service')}</td>
+          <td class="amount">${rm(booking.price)}</td>
+        </tr>`;
+
+      const html = `
+  <div class="receipt-page" style="position:relative">
+    <div class="rcp-watermark" style="color:rgba(124,58,237,.08)">QUOTATION</div>
+
+    <!-- Header -->
+    <div class="rcp-header">
+      <div>
+        <p class="rcp-brand-name">Cuci Seat, Kusyen, Karpet Kereta</p>
+        <p class="rcp-brand-tagline">Pakar Hygiene Dalaman Kereta</p>
+        <p class="rcp-brand-info">
+          Northern Hope Enterprise (003746411-A)<br>
+          Blok D-00-01, Pangsapuri Mawar, Jln KP 4/4<br>
+          Taman Kota Perdana, 43300 Seri Kembangan, Selangor<br>
+          📞 017-699 3876 &nbsp;|&nbsp; 🌐 cuciseatkereta.com
+        </p>
+      </div>
+      <div class="rcp-header-right">
+        <p class="rcp-title" style="color:#7c3aed">QUOTATION</p>
+        <div class="rcp-meta-row"><span class="rcp-meta-label">Quote No.</span><span class="rcp-meta-val">${quoteNo}</span></div>
+        <div class="rcp-meta-row"><span class="rcp-meta-label">Date</span><span class="rcp-meta-val">${displayDate(booking.date || today())}</span></div>
+        <div class="rcp-meta-row"><span class="rcp-meta-label">Valid For</span><span class="rcp-meta-val">7 Days</span></div>
+      </div>
+    </div>
+    <div class="rcp-strip" style="background:linear-gradient(90deg,#7c3aed,#a855f7)"></div>
+
+    <!-- Body -->
+    <div class="rcp-body">
+      <div class="rcp-section-title">Customer &amp; Vehicle Information</div>
+      <div class="rcp-grid">
+        <div class="rcp-box">
+          <div class="rcp-box-label">Name</div>
+          <div class="rcp-box-val">${esc(booking.name || '-')}</div>
+          <div class="rcp-box-sub-label">Phone No.</div>
+          <div class="rcp-box-sub-val">${esc(booking.phone || '-')}</div>
+        </div>
+        <div class="rcp-box">
+          <div class="rcp-box-label">Vehicle</div>
+          <div class="rcp-box-val">${esc(booking.car || '-')}</div>
+          <div class="rcp-box-sub-label">Plate No.</div>
+          <div class="rcp-box-sub-val">${esc(booking.plate || '-') || '—'}</div>
+        </div>
+      </div>
+
+      <div class="rcp-section-title">SERVICE DETAILS</div>
+      <table class="rcp-table">
+        <thead>
+          <tr>
+            <th style="width:48px">Bil.</th>
+            <th>Service</th>
+            <th class="amt" style="width:120px">Estimated Price</th>
+          </tr>
+        </thead>
+        <tbody>${serviceRows.replace(/class="amount"/g, 'class="amt"')}</tbody>
+      </table>
+
+      <div class="rcp-total-wrap">
+        <div class="rcp-total-box">
+          <div class="rcp-total-row">
+            <span class="rcp-total-row-label">ESTIMATED TOTAL</span>
+            <span class="rcp-total-row-val" style="color:#7c3aed">${rm(booking.price)}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Note -->
+      <div style="margin-top:14px;padding:12px 14px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;font-size:12px;color:#6d28d9;line-height:1.6">
+        📋 <strong>Nota:</strong> Sebutharga ini adalah anggaran sahaja dan tertakluk kepada pemeriksaan kenderaan sebenar.
+        Harga muktamad akan dimaklumkan selepas pemeriksaan. Sebutharga ini sah selama <strong>7 hari</strong> dari tarikh dikeluarkan.
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="rcp-footer">
+      <div class="rcp-footer-note">
+        <strong>Terima kasih kerana memilih perkhidmatan kami!</strong><br>
+        Cuci Seat, Kusyen, Karpet Kereta | Pakar Hygiene Dalaman Kereta<br>
+        <span style="color:#cbd5e1">Sebutharga ini dijana secara digital. Tiada tandatangan diperlukan.</span>
+      </div>
+    </div>
+  </div>`;
+
+      document.getElementById('receipt-preview').innerHTML = html;
+      document.getElementById('receipt-modal').classList.add('active');
+    }
 
     function generateReceipt(id) {
       _currentReceiptBookingId = id;
@@ -2498,6 +2614,7 @@
               + '<button class="btn wa full" data-id="' + b.id + '" onclick="confirmAndWhatsApp(Number(this.dataset.id))">Confirm WA</button>'
               + '<button class="btn btn-ready" data-id="' + b.id + '" onclick="notifyCarReady(Number(this.dataset.id))">Siap</button>'
               + '<button class="btn" data-id="' + b.id + '" onclick="openWaFromList(Number(this.dataset.id))">Follow-up</button>'
+              + '<button class="btn" data-id="' + b.id + '" onclick="generateQuotation(Number(this.dataset.id))" style="background:#7c3aed;color:#fff">Quote</button>'
               + '<button class="btn" data-id="' + b.id + '" onclick="generateReceipt(Number(this.dataset.id))">Receipt</button>'
               + '<button class="btn" data-id="' + b.id + '" onclick="fillBookingForm(Number(this.dataset.id))">Edit</button>'
               + '<button class="btn danger" data-id="' + b.id + '" onclick="deleteBooking(Number(this.dataset.id))">Delete</button>'
@@ -2530,6 +2647,7 @@
               <button class="btn wa" type="button" onclick="confirmAndWhatsApp(${b.id})">Confirm WA</button>
               <button class="btn" type="button" onclick="openWaFromList(${b.id})">Follow-up WA</button>
               <button class="btn btn-ready" type="button" onclick="notifyCarReady(${b.id})">🚗 Siap</button>
+              <button class="btn" type="button" onclick="generateQuotation(${b.id})" style="background:#7c3aed;color:#fff">Quote</button>
               <button class="btn" type="button" onclick="generateReceipt(${b.id})">Receipt</button>
               <button class="btn" type="button" onclick="fillBookingForm(${b.id})">Edit</button>
               <button class="btn danger" type="button" onclick="deleteBooking(${b.id})">Delete</button>
