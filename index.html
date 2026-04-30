@@ -1947,11 +1947,20 @@
         notes: val('notes'),
         servicePrices: (function() {
           var prices = {};
-          document.querySelectorAll('input[name="service"]').forEach(function(c) {
+          document.querySelectorAll('input[name="service"]:checked').forEach(function(c) {
             var inp = c.closest('label').querySelector('.svc-price-input');
-            prices[c.value] = inp ? (Number(inp.value) || 0) : 0;
+            var svcName = c.value;
+            prices[svcName] = inp ? (Number(inp.value) || 0) : 0;
           });
           return prices;
+        })(),
+        servicePriceList: (function() {
+          var list = [];
+          document.querySelectorAll('input[name="service"]:checked').forEach(function(c) {
+            var inp = c.closest('label').querySelector('.svc-price-input');
+            list.push(inp ? (Number(inp.value) || 0) : 0);
+          });
+          return list;
         })()
       };
     }
@@ -1992,16 +2001,22 @@
       setSelectedServices(services[0]);
       // Restore individual service prices
       setTimeout(function() {
-        if (b.servicePrices) {
-          document.querySelectorAll('input[name="service"]:checked').forEach(function(c) {
-            var priceInput = c.closest('label').querySelector('.svc-price-input');
-            if (priceInput && b.servicePrices[c.value] !== undefined) {
-              priceInput.value = b.servicePrices[c.value];
-              var wrap = c.closest('label').querySelector('.svc-price-wrap');
-              if (wrap) wrap.style.display = '';
+        const checkedBoxes = document.querySelectorAll('input[name="service"]:checked');
+        checkedBoxes.forEach(function(c, idx) {
+          var priceInput = c.closest('label').querySelector('.svc-price-input');
+          var wrap = c.closest('label').querySelector('.svc-price-wrap');
+          if (wrap) wrap.style.display = '';
+          if (priceInput) {
+            var price = 0;
+            if (b.servicePriceList && b.servicePriceList[idx] !== undefined) {
+              price = b.servicePriceList[idx];
+            } else if (b.servicePrices && b.servicePrices[c.value] !== undefined) {
+              price = b.servicePrices[c.value];
             }
-          });
-        }
+            priceInput.value = price;
+          }
+        });
+        autoTotalPrice();
       }, 100);
       updateWhatsAppPreview();
     }
@@ -2147,8 +2162,16 @@
       const quoteNo = `QUO${String(booking.id).slice(-6)}`;
       const services = String(booking.service || '').split(',').map(item => item.trim()).filter(Boolean);
       const serviceRows = services.length ? services.map((service, index) => {
+        const pl = booking.servicePriceList;
         const sp = booking.servicePrices || {};
-        const svcPrice = sp[service] !== undefined ? sp[service] : (index === 0 ? booking.price : 0);
+        let svcPrice = 0;
+        if (pl && pl[index] !== undefined) {
+          svcPrice = Number(pl[index]) || 0;
+        } else if (sp[service] !== undefined) {
+          svcPrice = Number(sp[service]) || 0;
+        } else if (index === 0) {
+          svcPrice = Number(booking.price) || 0;
+        }
         const priceDisplay = svcPrice > 0 ? rm(svcPrice) : 'FOC';
         return `
         <tr>
@@ -2255,8 +2278,16 @@
       const receiptNo = `RCP${String(booking.id).slice(-6)}`;
       const services = String(booking.service || '').split(',').map(item => item.trim()).filter(Boolean);
       const serviceRows = services.length ? services.map((service, index) => {
+        const pl = booking.servicePriceList;
         const sp = booking.servicePrices || {};
-        const svcPrice = sp[service] !== undefined ? sp[service] : (index === 0 ? booking.price : 0);
+        let svcPrice = 0;
+        if (pl && pl[index] !== undefined) {
+          svcPrice = Number(pl[index]) || 0;
+        } else if (sp[service] !== undefined) {
+          svcPrice = Number(sp[service]) || 0;
+        } else if (index === 0) {
+          svcPrice = Number(booking.price) || 0;
+        }
         const priceDisplay = svcPrice > 0 ? rm(svcPrice) : 'FOC';
         return `
         <tr>
