@@ -1217,9 +1217,65 @@
       margin-top: 4px; padding: 4px 8px; background: rgba(255,255,255,.03);
       border-radius: 6px; border-left: 2px solid var(--border);
     }
+
+    /* New booking notification */
+    .new-booking-toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-120px);
+      background: linear-gradient(135deg, #059669, #047857);
+      color: #fff;
+      border-radius: 16px;
+      padding: 14px 20px;
+      min-width: 300px;
+      max-width: 90vw;
+      box-shadow: 0 8px 32px rgba(0,0,0,.3);
+      z-index: 9998;
+      transition: transform .4s cubic-bezier(.34,1.56,.64,1);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .new-booking-toast.show { transform: translateX(-50%) translateY(0); }
+    .new-booking-toast .ntf-icon { font-size: 24px; flex-shrink: 0; }
+    .new-booking-toast .ntf-body { flex: 1; }
+    .new-booking-toast .ntf-title { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+    .new-booking-toast .ntf-msg { font-size: 12px; opacity: .9; }
+    .new-booking-toast .ntf-close {
+      background: rgba(255,255,255,.2);
+      border: none; color: #fff;
+      border-radius: 8px; padding: 4px 10px;
+      font-size: 12px; cursor: pointer;
+      flex-shrink: 0; margin-top: 2px;
+    }
+    .notif-badge {
+      background: #ef4444;
+      color: #fff;
+      border-radius: 50%;
+      width: 18px; height: 18px;
+      font-size: 10px; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-left: 4px;
+      animation: pulse-badge 1.5s infinite;
+    }
+    @keyframes pulse-badge {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
   </style>
 </head>
 <body>
+  <!-- New booking notification toast -->
+  <div class="new-booking-toast" id="new-booking-toast">
+    <div class="ntf-icon">🔔</div>
+    <div class="ntf-body">
+      <div class="ntf-title">Booking Baru!</div>
+      <div class="ntf-msg" id="ntf-msg">Ada booking baru dari online form.</div>
+    </div>
+    <button class="ntf-close" onclick="dismissNewBooking()">Lihat</button>
+  </div>
+
   <!-- Loading overlay -->
   <div id="fb-loading" style="position:fixed;inset:0;background:rgba(9,21,40,.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#fff;font-family:inherit">
     <div style="width:42px;height:42px;border:3px solid rgba(59,130,246,.3);border-top-color:#3b82f6;border-radius:50%;animation:spin .8s linear infinite"></div>
@@ -2871,13 +2927,17 @@
       const dep = Number(b.depositAmount || 0);
       const price = Number(b.price || 0);
       const balance = price - dep;
+      const depositPaid = b.paymentStatus === 'Sudah Bayar' || b.paymentStatus === 'Deposit';
       const depositLine = dep > 0
         ? '\n' + sep + '\n'
           + '💰 *MAKLUMAT DEPOSIT*\n'
           + sep + '\n'
-          + '✅ Deposit Diterima : ' + rm(dep) + '\n'
-          + '💵 Baki Perlu Dibayar : ' + rm(balance) + '\n'
-          + 'Baki bayaran boleh diselesaikan selepas servis selesai.\n'
+          + (depositPaid
+            ? '✅ Deposit Diterima : ' + rm(dep) + '\n'
+              + '💵 Baki Perlu Dibayar : ' + rm(balance) + '\n'
+              + 'Baki bayaran boleh diselesaikan selepas servis selesai.\n'
+            : '⚠️ Deposit Diperlukan : ' + rm(dep) + '\n'
+              + '📌 Sila transfer deposit untuk mengesahkan tempahan anda.\n')
         : '';
       const notesLine = (b.notes || '').trim()
         ? '\n📝 *Nota*      : ' + b.notes.trim() + '\n'
@@ -3088,8 +3148,79 @@
       db = firebase.firestore();
       db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
       await init();
+      startNewBookingListener();
     };
     if (window._firebaseReady) window._appInit();
+
+    // ── New Booking Real-time Listener ─────────────────────────────────────
+    let _listenerInit = false;
+    let _newBookingCount = 0;
+
+    function startNewBookingListener() {
+      const startTime = Date.now();
+      db.collection('bookings')
+        .where('source', '==', 'Online Form')
+        .onSnapshot(function(snapshot) {
+          if (!_listenerInit) { _listenerInit = true; return; } // skip initial load
+          snapshot.docChanges().forEach(function(change) {
+            if (change.type === 'added') {
+              const b = change.doc.data();
+              // Only notify if booking was created after app loaded
+              const createdAt = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              if (createdAt > startTime) {
+                showNewBookingNotif(b);
+                // Also reload state
+                load().then(() => renderAll());
+              }
+            }
+          });
+        });
+    }
+
+    function showNewBookingNotif(booking) {
+      _newBookingCount++;
+      const msg = booking.name
+        ? booking.name + ' — ' + (booking.car || '') + ' (' + (booking.service || '') + ')'
+        : 'Booking baru dari online form';
+      document.getElementById('ntf-msg').textContent = msg;
+      const toast = document.getElementById('new-booking-toast');
+      toast.classList.add('show');
+
+      // Update badge on Bookings nav
+      updateBookingBadge(_newBookingCount);
+
+      // Browser notification
+      if (Notification.permission === 'granted') {
+        new Notification('🔔 Booking Baru!', { body: msg, icon: '/favicon.ico' });
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission();
+      }
+
+      // Auto dismiss after 8 seconds
+      setTimeout(function() {
+        toast.classList.remove('show');
+      }, 8000);
+    }
+
+    function dismissNewBooking() {
+      document.getElementById('new-booking-toast').classList.remove('show');
+      _newBookingCount = 0;
+      updateBookingBadge(0);
+      go('bookings');
+    }
+
+    function updateBookingBadge(count) {
+      // Desktop sidebar
+      document.querySelectorAll('.notif-badge').forEach(el => el.remove());
+      if (count > 0) {
+        document.querySelectorAll('[data-page="bookings"]').forEach(function(el) {
+          const badge = document.createElement('span');
+          badge.className = 'notif-badge';
+          badge.textContent = count;
+          el.appendChild(badge);
+        });
+      }
+    }
 
     // Live clock
     function updateClock() {
