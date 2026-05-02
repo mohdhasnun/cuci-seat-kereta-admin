@@ -2927,42 +2927,37 @@
       const dep = Number(b.depositAmount || 0);
       const price = Number(b.price || 0);
       const balance = price - dep;
-      const depositPaid = b.paymentStatus === 'Sudah Bayar' || b.paymentStatus === 'Deposit';
-      const depositLine = dep > 0
-        ? '\n' + sep + '\n'
-          + '💰 *MAKLUMAT DEPOSIT*\n'
-          + sep + '\n'
-          + (depositPaid
-            ? '✅ Deposit Diterima : ' + rm(dep) + '\n'
-              + '💵 Baki Perlu Dibayar : ' + rm(balance) + '\n'
-              + 'Baki bayaran boleh diselesaikan selepas servis selesai.\n'
-            : '⚠️ Deposit Diperlukan : ' + rm(dep) + '\n'
-              + '📌 Sila transfer deposit untuk mengesahkan tempahan anda.\n')
-        : '';
+      const depositPaid = b.paymentStatus === 'Sudah Bayar';
       const notesLine = (b.notes || '').trim()
-        ? '\n📝 *Nota*      : ' + b.notes.trim() + '\n'
+        ? '📝 ' + b.notes.trim() + '\n'
         : '';
-      return 'Hi ' + customerGreeting(b.name) + ',\n\n'
-        + 'Tempahan anda telah berjaya disahkan! ✅ Berikut adalah butiran perkhidmatan anda:\n'
-        + sep + '\n'
-        + '🚗 Vehicle   : ' + (b.car || '-') + '\n'
-        + '💺 Servis    : ' + (b.service || '-') + '\n'
-        + '📅 Tarikh    : ' + (displayDate(b.date) || '-') + '\n'
-        + '🕐 Masa      : ' + (b.time || '-') + '\n'
-        + '💳 Harga     : ' + rm(b.price || 0) + '\n'
-        + notesLine
-        + sep + depositLine + '\n\n'
-        + 'Sila pastikan anda hadir pada tarikh dan masa yang ditetapkan.\n'
 
+      const depositSection = dep > 0
+        ? sep + '\n'
+          + (depositPaid
+            ? '✅ Deposit diterima : ' + rm(dep) + '\n'
+              + '💵 Baki : ' + rm(balance) + ' (dibayar selepas servis selesai)\n'
+            : '💰 Deposit diperlukan : ' + rm(dep) + '\n'
+              + 'Sila transfer ke:\n'
+              + '🏦 Maybank\n'
+              + '👤 Northern Hope Enterprise\n'
+              + '🔢 5521 8951 6033\n\n'
+              + 'Hantar bukti bayaran ke sini untuk sahkan slot anda.\n')
+          + sep + '\n\n'
+        : '';
+
+      return 'Hi ' + customerGreeting(b.name) + ',\n\n'
         + sep + '\n'
-        + '📍 Lokasi kami:\n'
-        + '🗺️ Google Maps : ' + googleLocationUrl + '\n'
-        + '🔵 Waze        : ' + wazeLocationUrl + '\n\n'
-        + '🏢 Cuci Seat Kereta\n'
-        + '📞 Tel  : 017-699 3876\n'
-        + '🌐 Web  : cuciseatkereta.com\n'
+        + '🚗 ' + (b.car || '-') + ' · ' + (b.plate || '-') + '\n'
+        + '💺 ' + (b.service || '-') + '\n'
+        + '📅 ' + (displayDate(b.date) || '-') + ' · ' + (b.time || '-') + '\n'
+        + '💳 ' + rm(b.price || 0) + '\n'
+        + (notesLine)
         + sep + '\n\n'
-        + 'Terima kasih kerana memilih perkhidmatan kami! Jumpa nanti 😊';
+        + depositSection
+        + '📍 ' + googleLocationUrl + '\n'
+        + '🔵 ' + wazeLocationUrl + '\n\n'
+        + 'Terima kasih! 😊';
     }
 
     function customerGreeting(name) {
