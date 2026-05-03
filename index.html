@@ -1308,20 +1308,6 @@
   </style>
 </head>
 <body>
-  <!-- Bottom sheet backdrop -->
-  <div class="sheet-backdrop" id="sheet-backdrop" onclick="closeSheet()"></div>
-  <!-- Bottom sheet -->
-  <div class="bottom-sheet" id="action-sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title" id="sheet-title">Actions</div>
-    <button class="sheet-btn" id="sheet-siap" onclick="sheetAction('siap')"><span class="sheet-icon">🚗</span> Siap</button>
-    <button class="sheet-btn" id="sheet-followup" onclick="sheetAction('followup')"><span class="sheet-icon">💬</span> Follow-up WA</button>
-    <button class="sheet-btn" id="sheet-receipt" onclick="sheetAction('receipt')"><span class="sheet-icon">🧾</span> Receipt</button>
-    <button class="sheet-btn" id="sheet-quote" onclick="sheetAction('quote')"><span class="sheet-icon">📋</span> Quotation</button>
-    <button class="sheet-btn" id="sheet-edit" onclick="sheetAction('edit')"><span class="sheet-icon">✏️</span> Edit</button>
-    <button class="sheet-btn danger" id="sheet-delete" onclick="sheetAction('delete')"><span class="sheet-icon">🗑️</span> Delete</button>
-  </div>
-
   <!-- New booking notification toast -->
   <div class="new-booking-toast" id="new-booking-toast">
     <div class="ntf-icon">🔔</div>
@@ -1994,38 +1980,7 @@
       document.getElementById('bnav-more').classList.add('active');
     }
 
-    var _sheetBookingId = null;
 
-    function openSheet(id, name) {
-      _sheetBookingId = id;
-      document.getElementById('sheet-title').textContent = name || 'Actions';
-      document.getElementById('action-sheet').classList.add('open');
-      document.getElementById('sheet-backdrop').classList.add('open');
-    }
-
-    function closeSheet() {
-      document.getElementById('action-sheet').classList.remove('open');
-      document.getElementById('sheet-backdrop').classList.remove('open');
-      _sheetBookingId = null;
-    }
-
-    function sheetAction(action) {
-      closeSheet();
-      if (!_sheetBookingId) return;
-      var id = _sheetBookingId;
-      setTimeout(function() {
-        if (action === 'siap')     notifyCarReady(id);
-        if (action === 'followup') openWaFromList(id);
-        if (action === 'receipt')  generateReceipt(id);
-        if (action === 'quote')    generateQuotation(id);
-        if (action === 'edit')     fillBookingForm(id);
-        if (action === 'delete')   deleteBooking(id);
-      }, 300);
-    }
-
-    // Keep for desktop compatibility
-    function toggleDropdown(btn) { }
-    function closeDropdowns() { }
 
     function go(page) {
       document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
@@ -2788,7 +2743,13 @@
               + '</div>'
               + '<div class="bk-actions">'
               + '<button class="btn wa full" data-id="' + b.id + '" onclick="confirmAndWhatsApp(Number(this.dataset.id))">Confirm WA</button>'
-              + '<button class="btn-more" onclick="openSheet(' + b.id + ',this.dataset.name)" data-name="' + esc(b.name) + '">Actions &#9660;</button>'+ '</div>'
+              + '<button class="btn btn-ready" data-id="' + b.id + '" onclick="notifyCarReady(Number(this.dataset.id))">🚗 Siap</button>'
+              + '<button class="btn" data-id="' + b.id + '" onclick="openWaFromList(Number(this.dataset.id))">Follow-up</button>'
+              + '<button class="btn" data-id="' + b.id + '" onclick="generateReceipt(Number(this.dataset.id))">Receipt</button>'
+              + '<button class="btn" data-id="' + b.id + '" onclick="generateQuotation(Number(this.dataset.id))" style="background:#7c3aed;color:#fff">Quote</button>'
+              + '<button class="btn" data-id="' + b.id + '" onclick="fillBookingForm(Number(this.dataset.id))">Edit</button>'
+              + '<button class="btn danger" data-id="' + b.id + '" onclick="deleteBooking(Number(this.dataset.id))">Delete</button>'
+              + '</div>'
               + '</div>';
           });
           mobileList.innerHTML = cards;
