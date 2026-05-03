@@ -1263,6 +1263,44 @@
       0%, 100% { transform: scale(1); }
       50% { transform: scale(1.2); }
     }
+
+    .actions-wrap { position: relative; display: inline-block; }
+    .btn-more {
+      padding: 6px 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-more:hover { background: rgba(255,255,255,.05); }
+    .actions-dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 4px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.25);
+      z-index: 200;
+      min-width: 160px;
+      overflow: hidden;
+    }
+    .actions-dropdown.open { display: block; }
+    .actions-dropdown button {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; padding: 10px 14px;
+      background: none; border: none; border-bottom: 1px solid var(--border);
+      color: var(--text); font-family: inherit; font-size: 13px;
+      font-weight: 500; cursor: pointer; text-align: left;
+    }
+    .actions-dropdown button:last-child { border-bottom: none; }
+    .actions-dropdown button:hover { background: rgba(255,255,255,.05); }
+    .actions-dropdown button.danger { color: #f87171; }
   </style>
 </head>
 <body>
@@ -1937,6 +1975,23 @@
       document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('bnav-more').classList.add('active');
     }
+
+    function toggleDropdown(btn) {
+      var dropdown = btn.nextElementSibling;
+      var isOpen = dropdown.classList.contains('open');
+      closeDropdowns();
+      if (!isOpen) dropdown.classList.add('open');
+    }
+
+    function closeDropdowns() {
+      document.querySelectorAll('.actions-dropdown.open').forEach(function(d) {
+        d.classList.remove('open');
+      });
+    }
+
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.actions-wrap')) closeDropdowns();
+    });
 
     function go(page) {
       document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
@@ -2698,14 +2753,18 @@
               + '<select data-id="' + b.id + '" data-field="status" onchange="updateStatus(Number(this.dataset.id),this.dataset.field,this.value)">' + stOpts + '</select>'
               + '</div>'
               + '<div class="bk-actions">'
-              + '<button class="btn wa full" data-id="' + b.id + '" onclick="confirmAndWhatsApp(Number(this.dataset.id))">Confirm WA</button>'
-              + '<button class="btn btn-ready" data-id="' + b.id + '" onclick="notifyCarReady(Number(this.dataset.id))">Siap</button>'
-              + '<button class="btn" data-id="' + b.id + '" onclick="openWaFromList(Number(this.dataset.id))">Follow-up</button>'
-              + '<button class="btn" data-id="' + b.id + '" onclick="generateQuotation(Number(this.dataset.id))" style="background:#7c3aed;color:#fff">Quote</button>'
-              + '<button class="btn" data-id="' + b.id + '" onclick="generateReceipt(Number(this.dataset.id))">Receipt</button>'
-              + '<button class="btn" data-id="' + b.id + '" onclick="fillBookingForm(Number(this.dataset.id))">Edit</button>'
-              + '<button class="btn danger" data-id="' + b.id + '" onclick="deleteBooking(Number(this.dataset.id))">Delete</button>'
+              '<button class="btn wa full" data-id="' + b.id + '" onclick="confirmAndWhatsApp(Number(this.dataset.id))">Confirm WA</button>'
+              + '<div class="actions-wrap" style="grid-column:span 2">'
+              + '<button class="btn-more" style="width:100%;text-align:center" onclick="toggleDropdown(this)">Actions &#9660;</button>'
+              + '<div class="actions-dropdown">'
+              + '<button data-id="' + b.id + '" onclick="notifyCarReady(Number(this.dataset.id));closeDropdowns()">&#128663; Siap</button>'
+              + '<button data-id="' + b.id + '" onclick="openWaFromList(Number(this.dataset.id));closeDropdowns()">&#128172; Follow-up</button>'
+              + '<button data-id="' + b.id + '" onclick="generateReceipt(Number(this.dataset.id));closeDropdowns()">&#129534; Receipt</button>'
+              + '<button data-id="' + b.id + '" onclick="generateQuotation(Number(this.dataset.id));closeDropdowns()">&#128203; Quote</button>'
+              + '<button data-id="' + b.id + '" onclick="fillBookingForm(Number(this.dataset.id));closeDropdowns()">&#9999;&#65039; Edit</button>'
+              + '<button class="danger" data-id="' + b.id + '" onclick="deleteBooking(Number(this.dataset.id));closeDropdowns()">&#128465;&#65039; Delete</button>'
               + '</div>'
+              + '</div>'+ '</div>'
               + '</div>';
           });
           mobileList.innerHTML = cards;
@@ -2946,6 +3005,11 @@
           + sep + '\n\n'
         : '';
 
+      const locationLine = depositPaid || dep === 0
+        ? '📍 ' + googleLocationUrl + '\n'
+          + '🔵 ' + wazeLocationUrl + '\n\n'
+        : '';
+
       return 'Hi ' + customerGreeting(b.name) + ',\n\n'
         + sep + '\n'
         + '🚗 ' + (b.car || '-') + ' · ' + (b.plate || '-') + '\n'
@@ -2955,8 +3019,7 @@
         + (notesLine)
         + sep + '\n\n'
         + depositSection
-        + '📍 ' + googleLocationUrl + '\n'
-        + '🔵 ' + wazeLocationUrl + '\n\n'
+        + locationLine
         + 'Terima kasih! 😊';
     }
 
