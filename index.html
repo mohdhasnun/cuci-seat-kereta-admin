@@ -1264,7 +1264,13 @@
       50% { transform: scale(1.2); }
     }
 
-    .actions-wrap { position: relative; display: inline-block; }
+    .dropdown-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+    }
+    .dropdown-backdrop.open { display: block; }
     .btn-more {
       padding: 6px 12px;
       background: var(--card);
@@ -1302,6 +1308,9 @@
   </style>
 </head>
 <body>
+  <!-- Dropdown backdrop -->
+  <div class="dropdown-backdrop" id="dropdown-backdrop" onclick="closeDropdowns()"></div>
+
   <!-- New booking notification toast -->
   <div class="new-booking-toast" id="new-booking-toast">
     <div class="ntf-icon">🔔</div>
@@ -1981,8 +1990,7 @@
       if (!isOpen) {
         var rect = btn.getBoundingClientRect();
         dropdown.style.top = (rect.bottom + 6) + 'px';
-        // Position left or right depending on space
-        if (rect.left + 180 > window.innerWidth) {
+        if (rect.left + 200 > window.innerWidth) {
           dropdown.style.right = (window.innerWidth - rect.right) + 'px';
           dropdown.style.left = 'auto';
         } else {
@@ -1990,6 +1998,7 @@
           dropdown.style.right = 'auto';
         }
         dropdown.classList.add('open');
+        document.getElementById('dropdown-backdrop').classList.add('open');
       }
     }
 
@@ -1997,6 +2006,8 @@
       document.querySelectorAll('.actions-dropdown.open').forEach(function(d) {
         d.classList.remove('open');
       });
+      var bd = document.getElementById('dropdown-backdrop');
+      if (bd) bd.classList.remove('open');
     }
 
     document.addEventListener('click', function(e) {
