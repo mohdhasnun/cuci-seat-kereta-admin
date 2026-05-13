@@ -1305,6 +1305,24 @@
     .actions-dropdown button:last-child { border-bottom: none; }
     .actions-dropdown button:hover { background: rgba(255,255,255,.05); }
     .actions-dropdown button.danger { color: #f87171; }
+
+    /* Booking card color coding */
+    .bk-card.status-complete { border-left: 4px solid #10b981; }
+    .bk-card.status-complete .bk-name { color: #10b981; }
+    .bk-card.status-cancelled { border-left: 4px solid #ef4444; opacity: .7; }
+    .bk-card.status-noshow { border-left: 4px solid #6b7280; opacity: .65; }
+    .bk-card.status-confirmed { border-left: 4px solid #3b82f6; }
+    .bk-card.status-paid { border-left: 4px solid #10b981; background: rgba(16,185,129,.05); }
+    .bk-card.status-pending { border-left: 4px solid #f59e0b; }
+    .bk-card .paid-badge {
+      display: inline-block; background: #10b981; color: #fff;
+      border-radius: 5px; padding: 1px 7px; font-size: 10px;
+      font-weight: 700; margin-left: 6px; vertical-align: middle;
+    }
+    .bk-card .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; margin-right: 6px;
+    }
   </style>
 </head>
 <body>
@@ -1411,13 +1429,13 @@
           <div class="panel">
             <h3 class="section-title">Booking Status</h3>
             <div class="status-grid">
-              <div class="status-card" style="background:#ede9fe;border-color:#ddd6fe;color:#6d28d9"><div class="s-label">Booking</div><div class="s-value" id="s-booking">0</div></div>
-              <div class="status-card" style="background:#fefce8;border-color:#fde047;color:#b45309"><div class="s-label">Pending</div><div class="s-value" id="s-pending">0</div></div>
-              <div class="status-card" style="background:#dcfce7;border-color:#bbf7d0;color:#15803d"><div class="s-label">Confirmed</div><div class="s-value" id="s-confirmed">0</div></div>
-              <div class="status-card" style="background:#dbeafe;border-color:#bfdbfe;color:#1d4ed8"><div class="s-label">Postponed</div><div class="s-value" id="s-postponed">0</div></div>
-              <div class="status-card" style="background:#ccfbf1;border-color:#99f6e4;color:#0f766e"><div class="s-label">Complete</div><div class="s-value" id="s-complete">0</div></div>
-              <div class="status-card" style="background:#fee2e2;border-color:#fecaca;color:#b91c1c"><div class="s-label">Cancelled</div><div class="s-value" id="s-cancelled">0</div></div>
-              <div class="status-card" style="background:#1f2937;border-color:#374151;color:#f9fafb"><div class="s-label">No-Show</div><div class="s-value" id="s-no-show">0</div></div>
+              <div class="status-card" style="background:#ede9fe;border-color:#ddd6fe;color:#6d28d9;cursor:pointer" onclick="filterByStatus('Booking')"><div class="s-label">Booking</div><div class="s-value" id="s-booking">0</div></div>
+              <div class="status-card" style="background:#fefce8;border-color:#fde047;color:#b45309;cursor:pointer" onclick="filterByStatus('Pending')"><div class="s-label">Pending</div><div class="s-value" id="s-pending">0</div></div>
+              <div class="status-card" style="background:#dcfce7;border-color:#bbf7d0;color:#15803d;cursor:pointer" onclick="filterByStatus('Confirmed')"><div class="s-label">Confirmed</div><div class="s-value" id="s-confirmed">0</div></div>
+              <div class="status-card" style="background:#dbeafe;border-color:#bfdbfe;color:#1d4ed8;cursor:pointer" onclick="filterByStatus('Postponed')"><div class="s-label">Postponed</div><div class="s-value" id="s-postponed">0</div></div>
+              <div class="status-card" style="background:#ccfbf1;border-color:#99f6e4;color:#0f766e;cursor:pointer" onclick="filterByStatus('Complete')"><div class="s-label">Complete</div><div class="s-value" id="s-complete">0</div></div>
+              <div class="status-card" style="background:#fee2e2;border-color:#fecaca;color:#b91c1c;cursor:pointer" onclick="filterByStatus('Cancelled')"><div class="s-label">Cancelled</div><div class="s-value" id="s-cancelled">0</div></div>
+              <div class="status-card" style="background:#1f2937;border-color:#374151;color:#f9fafb;cursor:pointer" onclick="filterByStatus('No-Show')"><div class="s-label">No-Show</div><div class="s-value" id="s-no-show">0</div></div>
             </div>
           </div>
           <div class="panel">
@@ -1443,7 +1461,10 @@
               <div class="field"><label>Price (RM) <span style="font-weight:400;color:var(--muted);font-size:11px">— auto-kira dari servis</span></label><input id="price" type="number" min="0" step="1" required readonly style="background:rgba(59,130,246,.07);color:var(--accent);font-weight:700;cursor:default" /></div>
               <div class="field"><label>Material Cost (RM)</label><input id="material" type="number" min="0" step="1" value="25" /></div>
               <div class="field"><label>Payment Method</label><select id="paymentMethod"></select></div>
-              <div class="field"><label>Payment Status</label><select id="paymentStatus"></select></div>
+              <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div class="field"><label>Deposit</label><select id="depositStatus"></select></div>
+                <div class="field"><label>Bayaran</label><select id="paymentStatus"></select></div>
+              </div>
               <div class="field" id="deposit-field">
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:0">
                   <input type="checkbox" id="deposit-toggle" onchange="toggleDeposit()" style="width:16px;height:16px;accent-color:#f59e0b;cursor:pointer" />
@@ -1755,7 +1776,8 @@
     };
     const times = ['9:00am', '9:30am', '10:00am', '10:30am', '11:00am', '11:30am', '12:00pm', '12:30pm', '1:00pm', '1:30pm', '2:00pm', '2:30pm', '3:00pm', '3:30pm', '4:00pm', '4:30pm', '5:00pm', '5:30pm', '6:00pm'];
     const paymentMethods = ['TBD', 'Tunai', 'Online Transfer', 'QR Pay'];
-    const paymentStatuses = ['Belum Bayar', 'Deposit', 'Sudah Bayar'];
+    const paymentStatuses = ['Belum Bayar', 'Sudah Bayar'];
+    const depositStatuses = ['Belum Terima', 'Diterima'];
     const sources = ['WhatsApp Website', 'Google Ads', 'Walk-in', 'Rujukan', 'Instagram', 'Facebook', 'TikTok'];
     const expenseCategories = ['Sewa Kedai', 'Utiliti', 'Bahan Cuci', 'Peralatan', 'Internet/Telefon', 'Minyak', 'Gaji', 'Lain-lain'];
     const googleLocationUrl = 'https://maps.app.goo.gl/jRbBBuKDn7JsiBLy8';
@@ -1766,13 +1788,13 @@
         {
           id: 1, date: '2026-04-26', time: '10:30am', name: 'Aisyah', phone: '018-989 1243',
           car: 'Perodua Bezza', plate: 'AGX 1592', service: 'Cuci Seat (Tanpa Buka)', price: 170, material: 25,
-          paymentMethod: 'Tunai', paymentStatus: 'Belum Bayar', status: 'Confirmed',
+          paymentMethod: 'Tunai', depositStatus: 'Belum Terima', paymentStatus: 'Belum Bayar', status: 'Confirmed',
           source: 'Google Ads', review: 'Not Yet', notes: 'Datang Sabtu', createdAt: new Date().toISOString()
         },
         {
           id: 2, date: '', time: 'TBD', name: 'Customer Honda', phone: '013-814 9378',
           car: 'Honda EK', plate: '', service: 'Cuci Seat (Tanpa Buka)', price: 180, material: 30,
-          paymentMethod: 'TBD', paymentStatus: 'Belum Bayar', status: 'Pending',
+          paymentMethod: 'TBD', depositStatus: 'Belum Terima', paymentStatus: 'Belum Bayar', status: 'Pending',
           source: 'Google Ads', review: 'Not Yet', notes: 'Tanya harga', createdAt: new Date().toISOString()
         }
       ],
@@ -1821,6 +1843,7 @@
       hydrateSelect('time', times);
       hydrateServices();
       hydrateSelect('paymentMethod', paymentMethods);
+      hydrateSelect('depositStatus', depositStatuses);
       hydrateSelect('paymentStatus', paymentStatuses);
       hydrateSelect('status', statuses);
       hydrateSelect('source', sources);
@@ -1990,6 +2013,14 @@
 
 
 
+    function filterByStatus(status) {
+      go('bookings');
+      setTimeout(function() {
+        const sel = document.getElementById('filter-status');
+        if (sel) { sel.value = status; renderBookings(); }
+      }, 100);
+    }
+
     function go(page) {
       document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.side button[data-page], .bnav-btn').forEach(el => el.classList.remove('active'));
@@ -2048,6 +2079,7 @@
         material: num('material'),
         depositAmount: num('depositAmount'),
         paymentMethod: val('paymentMethod'),
+        depositStatus: val('depositStatus'),
         paymentStatus: val('paymentStatus'),
         status: val('status'),
         source: val('source'),
@@ -2091,6 +2123,7 @@
       document.getElementById('deposit-input-wrap').style.display = hasDep ? 'block' : 'none';
       setVal('depositAmount', b.depositAmount || 0);
       updateDepositHint();
+      setVal('depositStatus', b.depositStatus || 'Belum Terima');
       setVal('paymentMethod', b.paymentMethod);
       setVal('paymentStatus', b.paymentStatus);
       setVal('status', b.status);
@@ -2410,10 +2443,10 @@
           <td class="amount">${rm(booking.price)}</td>
         </tr>
       `;
-      const stampClass = booking.paymentStatus === 'Sudah Bayar' ? 'paid' : booking.paymentStatus === 'Deposit' ? 'deposit' : 'unpaid';
-      const stampText = booking.paymentStatus === 'Sudah Bayar' ? 'SUDAH\nBAYAR' : booking.paymentStatus === 'Deposit' ? 'DEPOSIT' : 'BELUM\nBAYAR';
-      const stampSub = booking.paymentStatus === 'Sudah Bayar' ? 'PAYMENT RECEIVED' : booking.paymentStatus === 'Deposit' ? 'PARTIAL PAYMENT' : 'AWAITING PAYMENT';
-      const watermark = booking.paymentStatus === 'Sudah Bayar' ? 'PAID' : booking.paymentStatus === 'Deposit' ? 'DEPOSIT' : 'UNPAID';
+      const stampClass = booking.paymentStatus === 'Sudah Bayar' ? 'paid' : (booking.depositStatus === 'Diterima' ? 'deposit' : 'unpaid');
+      const stampText = booking.paymentStatus === 'Sudah Bayar' ? 'SUDAH\nBAYAR' : booking.depositStatus === 'Diterima' ? 'DEPOSIT' : 'BELUM\nBAYAR';
+      const stampSub = booking.paymentStatus === 'Sudah Bayar' ? 'PAYMENT RECEIVED' : booking.depositStatus === 'Diterima' ? 'PARTIAL PAYMENT' : 'AWAITING PAYMENT';
+      const watermark = booking.paymentStatus === 'Sudah Bayar' ? 'PAID' : booking.depositStatus === 'Diterima' ? 'DEPOSIT' : 'UNPAID';
       const html = `
   <div class="receipt-page" style="position:relative">
     <div class="rcp-watermark">${watermark}</div>
@@ -2502,8 +2535,8 @@
           <div class="rcp-stamp-ring"></div>
           <div class="rcp-stamp-content">
             <div class="rcp-stamp-icon">${booking.paymentStatus === 'Sudah Bayar' ? '✓' : booking.paymentStatus === 'Deposit' ? '◑' : '✕'}</div>
-            <div class="rcp-stamp-inner">${booking.paymentStatus === 'Sudah Bayar' ? 'PAID' : booking.paymentStatus === 'Deposit' ? 'DEPOSIT' : 'UNPAID'}</div>
-            <div class="rcp-stamp-sub">${booking.paymentStatus === 'Sudah Bayar' ? 'PAYMENT RECEIVED' : booking.paymentStatus === 'Deposit' ? 'PARTIAL PAYMENT' : 'AWAITING PAYMENT'}</div>
+            <div class="rcp-stamp-inner">${booking.paymentStatus === 'Sudah Bayar' ? 'PAID' : booking.depositStatus === 'Diterima' ? 'DEPOSIT' : 'UNPAID'}</div>
+            <div class="rcp-stamp-sub">${booking.paymentStatus === 'Sudah Bayar' ? 'PAYMENT RECEIVED' : booking.depositStatus === 'Diterima' ? 'PARTIAL PAYMENT' : 'AWAITING PAYMENT'}</div>
           </div>
         </div>
       </div>
@@ -2709,7 +2742,7 @@
       const payment = val('filter-payment');
       const rows = state.bookings.filter(b => {
         const hay = (b.name + ' ' + b.phone + ' ' + b.car + ' ' + b.service + ' ' + (b.notes||'')).toLowerCase();
-        return (!q || hay.includes(q)) && (status === 'all' || b.status === status) && (payment === 'all' || b.paymentStatus === payment);
+        return (!q || hay.includes(q)) && (status === 'all' || b.status === status) && (payment === 'all' || b.paymentStatus === payment || b.depositStatus === payment);
       }).sort((a, b) => (b.date + ' ' + b.time).localeCompare(a.date + ' ' + a.time));
 
       // Mobile cards
@@ -2733,9 +2766,19 @@
               ? '<div class="bk-notes">' + esc(b.notes) + '</div>'
               : '';
             var plateInfo = b.plate ? ' &middot; ' + esc(b.plate) : '';
-            cards += '<div class="bk-card" data-id="' + b.id + '">'
+            var cardClass = 'bk-card';
+            var paidBadge = '';
+            if (b.status === 'Complete' && b.paymentStatus === 'Sudah Bayar') { cardClass += ' status-paid'; paidBadge = '<span class="paid-badge">PAID ✓</span>'; }
+            else if (b.depositStatus === 'Diterima' && b.paymentStatus !== 'Sudah Bayar') paidBadge = '<span class="paid-badge" style="background:#f59e0b">DEPOSIT ✓</span>';
+            else if (b.status === 'Complete') cardClass += ' status-complete';
+            else if (b.status === 'Cancelled') cardClass += ' status-cancelled';
+            else if (b.status === 'No-Show') cardClass += ' status-noshow';
+            else if (b.status === 'Confirmed') cardClass += ' status-confirmed';
+            else if (b.status === 'Pending' || b.status === 'Booking') cardClass += ' status-pending';
+            if (b.paymentStatus === 'Sudah Bayar' && b.status !== 'Complete') paidBadge = '<span class="paid-badge">PAID ✓</span>';
+            cards += '<div class="' + cardClass + '" data-id="' + b.id + '">'
               + '<div class="bk-card-top">'
-              + '<div><div class="bk-name">' + esc(b.name) + '</div>'
+              + '<div><div class="bk-name">' + esc(b.name) + paidBadge + '</div>'
               + '<div style="font-size:12px;color:var(--muted)">' + esc(b.phone) + '</div></div>'
               + '<div class="bk-date"><div>' + esc(displayDate(b.date)) + '</div><div>' + esc(b.time) + '</div></div>'
               + '</div>'
@@ -2746,6 +2789,7 @@
               + '<div class="bk-price-row"><span class="bk-label">Jumlah</span>'
               + '<div class="bk-price">' + rm(b.price) + '</div></div>'
               + '<div class="bk-selects">'
+              + '<select data-id="' + b.id + '" data-field="depositStatus" onchange="updateStatus(Number(this.dataset.id),this.dataset.field,this.value)">' + depositStatuses.map(function(s){ return '<option' + (s === (b.depositStatus||'Belum Terima') ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select>'
               + '<select data-id="' + b.id + '" data-field="paymentStatus" onchange="updateStatus(Number(this.dataset.id),this.dataset.field,this.value)">' + payOpts + '</select>'
               + '<select data-id="' + b.id + '" data-field="status" onchange="updateStatus(Number(this.dataset.id),this.dataset.field,this.value)">' + stOpts + '</select>'
               + '</div>'
@@ -2979,36 +3023,13 @@
       const dep = Number(b.depositAmount || 0);
       const price = Number(b.price || 0);
       const balance = price - dep;
-      const depositPaid = b.paymentStatus === 'Sudah Bayar';
+      const depositPaid = b.depositStatus === 'Diterima';
       const notesLine = (b.notes || '').trim()
         ? '📝 Nota      : ' + b.notes.trim() + '\n'
         : '';
-      const depositSection = dep > 0
-        ? '\n💰 *MAKLUMAT DEPOSIT*\n'
-          + sep + '\n'
-          + (depositPaid
-            ? '✅ Deposit Diterima : ' + rm(dep) + '\n'
-              + '💵 Baki Perlu Dibayar : ' + rm(balance) + '\n'
-              + 'Baki bayaran boleh diselesaikan selepas servis selesai.\n'
-            : '⚠️ Deposit Diperlukan : ' + rm(dep) + '\n'
-              + 'Sila transfer ke:\n'
-              + '🏦 Maybank\n'
-              + '👤 Northern Hope Enterprise\n'
-              + '🔢 5521 8951 6033\n\n'
-              + 'Hantar bukti bayaran ke sini untuk sahkan slot anda.\n')
-        : '';
-      const locationLine = depositPaid || dep === 0
-        ? sep + '\n'
-          + '📍 Lokasi kami:\n'
-          + '🗺️ Google Maps : ' + googleLocationUrl + '\n'
-          + '🔵 Waze        : ' + wazeLocationUrl + '\n\n'
-          + '🏢 Cuci Seat Kereta\n'
-          + '📞 Tel  : 017-699 3876\n'
-          + '🌐 Web  : cuciseatkereta.com\n'
-          + sep + '\n\n'
-        : sep + '\n\n';
-      return 'Hi ' + customerGreeting(b.name) + ',\n\n'
-        + 'Tempahan anda telah berjaya disahkan! ✅ Berikut adalah butiran perkhidmatan anda:\n'
+
+      const header = 'Hi ' + customerGreeting(b.name) + ',\n'
+        + 'Berikut adalah butiran tempahan servis anda:\n'
         + sep + '\n'
         + '🚗 Vehicle   : ' + (b.car || '-') + '\n'
         + '🔢 No. Plat  : ' + (b.plate || '-') + '\n'
@@ -3017,10 +3038,44 @@
         + '🕐 Masa      : ' + (b.time || '-') + '\n'
         + '💳 Harga     : ' + rm(b.price || 0) + '\n'
         + notesLine
+        + sep + '\n';
+
+      if (dep > 0 && !depositPaid) {
+        return header
+          + '\n'
+          + '💰 MAKLUMAT DEPOSIT\n'
+          + sep + '\n'
+          + '⚠️ Deposit Diperlukan : ' + rm(dep) + '\n\n'
+          + 'Sila transfer deposit ke:\n'
+          + '🏦 Bank     : Maybank\n'
+          + '👤 Nama     : Northern Hope Enterprise\n'
+          + '🔢 Akaun    : 5521 8951 6033\n\n'
+          + 'Hantar bukti bayaran ke sini untuk kami sahkan slot anda.\n'
+          + sep + '\n\n'
+          + 'Terima kasih kerana memilih perkhidmatan kami! 😊';
+      }
+
+      const depositLine = dep > 0 && depositPaid
+        ? '\n' + sep + '\n'
+          + '💰 MAKLUMAT DEPOSIT\n'
+          + sep + '\n'
+          + '✅ Deposit Diterima    : ' + rm(dep) + '\n'
+          + '💵 Baki Perlu Dibayar : ' + rm(balance) + '\n'
+          + 'Baki boleh diselesaikan selepas servis selesai.\n'
+        : '';
+
+      return header
+        + depositLine
+        + '\n'
+        + 'Sila pastikan anda hadir pada tarikh dan masa yang ditetapkan.\n'
         + sep + '\n'
-        + depositSection + '\n'
-        + 'Sila pastikan anda hadir pada tarikh dan masa yang ditetapkan.\n\n'
-        + locationLine
+        + '📍 Lokasi kami:\n'
+        + '🗺️ Google Maps : ' + googleLocationUrl + '\n'
+        + '🔵 Waze        : ' + wazeLocationUrl + '\n'
+        + '🏢 Cuci Seat Kereta\n'
+        + '📞 Tel  : 017-699 3876\n'
+        + '🌐 Web  : cuciseatkereta.com\n'
+        + sep + '\n\n'
         + 'Terima kasih kerana memilih perkhidmatan kami! Jumpa nanti 😊';
     }
     function customerGreeting(name) {
