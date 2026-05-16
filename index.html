@@ -1406,6 +1406,7 @@
           <nav class="nav" id="nav">
             <button class="active" data-page="dashboard"><span class="nav-icon">📊</span>Dashboard</button>
             <button data-page="new-booking"><span class="nav-icon">➕</span>Add Booking</button>
+            <button data-page="enquiries"><span class="nav-icon">📩</span>Enquiries Form</button>
             <button data-page="bookings"><span class="nav-icon">📋</span>Booking List</button>
             <button data-page="calendar"><span class="nav-icon">📅</span>Weekly Slots</button>
           </nav>
@@ -1583,6 +1584,16 @@
         <div class="booking-mobile-list" id="booking-mobile-cards"></div>
       </section>
 
+      <section id="enquiries" class="page">
+        <div class="page-header">
+          <div>
+            <h2>Enquiries Form</h2>
+            <p class="page-sub">Pertanyaan dari online form. Hantar WA deposit &amp; convert bila customer bayar.</p>
+          </div>
+        </div>
+        <div id="enquiries-list"></div>
+      </section>
+
       <section id="calendar" class="page">
         <div class="toolbar">
           <input id="week-start" type="date" onchange="renderCalendar()" />
@@ -1716,6 +1727,10 @@
         <button class="bnav-btn" data-page="new-booking" onclick="go('new-booking')">
           <div class="bnav-icon">➕</div>
           Add
+        </button>
+        <button class="bnav-btn" data-page="enquiries" onclick="go('enquiries')">
+          <div class="bnav-icon">📩</div>
+          Enquiries
         </button>
         <button class="bnav-btn" data-page="bookings" onclick="go('bookings')">
           <div class="bnav-icon">📋</div>
@@ -2090,6 +2105,7 @@
         dashboard: ['Dashboard', 'Current month booking and performance overview.'],
         'new-booking': ['Add Booking', 'Record customer details after they WhatsApp you from the website.'],
         bookings: ['Booking List', 'Update status, follow up on WhatsApp, and check payments.'],
+        enquiries: ['Enquiries Form', 'Pertanyaan dari online form. Convert jadi booking bila customer bayar deposit.'],
         calendar: ['Weekly Slots', 'View bookings by date and time.'],
         expenses: ['Overhead', 'Record operating costs and cleaning supply purchases.'],
         ads: ['Google Ads', 'Track weekly ad spend and conversions.'],
@@ -2172,7 +2188,6 @@
       setVal('car', b.car);
       setVal('plate', b.plate);
       setSelectedServices(b.service);
-      setVal('price', b.price);
       setVal('material', b.material);
       const hasDep = Number(b.depositAmount || 0) > 0;
       document.getElementById('deposit-toggle').checked = hasDep;
@@ -2186,7 +2201,37 @@
       setVal('source', b.source);
       setVal('review', b.review);
       setVal('notes', b.notes);
-      updateWhatsAppPreview();
+
+      // Restore individual service prices after DOM updates
+      setTimeout(function() {
+        const checkedBoxes = document.querySelectorAll('input[name="service"]:checked');
+        checkedBoxes.forEach(function(c, idx) {
+          const priceInput = c.closest('label').querySelector('.svc-price-input');
+          const wrap = c.closest('label').querySelector('.svc-price-wrap');
+          if (wrap) wrap.style.display = '';
+          if (priceInput) {
+            let price = 0;
+            if (b.servicePriceList && b.servicePriceList[idx] !== undefined) {
+              price = b.servicePriceList[idx];
+            } else if (b.servicePrices && b.servicePrices[c.value] !== undefined) {
+              price = b.servicePrices[c.value];
+            } else if (idx === 0) {
+              price = b.price || 0;
+            }
+            priceInput.value = price;
+          }
+        });
+        autoTotalPrice();
+        // If still 0, force set price directly from saved value
+        const priceField = document.getElementById('price');
+        if (priceField && (Number(priceField.value) === 0) && b.price > 0) {
+          priceField.removeAttribute('readonly');
+          priceField.value = b.price;
+          priceField.setAttribute('readonly', true);
+        }
+        updateWhatsAppPreview();
+      }, 150);
+
       go('new-booking');
     }
 
@@ -2621,24 +2666,43 @@
       const booking = state.bookings.find(b => b.id === _currentReceiptBookingId);
       const filename = 'Resit-' + (booking ? booking.name.replace(/\s+/g, '-') : 'Cuci-Seat') + '-' + new Date().toISOString().slice(0, 10) + '.pdf';
 
+      // Clone receipt outside modal to capture full content
+      const clone = receiptEl.cloneNode(true);
+      clone.style.position = 'fixed';
+      clone.style.top = '-9999px';
+      clone.style.left = '0';
+      clone.style.width = '794px';
+      clone.style.height = 'auto';
+      clone.style.overflow = 'visible';
+      clone.style.background = '#ffffff';
+      clone.style.zIndex = '-1';
+      document.body.appendChild(clone);
+
       const opt = {
-        margin: [8, 8, 8, 8],
+        margin: [5, 5, 5, 5],
         filename: filename,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: {
+          scale: 1.5,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          logging: false,
+          scrollY: 0
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: 'avoid-all' }
+        pagebreak: { mode: ['css', 'legacy'] }
       };
 
-      html2pdf().set(opt).from(receiptEl).save()
+      html2pdf().set(opt).from(clone).save()
         .then(() => {
+          document.body.removeChild(clone);
           showWAToast('✅ PDF berjaya disimpan!');
           if (btn) { btn.innerHTML = '&#x1F4E5; Simpan PDF'; btn.disabled = false; }
           _isPrinting = false;
         })
         .catch(() => {
-          showWAToast('Gagal generate PDF. Cuba semula.');
-          if (btn) { btn.innerHTML = '&#x1F4E5; Simpan PDF'; btn.disabled = false; }
+        .catch(() => {
+          if (document.body.contains(clone)) document.body.removeChild(clone);
           _isPrinting = false;
         });
     }
@@ -2794,9 +2858,73 @@
       persist();
     }
 
+    function renderEnquiries() {
+      const enqs = state.bookings
+        .filter(function(b) { return b.source === 'Enquiry Form'; })
+        .sort(function(a, b) { return (b.createdAt||'').localeCompare(a.createdAt||''); });
+      const container = document.getElementById('enquiries-list');
+      if (!container) return;
+      if (!enqs.length) {
+        container.innerHTML = '<div class="empty" style="padding:40px;text-align:center">📩 Tiada enquiry baru.<br><span style="color:var(--muted);font-size:13px">Enquiry dari online form akan muncul di sini.</span></div>';
+        return;
+      }
+      container.innerHTML = enqs.map(function(b) {
+        var notesRow = (b.notes||'').trim() ? '<div class="bk-notes">📝 ' + esc(b.notes) + '</div>' : '';
+        var dateRow = b.date ? '<div class="bk-row"><span class="bk-label">📅 Tarikh</span><span class="bk-val">' + esc(displayDate(b.date)) + ' · ' + esc(b.time||'TBD') + '</span></div>' : '';
+        var timeAgo = b.createdAt ? new Date(b.createdAt).toLocaleDateString('ms-MY') : '-';
+        return '<div class="bk-card" style="border-left:4px solid #8b5cf6">'
+          + '<div class="bk-card-top">'
+          + '<div><div class="bk-name">' + esc(b.name) + ' <span style="background:#8b5cf6;color:#fff;font-size:10px;padding:1px 7px;border-radius:5px">ENQUIRY</span></div>'
+          + '<div style="font-size:12px;color:var(--muted)">' + esc(b.phone) + '</div></div>'
+          + '<div class="bk-date"><div>' + timeAgo + '</div></div>'
+          + '</div>'
+          + '<div class="bk-service">💺 ' + esc(b.service||'Belum ditentukan') + '</div>'
+          + '<div class="bk-row"><span class="bk-label">🚗 Kenderaan</span><span class="bk-val">' + esc(b.car||'-') + (b.plate ? ' · ' + esc(b.plate) : '') + '</span></div>'
+          + dateRow + notesRow
+          + '<div class="bk-actions">'
+          + '<button class="btn wa full" data-id="' + b.id + '" onclick="confirmAndWhatsApp(Number(this.dataset.id))">💬 Hantar WA Deposit</button>'
+          + '<button class="btn full" style="background:#8b5cf6;color:#fff;margin-top:6px;grid-column:span 2" data-id="' + b.id + '" onclick="convertToBooking(Number(this.dataset.id))">✅ Jadikan Booking</button>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+    }
+
+    function convertToBooking(id) {
+      if (!confirm('Tukar enquiry ini kepada booking?')) return;
+      state.bookings = state.bookings.map(function(b) {
+        if (b.id === id) {
+          var updated = Object.assign({}, b, { status: 'Booking', source: 'Online Form' });
+          fsSet('bookings', updated);
+          return updated;
+        }
+        return b;
+      });
+      persist();
+      showWAToast('✅ Enquiry dah jadi Booking!');
+      renderEnquiries();
+      updateEnquiryBadge();
+      go('bookings');
+    }
+
+    function updateEnquiryBadge() {
+      var count = state.bookings.filter(function(b) { return b.source === 'Enquiry Form'; }).length;
+      document.querySelectorAll('.enq-badge').forEach(function(el) { el.remove(); });
+      if (count > 0) {
+        document.querySelectorAll('[data-page="enquiries"]').forEach(function(el) {
+          var badge = document.createElement('span');
+          badge.className = 'enq-badge notif-badge';
+          badge.style.background = '#8b5cf6';
+          badge.textContent = count;
+          el.appendChild(badge);
+        });
+      }
+    }
+
     function renderAll() {
       renderDashboard();
       renderBookings();
+      renderEnquiries();
+      updateEnquiryBadge();
       renderCalendar();
       renderExpenses();
       renderAds();
@@ -2835,6 +2963,7 @@
       const status = val('filter-status');
       const payment = val('filter-payment');
       const rows = state.bookings.filter(b => {
+        if (b.source === 'Enquiry Form') return false;
         const hay = (b.name + ' ' + b.phone + ' ' + b.car + ' ' + b.service + ' ' + (b.notes||'')).toLowerCase();
         return (!q || hay.includes(q)) && (status === 'all' || b.status === status) && (payment === 'all' || b.paymentStatus === payment || b.depositStatus === payment);
       }).sort((a, b) => (b.date + ' ' + b.time).localeCompare(a.date + ' ' + a.time));
