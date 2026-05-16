@@ -1890,15 +1890,15 @@
     }
 
     function setDeposit30() {
-      const price = Number(document.getElementById('price')?.value || 0);
+      const priceEl = document.getElementById('price'); const price = Number(priceEl ? priceEl.value : 0) || 0;
       const depInput = document.getElementById('depositAmount');
       if (price > 0) { depInput.value = Math.round(price * 0.30 * 100) / 100; }
       updateDepositHint();
     }
 
     function updateDepositHint() {
-      const price = Number(document.getElementById('price')?.value || 0);
-      const dep = Number(document.getElementById('depositAmount')?.value || 0);
+      const priceEl = document.getElementById('price'); const price = Number(priceEl ? priceEl.value : 0) || 0;
+      const depEl2 = document.getElementById('depositAmount'); const dep = Number(depEl2 ? depEl2.value : 0) || 0;
       const hint = document.getElementById('deposit-balance-hint');
       if (hint && price > 0 && dep > 0) {
         hint.textContent = 'Baki: RM' + (price - dep).toFixed(2) + ' (' + Math.round(dep/price*100) + '%)';
@@ -2043,7 +2043,7 @@
           return serviceMap[trimmed] || trimmed;
         }).join(', ');
         return {
-          ...item,
+
           service,
           status: item.status === 'Siap' ? 'Complete' : item.status,
           paymentStatus: item.paymentStatus === 'Unpaid' ? 'Belum Bayar'
@@ -2126,10 +2126,10 @@
       const existingId = Number(document.getElementById('booking-id').value);
       let savedBooking;
       if (existingId) {
-        state.bookings = state.bookings.map(item => item.id === existingId ? { ...item, ...booking, id: existingId } : item);
+        state.bookings = state.bookings.map(item => item.id === existingId ? Object.assign({}, item, booking, { id: existingId }) : item);
         savedBooking = state.bookings.find(item => item.id === existingId);
       } else {
-        savedBooking = { ...booking, id: Date.now(), createdAt: new Date().toISOString() };
+        savedBooking = Object.assign({}, booking, { id: Date.now(), createdAt: new Date().toISOString() });
         state.bookings.push(savedBooking);
       }
       fsSet('bookings', savedBooking);
@@ -2241,30 +2241,14 @@
       document.getElementById('date').value = today();
       document.getElementById('material').value = 25;
       setSelectedServices(services[0]);
-      // Restore individual service prices
-      setTimeout(function() {
-        const checkedBoxes = document.querySelectorAll('input[name="service"]:checked');
-        checkedBoxes.forEach(function(c, idx) {
-          var priceInput = c.closest('label').querySelector('.svc-price-input');
-          var wrap = c.closest('label').querySelector('.svc-price-wrap');
-          if (wrap) wrap.style.display = '';
-          if (priceInput) {
-            var price = 0;
-            if (b.servicePriceList && b.servicePriceList[idx] !== undefined) {
-              price = b.servicePriceList[idx];
-            } else if (b.servicePrices && b.servicePrices[c.value] !== undefined) {
-              price = b.servicePrices[c.value];
-            }
-            priceInput.value = price;
-          }
-        });
-        autoTotalPrice();
-      }, 100);
+      document.getElementById('deposit-toggle').checked = false;
+      document.getElementById('deposit-input-wrap').style.display = 'none';
+      autoTotalPrice();
       updateWhatsAppPreview();
     }
 
     function updateStatus(id, field, value) {
-      state.bookings = state.bookings.map(item => item.id === id ? { ...item, [field]: value } : item);
+      state.bookings = state.bookings.map(item => { if (item.id === id) { var u = Object.assign({}, item); u[field] = value; return u; } return item; });
       const updated = state.bookings.find(item => item.id === id);
       if (updated) fsSet('bookings', updated);
       persist();
@@ -2286,8 +2270,8 @@
       if (!booking) return;
 
       // Auto mark as Complete
-      state.bookings = state.bookings.map(b => b.id === id ? { ...b, status: 'Complete' } : b);
-      fsSet('bookings', { ...booking, status: 'Complete' });
+      state.bookings = state.bookings.map(function(b) { if (b.id === id) return Object.assign({}, b, { status: 'Complete' }); return b; });
+      var readyBooking = Object.assign({}, booking, { status: 'Complete' }); fsSet('bookings', readyBooking);
       persist();
 
       const sep = '─────────────────';
@@ -2701,7 +2685,6 @@
           _isPrinting = false;
         })
         .catch(() => {
-        .catch(() => {
           if (document.body.contains(clone)) document.body.removeChild(clone);
           _isPrinting = false;
         });
@@ -3086,21 +3069,27 @@
     }
 
     function renderExpenses() {
-      const rows = state.expenses.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-      document.getElementById('expense-list').innerHTML = rows.length ? rows.map(item => `
-        <div style="border-bottom:1px solid var(--border);padding:12px 0;display:flex;gap:12px;align-items:flex-start">
-          ${item.receiptImg ? `<div class="receipt-img-wrap" onclick="viewReceiptImg('${item.receiptImg}')"><img src="${item.receiptImg}" /><div style="font-size:9px;color:var(--muted);text-align:center">Lihat</div></div>` : ''}
-          <div style="flex:1">
-            <strong>${esc(item.detail)}</strong><br>
-            <span style="color:var(--muted);font-size:12px">${esc(displayDate(item.date))} · ${esc(item.category)} · ${esc(item.method)}</span><br>
-            <strong style="color:var(--accent)">${rm(item.amount)}</strong>
-            ${item.notes ? `<span style="font-size:12px;color:var(--muted)"> · ${esc(item.notes)}</span>` : ''}
-          </div>
-          <button class="btn danger" style="flex-shrink:0" type="button" onclick="deleteExpense(${item.id})">Delete</button>
-        </div>
-      `).join('') : '<div class="empty">No cost records yet.</div>';
+      const rows = state.expenses.slice().sort(function(a, b) { return (b.date || '').localeCompare(a.date || ''); });
+      document.getElementById('expense-list').innerHTML = rows.length ? rows.map(function(item) {
+        var imgHtml = '';
+        if (item.receiptImg) {
+          imgHtml = '<div class="receipt-img-wrap" onclick="viewReceiptImg(this.dataset.src)" data-src="">'
+            + '<img src="' + item.receiptImg + '" />'
+            + '<div style="font-size:9px;color:var(--muted);text-align:center">Lihat</div>'
+            + '</div>';
+        }
+        var notesHtml = item.notes ? ' &middot; <span style="color:var(--muted)">' + esc(item.notes) + '</span>' : '';
+        return '<div style="border-bottom:1px solid var(--border);padding:12px 0;display:flex;gap:12px;align-items:flex-start">'
+          + imgHtml
+          + '<div style="flex:1">'
+          + '<strong>' + esc(item.detail) + '</strong><br>'
+          + '<span style="color:var(--muted);font-size:12px">' + esc(displayDate(item.date)) + ' &middot; ' + esc(item.category) + ' &middot; ' + esc(item.method) + '</span><br>'
+          + '<strong style="color:var(--accent)">' + rm(item.amount) + '</strong>' + notesHtml
+          + '</div>'
+          + '<button class="btn danger" style="flex-shrink:0" type="button" onclick="deleteExpense(' + item.id + ')">Delete</button>'
+          + '</div>';
+      }).join('') : '<p style="color:var(--muted);padding:20px 0">No overhead recorded.</p>';
     }
-
     function renderAds() {
       document.getElementById('ads-list').innerHTML = state.ads.length ? state.ads.map(item => {
         const ctr = item.impressions ? (item.clicks / item.impressions * 100) : 0;
@@ -3363,7 +3352,7 @@
     }
 
     function downloadCSV(filename, headers, rows) {
-      const csv = '\uFEFF' + [headers, ...rows].map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+      const allRows = [headers].concat(rows); const csv = '\uFEFF' + allRows.map(function(row) { return row.map(function(cell) { return '"' + String(cell === null || cell === undefined ? '' : cell).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
       download(csv, filename, 'text/csv;charset=utf-8');
     }
 
@@ -3397,7 +3386,7 @@
     }
 
     function setVal(id, value) {
-      document.getElementById(id).value = value ?? '';
+      var setEl = document.getElementById(id); if (setEl) setEl.value = (value === null || value === undefined) ? '' : value;
     }
 
     function selectedServices() {
@@ -3471,7 +3460,8 @@
     }
 
     function esc(value) {
-      return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
+      var s = value === null || value === undefined ? '' : String(value);
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
 
     // Boot: called by dynamic loader AFTER Firebase SDK is fully loaded
