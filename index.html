@@ -2646,20 +2646,20 @@
       const btn = document.querySelector('.btn-pdf-receipt');
       if (btn) { btn.textContent = '⏳ Generating...'; btn.disabled = true; }
 
-      const booking = state.bookings.find(b => b.id === _currentReceiptBookingId);
+      const booking = state.bookings.find(function(b) { return b.id === _currentReceiptBookingId; });
       const filename = 'Resit-' + (booking ? booking.name.replace(/\s+/g, '-') : 'Cuci-Seat') + '-' + new Date().toISOString().slice(0, 10) + '.pdf';
 
-      // Clone receipt outside modal to capture full content
-      const clone = receiptEl.cloneNode(true);
-      clone.style.position = 'fixed';
-      clone.style.top = '-9999px';
-      clone.style.left = '0';
-      clone.style.width = '794px';
-      clone.style.height = 'auto';
-      clone.style.overflow = 'visible';
-      clone.style.background = '#ffffff';
-      clone.style.zIndex = '-1';
-      document.body.appendChild(clone);
+      // Temporarily fix parent overflow so full receipt is captured
+      const modal = document.getElementById('receipt-modal');
+      const origModalOverflow = modal.style.overflow;
+      const origModalHeight = modal.style.height;
+      const origPreviewHeight = receiptEl.style.height;
+      const origPreviewOverflow = receiptEl.style.overflow;
+
+      modal.style.overflow = 'visible';
+      modal.style.height = 'auto';
+      receiptEl.style.height = 'auto';
+      receiptEl.style.overflow = 'visible';
 
       const opt = {
         margin: [5, 5, 5, 5],
@@ -2670,21 +2670,36 @@
           useCORS: true,
           backgroundColor: '#ffffff',
           logging: false,
-          scrollY: 0
+          scrollY: 0,
+          onclone: function(doc) {
+            var el = doc.getElementById('receipt-preview');
+            if (el) {
+              el.style.height = 'auto';
+              el.style.overflow = 'visible';
+            }
+          }
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['css', 'legacy'] }
       };
 
-      html2pdf().set(opt).from(clone).save()
-        .then(() => {
-          document.body.removeChild(clone);
+      html2pdf().set(opt).from(receiptEl).save()
+        .then(function() {
+          modal.style.overflow = origModalOverflow;
+          modal.style.height = origModalHeight;
+          receiptEl.style.height = origPreviewHeight;
+          receiptEl.style.overflow = origPreviewOverflow;
           showWAToast('✅ PDF berjaya disimpan!');
           if (btn) { btn.innerHTML = '&#x1F4E5; Simpan PDF'; btn.disabled = false; }
           _isPrinting = false;
         })
-        .catch(() => {
-          if (document.body.contains(clone)) document.body.removeChild(clone);
+        .catch(function() {
+          modal.style.overflow = origModalOverflow;
+          modal.style.height = origModalHeight;
+          receiptEl.style.height = origPreviewHeight;
+          receiptEl.style.overflow = origPreviewOverflow;
+          showWAToast('Gagal generate PDF. Cuba semula.');
+          if (btn) { btn.innerHTML = '&#x1F4E5; Simpan PDF'; btn.disabled = false; }
           _isPrinting = false;
         });
     }
