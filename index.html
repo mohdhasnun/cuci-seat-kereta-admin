@@ -2042,8 +2042,7 @@
           const trimmed = s.trim();
           return serviceMap[trimmed] || trimmed;
         }).join(', ');
-        return {
-
+        return Object.assign({}, item, {
           service,
           status: item.status === 'Siap' ? 'Complete' : item.status,
           paymentStatus: item.paymentStatus === 'Unpaid' ? 'Belum Bayar'
@@ -2051,7 +2050,7 @@
             : item.paymentStatus,
           paymentMethod: item.paymentMethod === 'Cash' ? 'Tunai' : item.paymentMethod,
           review: item.review === 'Belum' ? 'Not Yet' : item.review === 'Sudah' ? 'Done' : item.review,
-        };
+        });
       });
     }
 
