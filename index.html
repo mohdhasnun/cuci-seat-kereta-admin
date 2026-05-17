@@ -2885,17 +2885,22 @@
           + dateRow + notesRow
           + '<div class="bk-actions">'
           + '<button class="btn wa full" data-id="' + b.id + '" onclick="confirmAndWhatsApp(Number(this.dataset.id))">💬 Hantar WA Deposit</button>'
+          + '<button class="btn full" style="background:#1d4ed8;color:#fff;margin-top:6px;grid-column:span 2" data-id="' + b.id + '" onclick="editEnquiry(Number(this.dataset.id))">✏️ Edit & Set Harga</button>'
           + '<button class="btn full" style="background:#8b5cf6;color:#fff;margin-top:6px;grid-column:span 2" data-id="' + b.id + '" onclick="convertToBooking(Number(this.dataset.id))">✅ Jadikan Booking</button>'
           + '</div>'
           + '</div>';
       }).join('');
     }
 
+    function editEnquiry(id) {
+      fillBookingForm(id);
+    }
+
     function convertToBooking(id) {
       if (!confirm('Tukar enquiry ini kepada booking?')) return;
       state.bookings = state.bookings.map(function(b) {
         if (b.id === id) {
-          var updated = Object.assign({}, b, { status: 'Booking', source: 'Online Form' });
+          var updated = Object.assign({}, b, { status: 'Confirmed', source: 'Online (Converted)' });
           fsSet('bookings', updated);
           return updated;
         }
