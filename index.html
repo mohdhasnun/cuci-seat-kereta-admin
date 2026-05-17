@@ -2314,9 +2314,12 @@
     function confirmAndWhatsApp(id) {
       const booking = state.bookings.find(item => item.id === id);
       if (!booking) return;
-      booking.status = 'Confirmed';
-      fsSet('bookings', booking);
-      persist();
+      // Only auto-confirm if NOT an enquiry
+      if (booking.source !== 'Enquiry Form' && booking.source !== 'Online Form') {
+        booking.status = 'Confirmed';
+        fsSet('bookings', booking);
+        persist();
+      }
       openWA(booking.phone, confirmationMessage(booking));
     }
 
