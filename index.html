@@ -2919,7 +2919,11 @@
     }
 
     function updateEnquiryBadge() {
-      var count = state.bookings.filter(function(b) { return b.source === 'Enquiry Form' || b.source === 'Online Form'; }).length;
+      var count = state.bookings.filter(function(b) {
+        return (b.source === 'Enquiry Form' || b.source === 'Online Form')
+          && b.status !== 'Cancelled'
+          && b.status !== 'No-Show';
+      }).length;
       document.querySelectorAll('.enq-badge').forEach(function(el) { el.remove(); });
       if (count > 0) {
         document.querySelectorAll('[data-page="enquiries"]').forEach(function(el) {
