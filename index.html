@@ -2102,6 +2102,9 @@
     }
 
     function go(page) {
+      if (page === 'enquiries') {
+        document.querySelectorAll('.enq-badge').forEach(function(el) { el.remove(); });
+      }
       document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.side button[data-page], .bnav-btn').forEach(el => el.classList.remove('active'));
       const pageEl = document.getElementById(page);
