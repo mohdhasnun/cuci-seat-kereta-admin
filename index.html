@@ -1485,6 +1485,7 @@
           <div class="panel">
             <h3 class="section-title">Booking Status</h3>
             <div class="status-grid">
+              <div class="status-card" style="background:#f3e8ff;border-color:#e9d5ff;color:#7c3aed;cursor:pointer" onclick="go('enquiries')"><div class="s-label">Enquiries</div><div class="s-value" id="s-enquiries">0</div></div>
               <div class="status-card" style="background:#ede9fe;border-color:#ddd6fe;color:#6d28d9;cursor:pointer" onclick="filterByStatus('Booking')"><div class="s-label">Booking</div><div class="s-value" id="s-booking">0</div></div>
               <div class="status-card" style="background:#fefce8;border-color:#fde047;color:#b45309;cursor:pointer" onclick="filterByStatus('Pending')"><div class="s-label">Pending</div><div class="s-value" id="s-pending">0</div></div>
               <div class="status-card" style="background:#dcfce7;border-color:#bbf7d0;color:#15803d;cursor:pointer" onclick="filterByStatus('Confirmed')"><div class="s-label">Confirmed</div><div class="s-value" id="s-confirmed">0</div></div>
@@ -2976,6 +2977,11 @@
       setText('k-costs', rm(expenses + ads));
       setText('k-profit', rm(profit));
       document.getElementById('k-profit').className = `value ${profit < 0 ? 'money-red' : 'money-green'}`;
+      var enqCount = state.bookings.filter(function(b) {
+        return (b.source === 'Enquiry Form' || b.source === 'Online Form')
+          && b.status !== 'Cancelled' && b.status !== 'No-Show';
+      }).length;
+      setText('s-enquiries', enqCount || 0);
       statuses.forEach(status => setText(`s-${status.toLowerCase()}`, state.bookings.filter(b => b.status === status).length));
 
       const recent = state.bookings.slice().sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')).slice(0, 5);
