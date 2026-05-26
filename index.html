@@ -2978,7 +2978,7 @@
       setText('k-profit', rm(profit));
       document.getElementById('k-profit').className = `value ${profit < 0 ? 'money-red' : 'money-green'}`;
       var enqCount = state.bookings.filter(function(b) {
-        return (b.source === 'Enquiry Form' || b.source === 'Online Form')
+        return (b.source === 'Enquiry Form' || b.source === 'Online Form' || b.status === 'Enquiry')
           && b.status !== 'Cancelled' && b.status !== 'No-Show';
       }).length;
       setText('s-enquiries', enqCount || 0);
