@@ -1820,7 +1820,7 @@
       if (!db) return;
       db.collection(col).doc(String(id)).delete().catch(e => console.error('fsDel', e));
     }
-    const statuses = ['Booking', 'Pending', 'Confirmed', 'Postponed', 'Complete', 'Cancelled', 'No-Show'];
+    const statuses = ['Enquiry', 'Booking', 'Pending', 'Confirmed', 'Postponed', 'Complete', 'Cancelled', 'No-Show'];
     const services = [
       'Cuci Semua Seat (Tanpa Buka Seat)',
       'Cuci Semua Seat (Buka Seat)',
@@ -2865,7 +2865,7 @@
     function renderEnquiries() {
       const enqs = state.bookings
         .filter(function(b) { 
-          return (b.source === 'Enquiry Form' || b.source === 'Online Form')
+          return (b.source === 'Enquiry Form' || b.source === 'Online Form' || b.status === 'Enquiry')
             && b.status !== 'Cancelled'
             && b.status !== 'No-Show'; 
         })
@@ -2935,7 +2935,7 @@
 
     function updateEnquiryBadge() {
       var count = state.bookings.filter(function(b) {
-        return (b.source === 'Enquiry Form' || b.source === 'Online Form')
+        return (b.source === 'Enquiry Form' || b.source === 'Online Form' || b.status === 'Enquiry')
           && b.status !== 'Cancelled'
           && b.status !== 'No-Show';
       }).length;
@@ -2999,7 +2999,7 @@
       const status = val('filter-status');
       const payment = val('filter-payment');
       const rows = state.bookings.filter(b => {
-        if (b.source === 'Enquiry Form' || b.source === 'Online Form') return false;
+        if (b.source === 'Enquiry Form' || b.source === 'Online Form' || b.status === 'Enquiry') return false;
         const hay = (b.name + ' ' + b.phone + ' ' + b.car + ' ' + b.service + ' ' + (b.notes||'')).toLowerCase();
         return (!q || hay.includes(q)) && (status === 'all' || b.status === status) && (payment === 'all' || b.paymentStatus === payment || b.depositStatus === payment);
       }).sort((a, b) => (b.date + ' ' + b.time).localeCompare(a.date + ' ' + a.time));
