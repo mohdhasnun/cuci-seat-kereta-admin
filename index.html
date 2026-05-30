@@ -1416,6 +1416,7 @@
             <button class="active" data-page="dashboard"><span class="nav-icon">📊</span>Dashboard</button>
             <button data-page="new-booking"><span class="nav-icon">➕</span>Add Booking</button>
             <button data-page="bookings"><span class="nav-icon">📋</span>Booking List</button>
+            <button data-page="enquiries"><span class="nav-icon">📩</span>Enquiries</button>
             <button data-page="calendar"><span class="nav-icon">📅</span>Weekly Slots</button>
           </nav>
           <div class="nav-label" style="margin-top:18px">Kewangan</div>
@@ -1484,7 +1485,7 @@
           <div class="panel">
             <h3 class="section-title">Booking Status</h3>
             <div class="status-grid">
-              <div class="status-card" style="background:#f3e8ff;border-color:#e9d5ff;color:#7c3aed;cursor:pointer" onclick="go('enquiries')"><div class="s-label">Enquiries</div><div class="s-value" id="s-enquiries">0</div></div>
+              <div class="status-card" style="background:#f3e8ff;border-color:#e9d5ff;color:#7c3aed;cursor:pointer" onclick="go('enquiries')"><div class="s-label">Enquiries</div><div class="s-value" id="s-enquiries">0</div><span id="enq-badge-dash" style="position:absolute;top:-8px;right:-8px;background:#ef4444;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;display:none;"></span></div>
               <div class="status-card" style="background:#ede9fe;border-color:#ddd6fe;color:#6d28d9;cursor:pointer" onclick="filterByStatus('Booking')"><div class="s-label">Booking</div><div class="s-value" id="s-booking">0</div></div>
               <div class="status-card" style="background:#fefce8;border-color:#fde047;color:#b45309;cursor:pointer" onclick="filterByStatus('Pending')"><div class="s-label">Pending</div><div class="s-value" id="s-pending">0</div></div>
               <div class="status-card" style="background:#dcfce7;border-color:#bbf7d0;color:#15803d;cursor:pointer" onclick="filterByStatus('Confirmed')"><div class="s-label">Confirmed</div><div class="s-value" id="s-confirmed">0</div></div>
@@ -1740,6 +1741,10 @@
 <button class="bnav-btn" data-page="bookings" onclick="go('bookings')">
           <div class="bnav-icon">📋</div>
           Bookings
+        </button>
+        <button class="bnav-btn" data-page="enquiries" onclick="go('enquiries')">
+          <div class="bnav-icon">📩</div>
+          Enquiries
         </button>
         <button class="bnav-btn" data-page="calendar" onclick="go('calendar')">
           <div class="bnav-icon">📅</div>
