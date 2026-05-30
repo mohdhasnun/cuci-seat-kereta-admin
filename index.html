@@ -1997,25 +1997,16 @@
 
     async function load() {
       const loadingEl = document.getElementById('fb-loading');
-      const timeout = ms => new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('timeout')), ms));
       try {
-        const [bSnap, eSnap, aSnap] = await Promise.race([
-          Promise.all([
-            db.collection('bookings').get(),
-            db.collection('expenses').get(),
-            db.collection('ads').get()
-          ]),
-          timeout(12000)
+        const [bSnap, eSnap, aSnap] = await Promise.all([
+          db.collection('bookings').get(),
+          db.collection('expenses').get(),
+          db.collection('ads').get()
         ]);
-        const hasData = !bSnap.empty || !eSnap.empty || !aSnap.empty;
-        if (hasData) {
-          state.bookings = bSnap.docs.map(d => d.data());
-          state.expenses = eSnap.docs.map(d => d.data());
-          state.ads = aSnap.docs.map(d => d.data());
-        } else {
-          await seedFirestore();
-        }
+        state.bookings = (bSnap.docs || []).map(function(d) { return d.data(); });
+        state.expenses = (eSnap.docs || []).map(function(d) { return d.data(); });
+        state.ads = (aSnap.docs || []).map(function(d) { return d.data(); });
+        console.log('Loaded bookings:', state.bookings.length);
         migrateStateLabels();
       } catch (err) {
         console.error('Firebase load error:', err);
