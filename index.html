@@ -610,17 +610,13 @@
             <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Enquiries</div>
             <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-enquiry">0</div>
           </div>
-          <div class="status-card" onclick="filterByStatus('Booking')" style="cursor: pointer; background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%); color: #4f46e5; border: 2px solid #c7d2fe;">
-            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Booking</div>
-            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-booking">0</div>
-          </div>
           <div class="status-card" onclick="filterByStatus('Pending')" style="cursor: pointer; background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); color: #d97706; border: 2px solid #fde68a;">
             <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Pending</div>
             <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-pending">0</div>
           </div>
-          <div class="status-card" onclick="filterByStatus('Confirmed')" style="cursor: pointer; background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%); color: #059669; border: 2px solid #a7f3d0;">
-            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Confirmed</div>
-            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-confirmed">0</div>
+          <div class="status-card" onclick="filterByStatus('Booking')" style="cursor: pointer; background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%); color: #4f46e5; border: 2px solid #c7d2fe;">
+            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Booking</div>
+            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-booking">0</div>
           </div>
           <div class="status-card" onclick="filterByStatus('Postponed')" style="cursor: pointer; background: linear-gradient(135deg, #bfdbfe 0%, #eff6ff 100%); color: #0284c7; border: 2px solid #7dd3fc;">
             <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Postponed</div>
@@ -633,10 +629,6 @@
           <div class="status-card" onclick="filterByStatus('Cancelled')" style="cursor: pointer; background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%); color: #dc2626; border: 2px solid #fca5a5;">
             <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Cancelled</div>
             <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-cancelled">0</div>
-          </div>
-          <div class="status-card" onclick="filterByStatus('No-Show')" style="cursor: pointer; background: linear-gradient(135deg, #1f2937 0%, #374151 100%); color: white; border: 2px solid #4b5563;">
-            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">No-Show</div>
-            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-noshow">0</div>
           </div>
         </div>
 
@@ -1127,13 +1119,18 @@
     }
 
     function calculateBalanceDue() {
-      const serviceTotalText = document.getElementById('service-total').textContent;
+      const serviceTotalEl = document.getElementById('service-total');
+      const serviceTotalText = serviceTotalEl ? serviceTotalEl.textContent : 'RM 0.00';
       const serviceTotal = parseFloat(serviceTotalText.replace('RM ', '').replace(',', '')) || 0;
-      const deposit = Number(document.getElementById('deposit').value) || 0;
+      const depositEl = document.getElementById('deposit');
+      const deposit = (depositEl ? Number(depositEl.value) : 0) || 0;
       const balanceDue = Math.max(0, serviceTotal - deposit);
       
-      document.getElementById('balance-display').textContent = 'RM ' + balanceDue.toLocaleString('en-MY', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-      document.getElementById('balance-due').value = balanceDue.toFixed(2);
+      const balanceDisplay = document.getElementById('balance-display');
+      if (balanceDisplay) balanceDisplay.textContent = 'RM ' + balanceDue.toLocaleString('en-MY', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      
+      const balanceDueEl = document.getElementById('balance-due');
+      if (balanceDueEl) balanceDueEl.value = balanceDue.toFixed(2);
     }
 
     function calculateServiceTotal() {
@@ -1143,17 +1140,23 @@
       document.querySelectorAll('.service-checkbox:checked').forEach(cb => {
         const idx = cb.id.replace('svc_', '');
         const priceInput = document.getElementById('price_' + idx);
-        const price = Number(priceInput.value) || 0;
+        const price = Number(priceInput ? priceInput.value : 0) || 0;
         serviceTotal += price;
         checkedServices.push({service: cb.value, price: price});
       });
       
       // Update display (no material calculation, just service total)
-      document.getElementById('service-total').textContent = 'RM ' + serviceTotal.toLocaleString('en-MY', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      const serviceTotalEl = document.getElementById('service-total');
+      if (serviceTotalEl) {
+        serviceTotalEl.textContent = 'RM ' + serviceTotal.toLocaleString('en-MY', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      }
       
       // Store in hidden field
-      document.getElementById('price').value = serviceTotal;
-      document.getElementById('material').value = 0; // Not used anymore
+      const priceEl = document.getElementById('price');
+      if (priceEl) priceEl.value = serviceTotal;
+      
+      const materialEl = document.getElementById('material');
+      if (materialEl) materialEl.value = 0; // Not used anymore
       
       // Auto-update balance due if deposit already filled
       calculateBalanceDue();
@@ -1273,20 +1276,40 @@
       const profit = revenue - material - overhead;
       const completeCount = state.bookings.filter(isComplete).length;
 
-      document.getElementById('kpi-total').textContent = total;
-      document.getElementById('kpi-revenue').textContent = 'RM' + revenue.toLocaleString();
-      document.getElementById('kpi-material').textContent = 'RM' + material.toLocaleString();
-      document.getElementById('kpi-overhead').textContent = 'RM' + overhead.toLocaleString();
-      document.getElementById('kpi-profit').textContent = 'RM' + profit.toLocaleString();
+      // Update KPI cards (with null checks)
+      const kpiTotal = document.getElementById('kpi-total');
+      if (kpiTotal) kpiTotal.textContent = total;
+      
+      const kpiRevenue = document.getElementById('kpi-revenue');
+      if (kpiRevenue) kpiRevenue.textContent = 'RM' + revenue.toLocaleString();
+      
+      const kpiMaterial = document.getElementById('kpi-material');
+      if (kpiMaterial) kpiMaterial.textContent = 'RM' + material.toLocaleString();
+      
+      const kpiOverhead = document.getElementById('kpi-overhead');
+      if (kpiOverhead) kpiOverhead.textContent = 'RM' + overhead.toLocaleString();
+      
+      const kpiProfit = document.getElementById('kpi-profit');
+      if (kpiProfit) kpiProfit.textContent = 'RM' + profit.toLocaleString();
 
-      document.getElementById('status-enquiry').textContent = enquiries;
-      document.getElementById('status-booking').textContent = booking;
-      document.getElementById('status-pending').textContent = state.bookings.filter(b => b.status === 'Pending').length;
-      document.getElementById('status-confirmed').textContent = state.bookings.filter(b => b.status === 'Confirmed').length;
-      document.getElementById('status-postponed').textContent = state.bookings.filter(b => b.status === 'Postponed').length;
-      document.getElementById('status-complete').textContent = completeCount;
-      document.getElementById('status-cancelled').textContent = state.bookings.filter(b => b.status === 'Cancelled').length;
-      document.getElementById('status-noshow').textContent = state.bookings.filter(b => b.status === 'No-Show').length;
+      // Update status cards (with null checks)
+      const statusEnquiry = document.getElementById('status-enquiry');
+      if (statusEnquiry) statusEnquiry.textContent = enquiries;
+      
+      const statusBooking = document.getElementById('status-booking');
+      if (statusBooking) statusBooking.textContent = booking;
+      
+      const statusPending = document.getElementById('status-pending');
+      if (statusPending) statusPending.textContent = state.bookings.filter(b => b.status === 'Pending').length;
+      
+      const statusPostponed = document.getElementById('status-postponed');
+      if (statusPostponed) statusPostponed.textContent = state.bookings.filter(b => b.status === 'Postponed').length;
+      
+      const statusComplete = document.getElementById('status-complete');
+      if (statusComplete) statusComplete.textContent = completeCount;
+      
+      const statusCancelled = document.getElementById('status-cancelled');
+      if (statusCancelled) statusCancelled.textContent = state.bookings.filter(b => b.status === 'Cancelled').length;
     }
 
     function calculateRevenue() {
