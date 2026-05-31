@@ -610,13 +610,13 @@
             <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Enquiries</div>
             <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-enquiry">0</div>
           </div>
-          <div class="status-card" onclick="filterByStatus('Pending')" style="cursor: pointer; background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); color: #d97706; border: 2px solid #fde68a;">
-            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Pending</div>
-            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-pending">0</div>
-          </div>
           <div class="status-card" onclick="filterByStatus('Booking')" style="cursor: pointer; background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%); color: #4f46e5; border: 2px solid #c7d2fe;">
             <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Booking</div>
             <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-booking">0</div>
+          </div>
+          <div class="status-card" onclick="filterByStatus('Pending')" style="cursor: pointer; background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); color: #d97706; border: 2px solid #fde68a;">
+            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Pending</div>
+            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-pending">0</div>
           </div>
           <div class="status-card" onclick="filterByStatus('Confirmed')" style="cursor: pointer; background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%); color: #059669; border: 2px solid #a7f3d0;">
             <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Confirmed</div>
@@ -686,7 +686,7 @@
       <!-- Bookings -->
       <section id="bookings" class="page">
         <h2 class="section-title">Bookings</h2>
-        <p class="section-subtitle">All confirmed bookings</p>
+        <p class="section-subtitle" id="bookings-subtitle">All confirmed bookings</p>
         <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
           <input type="text" id="search-box" placeholder="Search customer name or phone..." 
             oninput="renderBookings()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
@@ -930,6 +930,7 @@
     const EXP_KEY = 'cuciSeatAdmin.expenses.v1';
     const SVC_KEY = 'cuciSeatAdmin.services.v1';
     let state = { bookings: [], expenses: [], services: {} };
+    let currentStatusFilter = null;  // Track which status is being filtered
     let currentReceiptId = null;
     let calMonth = new Date();
     let finChart = null, finPie = null;
@@ -1368,6 +1369,15 @@
     // Bookings
     function renderBookings() {
       const search = (document.getElementById('search-box')?.value || '').toLowerCase();
+      
+      // If no search and coming from normal render (not filter), reset the subtitle
+      if (!search && currentStatusFilter === null) {
+        const subtitle = document.getElementById('bookings-subtitle');
+        if (subtitle) {
+          subtitle.textContent = 'All confirmed bookings';
+        }
+      }
+      
       let bookings = state.bookings.filter(b => b.status !== 'Enquiry');
       bookings = bookings.sort((a, b) => b.id - a.id);  // Latest first
       if (search) {
@@ -1772,6 +1782,26 @@
       
       // Navigate to bookings page
       goToPage('bookings');
+      
+      // Update filter tracking
+      currentStatusFilter = status;
+      
+      // Update subtitle based on status
+      const subtitles = {
+        'Enquiry': 'Customers from online form. Send deposit & convert to booking.',
+        'Booking': 'Customers with deposit paid. Ready for service.',
+        'Pending': 'Waiting for deposit payment or confirmation.',
+        'Confirmed': 'Confirmed bookings.',
+        'Postponed': 'Postponed bookings.',
+        'Completed': 'Completed services.',
+        'Cancelled': 'Cancelled bookings.',
+        'No-Show': 'No-show customers.'
+      };
+      
+      const subtitle = document.getElementById('bookings-subtitle');
+      if (subtitle) {
+        subtitle.textContent = subtitles[status] || status + ' bookings';
+      }
       
       // Filter and display
       let bookings;
