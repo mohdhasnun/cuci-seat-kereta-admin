@@ -991,6 +991,8 @@
         } else {
           goToPage('dashboard');
         }
+        // Render after page is set
+        renderAll();
       }, 100);
     }
 
@@ -1023,7 +1025,7 @@
         if (ss) state.services = JSON.parse(ss) || {};
         if (!Object.keys(state.services).length) initServices();
       } catch (e) { console.error('cache services parse', e); initServices(); }
-      renderAll();
+      // Don't render here - let initApp handle page restoration first
 
       // 2) Overlay live data from Firebase
       if (fbReady()) {
@@ -1032,6 +1034,7 @@
           state.bookings = bSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           localStorage.setItem(STORE_KEY, JSON.stringify({ bookings: state.bookings }));
           console.log('✅ Loaded', state.bookings.length, 'bookings from Firebase');
+          renderAll(); // Refresh after Firebase update
         } catch (err) { console.error('Firebase bookings load failed (keeping cache):', err); }
         try {
           const eSnap = await firebase.firestore().collection('expenses').get();
