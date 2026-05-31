@@ -639,9 +639,7 @@
             <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-noshow">0</div>
           </div>
         </div>
-      </section>
 
-      <!-- Enquiries -->
         <p class="section-subtitle">Business overview & quick stats</p>
 
         <div class="kpi-grid">
@@ -676,8 +674,9 @@
             <div style="font-size: 11px; color: #999; margin-top: 5px;">Revenue minus costs</div>
           </div>
         </div>
+      </section>
 
-        <h3 style="font-size: 16px; font-weight: 600; margin: 30px 0 12px; color: #0f2044;">Booking Status</h3>
+      <!-- Enquiries -->
       <section id="enquiries" class="page">
         <h2 class="section-title">Enquiries Form</h2>
         <p class="section-subtitle">Customers from online form. Send deposit & convert to booking.</p>
@@ -1348,6 +1347,24 @@
       document.getElementById('enquiries-list').innerHTML = html;
     }
 
+    // Format date: YYYY-MM-DD → dd/mm/yy
+    function formatDateCard(dateStr) {
+      if (!dateStr) return '';
+      const [year, month, day] = dateStr.split('-');
+      const yy = year.slice(-2);
+      return `${day}/${month}/${yy}`;
+    }
+
+    // Format time: 13:00 → 1:00pm
+    function formatTimeCard(timeStr) {
+      if (!timeStr) return '';
+      const [hours, mins] = timeStr.split(':');
+      const h = parseInt(hours);
+      const period = h >= 12 ? 'pm' : 'am';
+      const h12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+      return `${h12}:${mins}${period}`;
+    }
+
     // Bookings
     function renderBookings() {
       const search = (document.getElementById('search-box')?.value || '').toLowerCase();
@@ -1364,7 +1381,7 @@
               <span class="card-badge badge-confirmed">${b.status}</span>
               <div class="card-name">${b.name}</div>
             </div>
-            <div class="card-date">${b.date} ${b.time || ''}</div>
+            <div class="card-date" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 13px;">${formatDateCard(b.date)} ${b.time ? formatTimeCard(b.time) : ""}</div>
           </div>
           <div class="card-detail-box">
             <div class="detail-row">
@@ -1774,7 +1791,7 @@
               <span class="card-badge badge-confirmed">${b.status}</span>
               <div class="card-name">${b.name}</div>
             </div>
-            <div class="card-date">${b.date} ${b.time || ''}</div>
+            <div class="card-date" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 13px;">${formatDateCard(b.date)} ${b.time ? formatTimeCard(b.time) : ""}</div>
           </div>
           <div class="card-detail-box">
             <div class="detail-row">
