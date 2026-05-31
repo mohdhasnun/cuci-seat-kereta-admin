@@ -1771,6 +1771,7 @@
               <div class="detail-label">📊 Status:</div>
               <select onchange="updateStatus('${b.id}', this.value)" style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
                 <option value="Enquiry" ${b.status === 'Enquiry' ? 'selected' : ''}>Enquiry</option>
+                <option value="Booking" ${b.status === 'Booking' ? 'selected' : ''}>Booking</option>
                 <option value="Pending" ${b.status === 'Pending' ? 'selected' : ''}>Pending</option>
                 <option value="Confirmed" ${b.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
                 <option value="Postponed" ${b.status === 'Postponed' ? 'selected' : ''}>Postponed</option>
