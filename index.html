@@ -269,7 +269,170 @@
       font-family: inherit;
     }
 
-    /* Receipt */
+    /* Service checkboxes styling */
+    #services-checkboxes {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+    .service-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 8px;
+      border-bottom: 1px solid #f5f5f5;
+      gap: 10px;
+    }
+    .service-item:last-child {
+      border-bottom: none;
+    }
+    .service-checkbox {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      flex-shrink: 0;
+      accent-color: #3b82f6;
+    }
+    .service-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex: 1;
+      cursor: pointer;
+      gap: 12px;
+      font-size: 14px;
+    }
+
+    /* Service items with price inputs */
+    .service-item-with-price {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 10px;
+      border-bottom: 1px solid #f0f0f0;
+      gap: 16px;
+    }
+    .service-item-with-price:last-child {
+      border-bottom: none;
+    }
+    .service-price-input {
+      font-family: inherit;
+    }
+    .service-price-input:focus {
+      outline: none;
+      border-color: #3b82f6 !important;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Professional Booking Form */
+    .booking-form {
+      display: grid;
+      gap: 0;
+      background: white;
+      border-radius: 0;
+    }
+    .form-section {
+      padding: 20px;
+      border-bottom: 1px solid #e5e7eb;
+      background: white;
+    }
+    .form-section:first-of-type {
+      border-radius: 12px 12px 0 0;
+    }
+    .form-section:last-of-type {
+      border-bottom: none;
+      border-radius: 0 0 12px 12px;
+    }
+    .form-section-header {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f2044;
+      margin: 0 0 16px 0;
+      padding: 0;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .form-row:last-child {
+      margin-bottom: 0;
+    }
+    .form-col {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-col label {
+      font-weight: 600;
+      font-size: 14px;
+      color: #0f2044;
+    }
+    .form-col input,
+    .form-col select {
+      padding: 11px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+    }
+    .form-col input:focus,
+    .form-col select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .booking-form label {
+      font-weight: 600;
+      color: #0f2044;
+      font-size: 14px;
+    }
+    .booking-form textarea {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    /* Price Summary Box */
+    .price-summary {
+      background: white;
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+    }
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      font-size: 14px;
+    }
+    .price-label {
+      font-weight: 600;
+      color: #475569;
+    }
+    .price-value {
+      font-weight: 700;
+      color: #10b981;
+      font-size: 16px;
+    }
+
+    @media (max-width: 640px) {
+      .form-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+    }
     .receipt {
       background: white;
       padding: 20px;
@@ -535,48 +698,100 @@
       <section id="add-booking" class="page">
         <h2 class="section-title">Add Booking</h2>
         <p class="section-subtitle">Create new booking record</p>
-        <form onsubmit="saveBooking(event)" class="form-group">
-          <div>
-            <label>Customer Name *</label>
-            <input type="text" id="name" placeholder="Full name" required>
+        <form onsubmit="saveBooking(event)" class="booking-form">
+          
+          <!-- Your Details -->
+          <div class="form-section">
+            <h3 class="form-section-header">👤 Your Details</h3>
+            <div class="form-row">
+              <div class="form-col">
+                <label>Customer Name *</label>
+                <input type="text" id="name" placeholder="e.g. Ahmad Ali" required>
+              </div>
+              <div class="form-col">
+                <label>Phone Number *</label>
+                <input type="tel" id="phone" placeholder="e.g. 011-2345 6789" required>
+              </div>
+            </div>
           </div>
-          <div>
-            <label>Phone Number *</label>
-            <input type="tel" id="phone" placeholder="Phone" required>
+
+          <!-- Your Vehicle -->
+          <div class="form-section">
+            <h3 class="form-section-header">🚗 Your Vehicle</h3>
+            <div class="form-row">
+              <div class="form-col">
+                <label>Car Model *</label>
+                <input type="text" id="car" placeholder="e.g. Perodua Myvi, Honda City" required>
+              </div>
+              <div class="form-col">
+                <label>Plate Number</label>
+                <input type="text" id="plate" placeholder="e.g. WXY 1234">
+              </div>
+            </div>
+
+            <!-- Date & Time (Below Vehicle Details) -->
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+              <div class="form-row">
+                <div class="form-col">
+                  <label>Date *</label>
+                  <input type="date" id="date" required>
+                </div>
+                <div class="form-col">
+                  <label>Time *</label>
+                  <select id="time" required>
+                    <option value="">-- Select Time --</option>
+                  </select>
+                </div>
+              </div>
+            </div>
           </div>
-          <div>
-            <label>Car Model *</label>
-            <input type="text" id="car" placeholder="e.g., Toyota Vios" required>
+
+          <!-- Services with Individual Pricing -->
+          <div class="form-section">
+            <h3 class="form-section-header">✨ Services & Pricing <span style="color: #ef4444;">*</span></h3>
+            <p style="font-size: 12px; color: #666; margin-bottom: 12px;">Check services + enter price for each (includes all costs)</p>
+            <div id="services-checkboxes">
+              <!-- populated by JS with price inputs -->
+            </div>
+            
+            <!-- Price Summary (blue box) -->
+            <div style="background: linear-gradient(135deg, #f0f9ff 0%, #f5fbff 100%); border: 2px solid #3b82f6; padding: 16px; border-radius: 8px; margin-top: 16px;">
+              <div style="display: grid; gap: 12px; font-size: 14px;">
+                <!-- Total -->
+                <div style="display: flex; justify-content: space-between; padding-bottom: 12px; border-bottom: 2px solid #3b82f6;">
+                  <span style="font-weight: 700; color: #0f2044; font-size: 16px;">Total Service:</span>
+                  <span style="font-weight: 700; color: #10b981; font-size: 18px;" id="service-total">RM 0.00</span>
+                </div>
+                
+                <!-- Deposit -->
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                  <label style="font-weight: 600; color: #0f2044;">Deposit Received (RM):</label>
+                  <input type="number" id="deposit" placeholder="0" min="0" step="0.01" 
+                    onchange="calculateBalanceDue()" 
+                    oninput="calculateBalanceDue()"
+                    style="width: 100px; padding: 8px 10px; border: 1px solid #3b82f6; border-radius: 6px; text-align: right; font-weight: 600; background: white;">
+                </div>
+                
+                <!-- Balance Due -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 2px solid #3b82f6;">
+                  <span style="font-weight: 700; color: #0f2044; font-size: 16px;">Balance Due:</span>
+                  <span style="font-weight: 700; color: #ef4444; font-size: 18px;" id="balance-display">RM 0.00</span>
+                </div>
+              </div>
+            </div>
+            
+            <input type="hidden" id="price" value="0">
+            <input type="hidden" id="material" value="0">
+            <input type="hidden" id="balance-due" value="0">
           </div>
-          <div>
-            <label>Plate Number</label>
-            <input type="text" id="plate" placeholder="e.g., ABC 1234">
+
+          <!-- Notes Only -->
+          <div class="form-section">
+            <h3 class="form-section-header">📝 Notes</h3>
+            <textarea id="notes" placeholder="Any special requests or notes..." style="height: 80px; width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;"></textarea>
           </div>
-          <div>
-            <label>Service *</label>
-            <input type="text" id="service" placeholder="Service description" required>
-          </div>
-          <div>
-            <label>Date *</label>
-            <input type="date" id="date" required>
-          </div>
-          <div>
-            <label>Time</label>
-            <input type="time" id="time">
-          </div>
-          <div>
-            <label>Price (RM) *</label>
-            <input type="number" id="price" placeholder="0" required>
-          </div>
-          <div>
-            <label>Material Cost (RM)</label>
-            <input type="number" id="material" placeholder="0">
-          </div>
-          <div>
-            <label>Notes</label>
-            <textarea id="notes" placeholder="Any notes..." style="height: 80px;"></textarea>
-          </div>
-          <button type="submit" class="btn btn-whatsapp">Save Booking</button>
+
+          <button type="submit" class="btn btn-whatsapp">✅ Save Booking</button>
         </form>
       </section>
 
@@ -644,6 +859,11 @@
         </div>
 
         <div class="fin-card">
+          <h3 style="font-size:15px;font-weight:700;color:#0f2044;margin-bottom:12px;">💰 Service Price List</h3>
+          <div id="service-prices-list" style="max-height:300px;overflow-y:auto;"></div>
+        </div>
+
+        <div class="fin-card">
           <h3 style="font-size:15px;font-weight:700;color:#0f2044;margin-bottom:12px;">+ Add Expense</h3>
           <form onsubmit="saveExpense(event)" class="form-group">
             <div>
@@ -708,10 +928,34 @@
   <script>
     const STORE_KEY = 'cuciSeatAdmin.bookings.v1';
     const EXP_KEY = 'cuciSeatAdmin.expenses.v1';
-    let state = { bookings: [], expenses: [] };
+    const SVC_KEY = 'cuciSeatAdmin.services.v1';
+    let state = { bookings: [], expenses: [], services: {} };
     let currentReceiptId = null;
     let calMonth = new Date();
     let finChart = null, finPie = null;
+
+    // Service list
+    const DEFAULT_SERVICES = [
+      'Cuci Semua Seat (Tanpa Buka Seat)',
+      'Cuci Semua Seat (Buka Seat)',
+      'Leather Seat Cleaning (Tanpa Buka Seat)',
+      'Leather Seat Cleaning (Buka Seat)',
+      'Cuci Satu Seat Sahaja (Tanpa Buka Seat)',
+      'Cuci Satu Seat Sahaja (Buka Seat)',
+      'Cuci Bumbung Kereta',
+      'Cuci Carpet Lantai',
+      'Cuci Carpet Lantai (Satu Bahagian Sahaja)',
+      'Cuci Carpet Kaki',
+      'Cuci Dashboard & Console Tengah',
+      'Cuci Door Panel',
+      'Cuci Seat Belt',
+      'Cuci Boot Belakang',
+      'Cuci Frame Body Kereta',
+      'Interior Wax',
+      'Odor Treatment',
+      'Sanitize Dalaman Kereta',
+      'Steam Cleaning (For Deep Cleaning)'
+    ];
 
     // PIN
     function checkPIN() {
@@ -763,7 +1007,7 @@
 
     // Load: show cached data instantly, then refresh from Firebase
     async function loadData() {
-      // 1) Seed from localStorage first so dashboard is never empty
+      // 1) Seed from localStorage first
       try {
         const s = localStorage.getItem(STORE_KEY);
         if (s) { const p = JSON.parse(s); state.bookings = Array.isArray(p) ? p : (p.bookings || []); }
@@ -772,9 +1016,14 @@
         const se = localStorage.getItem(EXP_KEY);
         if (se) { const p = JSON.parse(se); state.expenses = Array.isArray(p) ? p : (p.expenses || []); }
       } catch (e) { console.error('cache expenses parse', e); }
+      try {
+        const ss = localStorage.getItem(SVC_KEY);
+        if (ss) state.services = JSON.parse(ss) || {};
+        if (!Object.keys(state.services).length) initServices();
+      } catch (e) { console.error('cache services parse', e); initServices(); }
       renderAll();
 
-      // 2) Overlay live data from Firebase (each collection independent)
+      // 2) Overlay live data from Firebase
       if (fbReady()) {
         try {
           const bSnap = await firebase.firestore().collection('bookings').get();
@@ -788,15 +1037,33 @@
           localStorage.setItem(EXP_KEY, JSON.stringify({ expenses: state.expenses }));
           console.log('✅ Loaded', state.expenses.length, 'expenses from Firebase');
         } catch (err) { console.error('Firebase expenses load failed (keeping cache):', err); }
+        try {
+          const docSnap = await firebase.firestore().collection('config').doc('serviceprices').get();
+          if (docSnap.exists) {
+            state.services = docSnap.data() || {};
+            localStorage.setItem(SVC_KEY, JSON.stringify(state.services));
+          }
+        } catch (err) { console.error('Firebase services load failed (keeping cache):', err); }
         renderAll();
       } else {
         console.log('Firebase not available — using local cache only');
       }
     }
 
+    function initServices() {
+      state.services = {};
+      DEFAULT_SERVICES.forEach(svc => { state.services[svc] = 0; });
+      persistServices();
+    }
+
     function persistLocal() {
       localStorage.setItem(STORE_KEY, JSON.stringify({ bookings: state.bookings }));
       localStorage.setItem(EXP_KEY, JSON.stringify({ expenses: state.expenses }));
+    }
+
+    function persistServices() {
+      localStorage.setItem(SVC_KEY, JSON.stringify(state.services));
+      fbSet('config', 'serviceprices', state.services);
     }
 
     // Navigation
@@ -813,19 +1080,135 @@
       window.scrollTo(0, 0);
     }
 
+    // Auto-fill price when service is selected
+    function populateServiceCheckboxes() {
+      const container = document.getElementById('services-checkboxes');
+      if (!container || container.children.length > 0) return;
+      container.innerHTML = DEFAULT_SERVICES.map((svc, idx) => {
+        return `<div class="service-item" key="${idx}">
+          <input type="checkbox" value="${svc}" class="service-checkbox" id="svc_${idx}" />
+          <label for="svc_${idx}" class="service-label">
+            <span class="service-name">${svc}</span>
+          </label>
+        </div>`;
+      }).join('');
+    }
+
+    function populateServiceCheckboxes() {
+      const container = document.getElementById('services-checkboxes');
+      if (!container || container.children.length > 0) return;
+      container.innerHTML = DEFAULT_SERVICES.map((svc, idx) => {
+        return `<div class="service-item-with-price">
+          <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+            <input type="checkbox" value="${svc}" class="service-checkbox" id="svc_${idx}" onchange="calculateServiceTotal()" />
+            <label for="svc_${idx}" style="cursor: pointer; flex: 1; font-weight: 500; color: #333;">${svc}</label>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; min-width: 130px;">
+            <span style="font-weight: 600; color: #666; font-size: 13px;">RM</span>
+            <input type="number" class="service-price-input" value="0" min="0" step="0.01" 
+              placeholder="0" id="price_${idx}" 
+              onchange="calculateServiceTotal()" 
+              oninput="calculateServiceTotal()"
+              style="width: 70px; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; text-align: right; font-weight: 600;" />
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function calculateBalanceDue() {
+      const serviceTotalText = document.getElementById('service-total').textContent;
+      const serviceTotal = parseFloat(serviceTotalText.replace('RM ', '').replace(',', '')) || 0;
+      const deposit = Number(document.getElementById('deposit').value) || 0;
+      const balanceDue = Math.max(0, serviceTotal - deposit);
+      
+      document.getElementById('balance-display').textContent = 'RM ' + balanceDue.toLocaleString('en-MY', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      document.getElementById('balance-due').value = balanceDue.toFixed(2);
+    }
+
+    function calculateServiceTotal() {
+      let serviceTotal = 0;
+      const checkedServices = [];
+      
+      document.querySelectorAll('.service-checkbox:checked').forEach(cb => {
+        const idx = cb.id.replace('svc_', '');
+        const priceInput = document.getElementById('price_' + idx);
+        const price = Number(priceInput.value) || 0;
+        serviceTotal += price;
+        checkedServices.push({service: cb.value, price: price});
+      });
+      
+      // Update display (no material calculation, just service total)
+      document.getElementById('service-total').textContent = 'RM ' + serviceTotal.toLocaleString('en-MY', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      
+      // Store in hidden field
+      document.getElementById('price').value = serviceTotal;
+      document.getElementById('material').value = 0; // Not used anymore
+      
+      // Auto-update balance due if deposit already filled
+      calculateBalanceDue();
+    }
+
+    function calculateMaterialAndTotal() {
+      // Alias for consistency
+      calculateServiceTotal();
+    }
+
+    function autoFillPrice() {
+      // no longer needed
+    }
+
+    function populateTimeDropdown() {
+      const select = document.getElementById('time');
+      if (!select || select.children.length > 1) return;
+      
+      const times = [];
+      for (let h = 9; h <= 18; h++) {
+        for (let m = 0; m < 60; m += 30) {
+          if (h === 18 && m > 0) break; // stop at 6:00 PM
+          const hour12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+          const ampm = h >= 12 ? 'PM' : 'AM';
+          const timeStr = String(hour12).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ' ' + ampm;
+          const timeVal = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+          times.push({val: timeVal, str: timeStr});
+        }
+      }
+      
+      times.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.val;
+        opt.textContent = t.str;
+        select.appendChild(opt);
+      });
+    }
+
     // Save booking
     function saveBooking(e) {
       e.preventDefault();
+      const checkboxes = document.querySelectorAll('.service-checkbox:checked');
+      const services = Array.from(checkboxes).map(cb => cb.value);
+      const serviceStr = services.join(' + ');
+      const price = Number(document.getElementById('price').value);
+      
+      // Update service prices if changed from stored defaults
+      services.forEach(svc => {
+        const currentPrice = state.services[svc] || 0;
+        // If user entered different total, don't update individual service prices
+        // (they did custom pricing for this booking)
+      });
+
       const booking = {
         id: Date.now(),
         name: document.getElementById('name').value,
         phone: document.getElementById('phone').value,
         car: document.getElementById('car').value,
         plate: document.getElementById('plate').value,
-        service: document.getElementById('service').value,
+        service: serviceStr,  // store as "Service 1 + Service 2 + Service 3"
+        services: services,   // also store array for processing
         date: document.getElementById('date').value,
         time: document.getElementById('time').value,
-        price: Number(document.getElementById('price').value),
+        price: price,
+        deposit: Number(document.getElementById('deposit').value) || 0,
+        balanceDue: Number(document.getElementById('balance-due').value) || 0,
         material: Number(document.getElementById('material').value) || 0,
         notes: document.getElementById('notes').value,
         status: 'Pending',
@@ -837,6 +1220,13 @@
       fbSet('bookings', booking.id, booking);
       renderAll();
       document.querySelector('#add-booking form').reset();
+      // Reset checkboxes and displays
+      document.querySelectorAll('.service-checkbox').forEach(cb => cb.checked = false);
+      document.querySelectorAll('.service-price-input').forEach(inp => inp.value = '0');
+      document.getElementById('service-total').textContent = 'RM 0.00';
+      document.getElementById('balance-display').textContent = 'RM 0.00';
+      document.getElementById('balance-due').value = '0.00';
+      document.getElementById('material').value = 0;
       alert('✅ Booking saved!');
       goToPage('bookings');
     }
@@ -848,6 +1238,8 @@
       renderBookings();
       renderCalendar();
       renderFinance();
+      populateServiceCheckboxes();
+      populateTimeDropdown();
     }
 
     // Dashboard
@@ -1033,12 +1425,31 @@
         document.getElementById('phone').value = booking.phone;
         document.getElementById('car').value = booking.car;
         document.getElementById('plate').value = booking.plate || '';
-        document.getElementById('service').value = booking.service;
         document.getElementById('date').value = booking.date;
         document.getElementById('time').value = booking.time || '';
-        document.getElementById('price').value = booking.price;
-        document.getElementById('material').value = booking.material || 0;
+        document.getElementById('deposit').value = booking.deposit || 0;
         document.getElementById('notes').value = booking.notes || '';
+        
+        // Restore selected services and their prices
+        populateServiceCheckboxes();
+        populateTimeDropdown();
+        const services = booking.services || booking.service.split(' + ');
+        
+        // Check services and restore prices
+        services.forEach(svc => {
+          const idx = DEFAULT_SERVICES.indexOf(svc);
+          if (idx >= 0) {
+            document.getElementById('svc_' + idx).checked = true;
+            // For now, user will need to re-enter prices when editing
+          }
+        });
+        
+        // Recalculate from restored prices
+        setTimeout(() => {
+          calculateServiceTotal();
+          calculateBalanceDue();
+        }, 100);
+        
         state.bookings = state.bookings.filter(b => b.id != id);
         persistLocal();
         fbDelete('bookings', id);
@@ -1147,21 +1558,24 @@
                   <td style="padding: 10px 0;">${booking.service}</td>
                   <td style="padding: 10px 0; text-align: right; font-weight: 700;">RM${booking.price}</td>
                 </tr>
-                ${booking.material ? '<tr style="border-bottom: 1px solid #f0f0f0;"><td style="padding: 10px 0;">2</td><td style="padding: 10px 0;">Material Cost</td><td style="padding: 10px 0; text-align: right; font-weight: 700;">RM' + booking.material + '</td></tr>' : ''}
               </table>
             </div>
 
             <!-- Payment Summary -->
             <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 12px;">
               <div style="display: grid; grid-template-columns: 150px 1fr; gap: 10px;">
-                <div style="color: #666; font-weight: 600;">PAYMENT METHOD</div>
-                <div style="font-weight: 700;">TBD</div>
+                <div style="color: #666; font-weight: 600;">TOTAL</div>
+                <div style="font-weight: 700;">RM${booking.price}</div>
                 
-                <div style="color: #666; font-weight: 600;">PAYMENT STATUS</div>
-                <div style="font-weight: 700; color: #10b981;">${isComplete(booking) ? 'PAID' : 'PENDING'}</div>
+                ${booking.deposit ? '<div style="color: #666; font-weight: 600;">DEPOSIT RECEIVED</div><div style="font-weight: 700; color: #10b981;">- RM' + booking.deposit + '</div>' : ''}
                 
-                <div style="border-top: 2px solid #0f2044; padding-top: 10px; margin-top: 10px; color: #0f2044; font-weight: 700; font-size: 14px;">TOTAL</div>
-                <div style="border-top: 2px solid #0f2044; padding-top: 10px; margin-top: 10px; text-align: right; color: #0f2044; font-weight: 700; font-size: 16px;">RM${booking.price + (booking.material || 0)}</div>
+                <div style="border-top: 2px solid #0f2044; padding-top: 10px; margin-top: 10px; color: #0f2044; font-weight: 700; font-size: 14px;">BALANCE DUE</div>
+                <div style="border-top: 2px solid #0f2044; padding-top: 10px; margin-top: 10px; text-align: right; color: #0f2044; font-weight: 700; font-size: 16px;">RM${Math.max(0, booking.price - (booking.deposit || 0))}</div>
+                
+                <div style="color: #666; font-weight: 600; margin-top: 10px;">PAYMENT STATUS</div>
+                <div style="font-weight: 700; margin-top: 10px; ${booking.deposit >= booking.price ? "color: #10b981;" : (booking.deposit > 0 ? "color: #f59e0b;" : "color: #ef4444;")}">
+                  ${isComplete(booking) ? 'PAID' : (booking.deposit >= booking.price ? 'PAID' : (booking.deposit > 0 ? 'DEPOSIT RECEIVED, BALANCE DUE' : 'UNPAID'))}
+                </div>
               </div>
             </div>
 
@@ -1379,6 +1793,30 @@
       }
     }
 
+    function renderServicePrices() {
+      const list = document.getElementById('service-prices-list');
+      if (!list) return;
+      list.innerHTML = DEFAULT_SERVICES.map(svc => {
+        const price = state.services[svc] || 0;
+        return `<div class="fin-row">
+          <div style="font-weight:600;flex:1;min-width:0;">${svc}</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span style="color:#0f2044;font-weight:700;">RM</span>
+            <input type="number" value="${price}" min="0" step="0.01" 
+              style="width:70px;padding:6px;border:1px solid #ddd;border-radius:4px;text-align:right;"
+              onchange="updateServicePrice('${svc}', this.value)" />
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function updateServicePrice(service, price) {
+      const p = Number(price) || 0;
+      state.services[service] = p;
+      persistServices();
+      renderServicePrices();
+    }
+
     function renderFinance() {
       if (!document.getElementById('fin-revenue')) return;
       const exp = state.expenses || [];
@@ -1409,6 +1847,7 @@
         </div>`).join('') : '<div style="text-align:center;color:#94a3b8;padding:16px;">No expenses recorded yet</div>';
 
       renderFinCharts();
+      renderServicePrices();
     }
 
     function renderFinCharts() {
