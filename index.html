@@ -604,41 +604,6 @@
       <!-- Dashboard -->
       <section id="dashboard" class="page active">
         <h2 class="section-title">Dashboard</h2>
-        <p class="section-subtitle">Business overview & quick stats</p>
-
-        <div class="kpi-grid">
-          <div class="kpi-card" onclick="alert('Total Bookings: ' + state.bookings.length)">
-            <div class="kpi-icon">👥</div>
-            <div class="kpi-value" id="kpi-total">0</div>
-            <div class="kpi-label">Total Customers</div>
-            <div style="font-size: 11px; color: #999; margin-top: 5px;">All bookings</div>
-          </div>
-          <div class="kpi-card revenue" onclick="alert('Monthly Revenue: RM' + calculateRevenue())">
-            <div class="kpi-icon">💰</div>
-            <div class="kpi-value" id="kpi-revenue">RM0</div>
-            <div class="kpi-label">Total Revenue</div>
-            <div style="font-size: 11px; color: #999; margin-top: 5px;">Complete bookings only</div>
-          </div>
-          <div class="kpi-card cost" onclick="alert('Material Cost: RM' + calculateMaterialCost())">
-            <div class="kpi-icon">🔧</div>
-            <div class="kpi-value" id="kpi-material">RM0</div>
-            <div class="kpi-label">Material Cost</div>
-            <div style="font-size: 11px; color: #999; margin-top: 5px;">Complete bookings</div>
-          </div>
-          <div class="kpi-card overhead" onclick="alert('Ads + Overhead: RM0')">
-            <div class="kpi-icon">📢</div>
-            <div class="kpi-value" id="kpi-overhead">RM0</div>
-            <div class="kpi-label">Ads + Overhead</div>
-            <div style="font-size: 11px; color: #999; margin-top: 5px;">Current month</div>
-          </div>
-          <div class="kpi-card profit" onclick="alert('Net Profit: RM' + calculateProfit())">
-            <div class="kpi-icon">📈</div>
-            <div class="kpi-value" id="kpi-profit">RM0</div>
-            <div class="kpi-label">Net Profit</div>
-            <div style="font-size: 11px; color: #999; margin-top: 5px;">Revenue minus costs</div>
-          </div>
-        </div>
-
         <h3 style="font-size: 16px; font-weight: 600; margin: 30px 0 12px; color: #0f2044;">Booking Status</h3>
         <div class="status-grid-2">
           <div class="status-card" onclick="filterByStatus('Enquiry')" style="cursor: pointer; background: linear-gradient(135deg, #e9d5ff 0%, #f3e8ff 100%); color: #7c3aed; border: 2px solid #d8b4fe;">
@@ -677,6 +642,42 @@
       </section>
 
       <!-- Enquiries -->
+        <p class="section-subtitle">Business overview & quick stats</p>
+
+        <div class="kpi-grid">
+          <div class="kpi-card" onclick="alert('Total Bookings: ' + state.bookings.length)">
+            <div class="kpi-icon">👥</div>
+            <div class="kpi-value" id="kpi-total">0</div>
+            <div class="kpi-label">Total Customers</div>
+            <div style="font-size: 11px; color: #999; margin-top: 5px;">All bookings</div>
+          </div>
+          <div class="kpi-card revenue" onclick="alert('Monthly Revenue: RM' + calculateRevenue())">
+            <div class="kpi-icon">💰</div>
+            <div class="kpi-value" id="kpi-revenue">RM0</div>
+            <div class="kpi-label">Total Revenue</div>
+            <div style="font-size: 11px; color: #999; margin-top: 5px;">Complete bookings only</div>
+          </div>
+          <div class="kpi-card cost" onclick="alert('Material Cost: RM' + calculateMaterialCost())">
+            <div class="kpi-icon">🔧</div>
+            <div class="kpi-value" id="kpi-material">RM0</div>
+            <div class="kpi-label">Material Cost</div>
+            <div style="font-size: 11px; color: #999; margin-top: 5px;">Complete bookings</div>
+          </div>
+          <div class="kpi-card overhead" onclick="alert('Ads + Overhead: RM0')">
+            <div class="kpi-icon">📢</div>
+            <div class="kpi-value" id="kpi-overhead">RM0</div>
+            <div class="kpi-label">Ads + Overhead</div>
+            <div style="font-size: 11px; color: #999; margin-top: 5px;">Current month</div>
+          </div>
+          <div class="kpi-card profit" onclick="alert('Net Profit: RM' + calculateProfit())">
+            <div class="kpi-icon">📈</div>
+            <div class="kpi-value" id="kpi-profit">RM0</div>
+            <div class="kpi-label">Net Profit</div>
+            <div style="font-size: 11px; color: #999; margin-top: 5px;">Revenue minus costs</div>
+          </div>
+        </div>
+
+        <h3 style="font-size: 16px; font-weight: 600; margin: 30px 0 12px; color: #0f2044;">Booking Status</h3>
       <section id="enquiries" class="page">
         <h2 class="section-title">Enquiries Form</h2>
         <p class="section-subtitle">Customers from online form. Send deposit & convert to booking.</p>
@@ -990,6 +991,15 @@
       loadData();
       updateClock();
       setInterval(updateClock, 1000);
+      // Load saved page state (after a delay to ensure PAGE_NAV is defined)
+      setTimeout(() => {
+        const savedPage = localStorage.getItem('currentPage');
+        if (savedPage && document.getElementById(savedPage)) {
+          goToPage(savedPage);
+        } else {
+          goToPage('dashboard');
+        }
+      }, 100);
     }
 
     // Firebase helpers (best-effort, never block UI)
@@ -1076,6 +1086,7 @@
       if (PAGE_NAV[page] !== undefined && navItems[PAGE_NAV[page]]) {
         navItems[PAGE_NAV[page]].classList.add('active');
       }
+      localStorage.setItem('currentPage', page);  // Save current page
       renderAll();
       window.scrollTo(0, 0);
     }
@@ -1300,7 +1311,8 @@
 
     // Enquiries
     function renderEnquiries() {
-      const enquiries = state.bookings.filter(b => b.status === 'Enquiry');
+      let enquiries = state.bookings.filter(b => b.status === 'Enquiry');
+      enquiries = enquiries.sort((a, b) => b.id - a.id);  // Latest first
       const html = enquiries.length ? enquiries.map(e => `
         <div class="enquiry-card">
           <div class="card-header">
@@ -1340,6 +1352,7 @@
     function renderBookings() {
       const search = (document.getElementById('search-box')?.value || '').toLowerCase();
       let bookings = state.bookings.filter(b => b.status !== 'Enquiry');
+      bookings = bookings.sort((a, b) => b.id - a.id);  // Latest first
       if (search) {
         bookings = bookings.filter(b => b.name.toLowerCase().includes(search) || (b.phone || '').includes(search));
       }
@@ -1378,7 +1391,6 @@
                 <option value="Enquiry" ${b.status === 'Enquiry' ? 'selected' : ''}>Enquiry</option>
                 <option value="Booking" ${b.status === 'Booking' ? 'selected' : ''}>Booking</option>
                 <option value="Pending" ${b.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                <option value="Confirmed" ${b.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
                 <option value="Postponed" ${b.status === 'Postponed' ? 'selected' : ''}>Postponed</option>
                 <option value="Completed" ${b.status === 'Completed' || b.status === 'Complete' ? 'selected' : ''}>Completed</option>
                 <option value="Cancelled" ${b.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
@@ -1435,40 +1447,56 @@
 
       let msg = '';
 
-      if (booking.status === 'Enquiry' || booking.status === 'Pending' || booking.status === 'Booking') {
+      if (booking.status === 'Enquiry' || booking.status === 'Pending') {
         // First message: Send pricing + bank details for deposit
         const depositAmount = booking.deposit || (price * 0.3).toFixed(2);
         msg = `Hai ${name},\n\n` +
-              `Terima kasih atas tempahan servis anda. Berikut adalah butiran:\n\n` +
-              `━━━━━━━━━━━━━━━━━━━━━\n` +
-              `📅 Tarikh: ${formattedDate}\n` +
-              `🕐 Masa: ${formattedTime}\n` +
-              `🚗 Kenderaan: ${car} (${plate})\n` +
-              `✨ Servis: ${service}\n` +
-              `💵 Harga: RM${price}\n` +
-              `━━━━━━━━━━━━━━━━━━━━━\n\n` +
-              `💰 DEPOSIT DIPERLUKAN: RM${depositAmount}\n\n` +
-              `🏦 BANK DETAILS:\n` +
-              `Bank: *${bankName}*\n` +
-              `No. Akaun: *${bankAccount}*\n` +
-              `Nama: *${bankAccName}*\n\n` +
-              `Sila transfer deposit dan hantar bukti bayaran.\n` +
-              `Terima kasih!`;
-      } 
-      else if (booking.status === 'Confirmed') {
-        // Second message: Confirmation + slot confirmed
-        msg = `Alhamdulillah ${name},\n\n` +
-              `Deposit anda telah diterima. Tempahan anda sudah CONFIRMED! ✅\n\n` +
-              `━━━━━━━━━━━━━━━━━━━━━\n` +
-              `📅 Tarikh: ${formattedDate}\n` +
-              `🕐 Masa: ${formattedTime}\n` +
-              `🚗 Kenderaan: ${car} (${plate})\n` +
-              `✨ Servis: ${service}\n` +
-              `💵 Harga: RM${price}\n` +
-              `━━━━━━━━━━━━━━━━━━━━━\n\n` +
-              `Slot anda sudah ditempah. Kami akan melayan kenderaan anda pada tarikh dan masa yang telah ditetapkan.\n\n` +
-              `Jika ada pertanyaan, sila hubungi kami.\n` +
-              `Terima kasih!`;
+              `Berikut adalah butiran tempahan servis cuci kereta anda:\n` +
+              `─────────────────\n` +
+              `🚗 Vehicle   : ${car}\n` +
+              `🔢 No. Plat  : ${plate}\n` +
+              `💺 Servis    : ${service}\n` +
+              `📅 Tarikh    : ${formattedDate}\n` +
+              `🕐 Masa      : ${formattedTime}\n` +
+              `💳 Harga     : RM${price}\n` +
+              `─────────────────\n\n` +
+              `💰 MAKLUMAT DEPOSIT\n` +
+              `─────────────────\n` +
+              `⚠️ Deposit Diperlukan : RM${depositAmount}\n\n` +
+              `Sila transfer deposit ke:\n` +
+              `🏦 Bank     : ${bankName}\n` +
+              `👤 Nama     : ${bankAccName}\n` +
+              `🔢 Akaun    : ${bankAccount}\n\n` +
+              `Hantar bukti bayaran ke sini untuk kami sahkan slot anda.\n` +
+              `─────────────────\n\n` +
+              `Terima kasih kerana memilih perkhidmatan kami! 😊`;
+      }
+      else if (booking.status === 'Booking' || booking.status === 'Confirmed') {
+        // Booking confirmed: Deposit received message
+        const balanceDue = price - (booking.deposit || 0);
+        msg = `Hai ${name},\n\n` +
+              `Berikut adalah butiran tempahan servis anda:\n` +
+              `─────────────────\n` +
+              `🚗 Vehicle   : ${car}\n` +
+              `🔢 No. Plat  : ${plate}\n` +
+              `📱 Phone     : ${phone}\n` +
+              `💺 Servis    : ${service}\n` +
+              `📅 Tarikh    : ${formattedDate}\n` +
+              `🕐 Masa      : ${formattedTime}\n` +
+              `💳 Harga     : RM${price}\n` +
+              `─────────────────\n` +
+              `✅ Deposit diterima : RM${booking.deposit || 0}\n` +
+              `💵 Baki : RM${balanceDue} (dibayar selepas servis selesai)\n\n` +
+              `Sila pastikan anda hadir pada tarikh dan masa yang ditetapkan.\n` +
+              `─────────────────\n` +
+              `📍 Lokasi kami\n` +
+              `🗺️ Google Maps : https://maps.app.goo.gl/jRbBBuKDn7JsiBLy8\n` +
+              `🔵 Waze        : https://waze.com/ul/hw282cr7ky\n\n` +
+              `🏢 Cuci Seat Kereta:\n` +
+              `📞 Tel  : 017-699 3876\n` +
+              `🌐 Web  : cuciseatkereta.com\n` +
+              `─────────────────\n\n` +
+              `Terima kasih kerana memilih perkhidmatan kami! Jumpa nanti 😊`;
       }
       else if (booking.status === 'Completed' || booking.status === 'Complete') {
         // Third message: Service completed
@@ -1773,7 +1801,6 @@
                 <option value="Enquiry" ${b.status === 'Enquiry' ? 'selected' : ''}>Enquiry</option>
                 <option value="Booking" ${b.status === 'Booking' ? 'selected' : ''}>Booking</option>
                 <option value="Pending" ${b.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                <option value="Confirmed" ${b.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
                 <option value="Postponed" ${b.status === 'Postponed' ? 'selected' : ''}>Postponed</option>
                 <option value="Completed" ${b.status === 'Completed' || b.status === 'Complete' ? 'selected' : ''}>Completed</option>
                 <option value="Cancelled" ${b.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
