@@ -1278,6 +1278,7 @@
 
   <script>
     const STORE_KEY = 'cuciSeatKeretaAdmin.v1';
+    let db; // Firebase Firestore reference
     const statuses = ['Booking', 'Pending', 'Confirmed', 'Postponed', 'Complete', 'Cancelled'];
     const services = [
       'Cuci Seat (Tanpa Buka)',
@@ -2241,7 +2242,36 @@
       return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
     }
 
-    init();
+    // Initialize Firebase using Compat library
+    if (!window.firebase) {
+      const script1 = document.createElement('script');
+      script1.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';
+      
+      const script2 = document.createElement('script');
+      script2.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js';
+      script2.onload = function() {
+        firebase.initializeApp({
+          apiKey: 'AIzaSyDfXcqzo-UY8yB1ip3Gu9ekwbBSwb3H7G8',
+          authDomain: 'cuci-seat-kereta.firebaseapp.com',
+          projectId: 'cuci-seat-kereta',
+          storageBucket: 'cuci-seat-kereta.firebasestorage.app',
+          messagingSenderId: '1001122712482',
+          appId: '1:1001122712482:web:5452d31571af55b4ea00fb'
+        });
+        db = firebase.firestore();
+        console.log('✅ Firebase Compat initialized, db ready');
+        init();
+      };
+      
+      document.head.appendChild(script1);
+      setTimeout(function() {
+        document.head.appendChild(script2);
+      }, 500);
+    } else {
+      // Firebase already loaded
+      db = firebase.firestore();
+      init();
+    }
 
     // Live clock
     function updateClock() {
