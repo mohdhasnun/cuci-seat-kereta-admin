@@ -962,7 +962,19 @@
   </style>
 </head>
 <body>
-  <div class="app">
+  <!-- PIN Security Modal -->
+  <div id="pin-modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+    <div style="background: white; padding: 40px; border-radius: 16px; text-align: center; width: 90%; max-width: 350px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+      <div style="font-size: 48px; margin-bottom: 20px;">🔐</div>
+      <h2 style="margin: 0 0 10px 0; font-size: 24px; color: #0f1c35;">Admin Access</h2>
+      <p style="margin: 0 0 30px 0; color: #64748b; font-size: 14px;">Enter PIN to access dashboard</p>
+      <input type="password" id="pin-input" placeholder="Enter 6-digit PIN" style="width: 100%; padding: 12px; font-size: 18px; border: 2px solid #e4eaf2; border-radius: 8px; text-align: center; letter-spacing: 8px; font-weight: bold; margin-bottom: 20px;" maxlength="6" />
+      <button onclick="checkPIN()" style="width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;">Unlock</button>
+      <p style="margin: 15px 0 0 0; font-size: 12px; color: #64748b;">Default PIN: 123456</p>
+    </div>
+  </div>
+
+  <div class="app" id="app-main" style="display: none;">
     <aside class="side">
       <div class="side-inner">
         <div class="brand">
@@ -1411,12 +1423,13 @@
             // Save to localStorage
             localStorage.setItem(STORE_KEY, JSON.stringify(state));
           } catch (fbErr) {
-            console.log('Firebase load failed, using localStorage...');
+            console.error('❌ Firebase load error:', fbErr.message, fbErr.code);
             const saved = localStorage.getItem(STORE_KEY);
             if (saved) state = JSON.parse(saved);
           }
         } else {
           // Firebase not ready, use localStorage
+          console.log('Firebase not ready, using localStorage...');
           const saved = localStorage.getItem(STORE_KEY);
           if (saved) state = JSON.parse(saved);
         }
@@ -2241,6 +2254,31 @@
     function esc(value) {
       return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
     }
+
+    function checkPIN() {
+      const pin = document.getElementById('pin-input').value;
+      const correctPIN = '123456'; // Change this to your desired PIN
+      if (pin === correctPIN) {
+        document.getElementById('pin-modal').style.display = 'none';
+        document.getElementById('app-main').style.display = 'grid';
+      } else {
+        alert('PIN salah! Coba lagi.');
+        document.getElementById('pin-input').value = '';
+        document.getElementById('pin-input').focus();
+      }
+    }
+
+    // Allow Enter key to submit PIN
+    document.addEventListener('DOMContentLoaded', function() {
+      const pinInput = document.getElementById('pin-input');
+      if (pinInput) {
+        pinInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') checkPIN();
+        });
+        pinInput.focus();
+      }
+    });
+
 
     // Initialize Firebase using Compat library
     if (!window.firebase) {
