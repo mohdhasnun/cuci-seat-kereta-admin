@@ -645,13 +645,13 @@
             <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Enquiries</div>
             <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-enquiry">0</div>
           </div>
-          <div class="status-card" onclick="filterByStatus('Booking')" style="cursor: pointer; background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%); color: #4f46e5; border: 2px solid #c7d2fe;">
-            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Booking</div>
-            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-booking">0</div>
-          </div>
           <div class="status-card" onclick="filterByStatus('Pending')" style="cursor: pointer; background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); color: #d97706; border: 2px solid #fde68a;">
             <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Pending</div>
             <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-pending">0</div>
+          </div>
+          <div class="status-card" onclick="filterByStatus('Booking')" style="cursor: pointer; background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%); color: #4f46e5; border: 2px solid #c7d2fe;">
+            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Booking</div>
+            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-booking">0</div>
           </div>
           <div class="status-card" onclick="filterByStatus('Confirmed')" style="cursor: pointer; background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%); color: #059669; border: 2px solid #a7f3d0;">
             <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Confirmed</div>
@@ -1478,7 +1478,15 @@
       }
 
       // Open WhatsApp with message
-      const waUrl = 'https://wa.me/' + booking.phone.replace(/[^0-9]/g, '') + '?text=' + encodeURIComponent(msg);
+      // Format phone for WhatsApp (add country code if needed)
+      let waPhone = booking.phone.replace(/[^0-9]/g, '');  // Remove all non-digits
+      if (waPhone.startsWith('0')) {
+        waPhone = '60' + waPhone.substring(1);  // Replace leading 0 with 60
+      } else if (!waPhone.startsWith('60')) {
+        waPhone = '60' + waPhone;  // Add 60 if missing
+      }
+      
+      const waUrl = 'https://wa.me/' + waPhone + '?text=' + encodeURIComponent(msg);
       window.open(waUrl, '_blank');
     }
 
