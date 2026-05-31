@@ -1413,32 +1413,45 @@
       const plate = booking.plate || '';
       const service = booking.service;
       const price = booking.price;
-      const date = booking.date;
-      const time = booking.time;
-      const deposit = booking.deposit || 0;
       const bankName = 'Maybank';
       const bankAccount = '5521 8951 6033';
       const bankAccName = 'Northern Hope Enterprise';
 
+      // Format date: 2026-05-31 → 31/05/26
+      const dateObj = new Date(booking.date + 'T00:00:00');
+      const formattedDate = String(dateObj.getDate()).padStart(2, '0') + '/' + 
+                           String(dateObj.getMonth() + 1).padStart(2, '0') + '/' + 
+                           String(dateObj.getFullYear()).slice(-2);
+
+      // Format time: 13:00 → 1:00 PM
+      let formattedTime = booking.time;
+      if (booking.time && booking.time.includes(':')) {
+        const [hours, mins] = booking.time.split(':');
+        const h = parseInt(hours);
+        const period = h >= 12 ? 'PM' : 'AM';
+        const h12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+        formattedTime = h12 + ':' + mins + ' ' + period;
+      }
+
       let msg = '';
 
-      if (booking.status === 'Enquiry' || booking.status === 'Pending') {
+      if (booking.status === 'Enquiry' || booking.status === 'Pending' || booking.status === 'Booking') {
         // First message: Send pricing + bank details for deposit
-        msg = `Halo ${name},\n\n` +
+        const depositAmount = booking.deposit || (price * 0.3).toFixed(2);
+        msg = `Hai ${name},\n\n` +
               `Terima kasih atas tempahan servis anda. Berikut adalah butiran:\n\n` +
               `━━━━━━━━━━━━━━━━━━━━━\n` +
-              `📅 Tarikh: ${date}\n` +
-              `🕐 Masa: ${time}\n` +
+              `📅 Tarikh: ${formattedDate}\n` +
+              `🕐 Masa: ${formattedTime}\n` +
               `🚗 Kenderaan: ${car} (${plate})\n` +
               `✨ Servis: ${service}\n` +
               `💵 Harga: RM${price}\n` +
               `━━━━━━━━━━━━━━━━━━━━━\n\n` +
-              `💰 DEPOSIT DIPERLUKAN: 30%\n` +
-              `Jumlah Deposit: RM${(price * 0.3).toFixed(2)}\n\n` +
+              `💰 DEPOSIT DIPERLUKAN: RM${depositAmount}\n\n` +
               `🏦 BANK DETAILS:\n` +
-              `Bank: ${bankName}\n` +
-              `No. Akaun: ${bankAccount}\n` +
-              `Nama: ${bankAccName}\n\n` +
+              `Bank: *${bankName}*\n` +
+              `No. Akaun: *${bankAccount}*\n` +
+              `Nama: *${bankAccName}*\n\n` +
               `Sila transfer deposit dan hantar bukti bayaran.\n` +
               `Terima kasih!`;
       } 
@@ -1447,8 +1460,8 @@
         msg = `Alhamdulillah ${name},\n\n` +
               `Deposit anda telah diterima. Tempahan anda sudah CONFIRMED! ✅\n\n` +
               `━━━━━━━━━━━━━━━━━━━━━\n` +
-              `📅 Tarikh: ${date}\n` +
-              `🕐 Masa: ${time}\n` +
+              `📅 Tarikh: ${formattedDate}\n` +
+              `🕐 Masa: ${formattedTime}\n` +
               `🚗 Kenderaan: ${car} (${plate})\n` +
               `✨ Servis: ${service}\n` +
               `💵 Harga: RM${price}\n` +
@@ -1459,7 +1472,7 @@
       }
       else if (booking.status === 'Completed' || booking.status === 'Complete') {
         // Third message: Service completed
-        msg = `Halo ${name},\n\n` +
+        msg = `Hai ${name},\n\n` +
               `Servis kenderaan anda SUDAH SELESAI! 🚗✅\n\n` +
               `🚗 ${car} (${plate})\n` +
               `✨ Servis: ${service}\n\n` +
@@ -1468,11 +1481,11 @@
       }
       else {
         // Default message for other statuses
-        msg = `Halo ${name},\n\n` +
+        msg = `Hai ${name},\n\n` +
               `Status booking anda: ${booking.status}\n\n` +
-              `🚗 ${car}\n` +
+              `🚗 ${car} (${plate})\n` +
               `✨ ${service}\n` +
-              `📅 ${date} ${time}\n` +
+              `📅 ${formattedDate} ${formattedTime}\n` +
               `💵 RM${price}\n\n` +
               `Sila hubungi kami untuk maklumat lanjut.`;
       }
