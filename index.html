@@ -642,14 +642,22 @@
       const total = state.bookings.length;
       const enquiries = state.bookings.filter(b => b.status === 'Enquiry').length;
       const booking = state.bookings.filter(b => b.status === 'Booking').length;
+      
+      // Debug: log all statuses
+      const allStatuses = state.bookings.map(b => b.status);
+      console.log('All booking statuses:', allStatuses);
+      console.log('Total bookings:', total);
+      
       const thisMonth = state.bookings.filter(b => {
         const d = new Date(b.date);
         return d.getMonth() === new Date().getMonth() && d.getFullYear() === new Date().getFullYear();
       });
-      const revenue = thisMonth.filter(b => b.status === 'Completed').reduce((s, b) => s + (b.price || 0), 0);
+      const revenue = thisMonth.filter(b => b.status === 'Completed' || b.status === 'Complete').reduce((s, b) => s + (b.price || 0), 0);
       const material = thisMonth.reduce((s, b) => s + (b.material || 0), 0);
       const profit = revenue - material;
-      const completeCount = state.bookings.filter(b => b.status === 'Completed').length;
+      const completeCount = state.bookings.filter(b => b.status === 'Completed' || b.status === 'Complete').length;
+
+      console.log('Complete count:', completeCount);
 
       document.getElementById('kpi-total').textContent = total;
       document.getElementById('kpi-revenue').textContent = 'RM' + revenue.toLocaleString();
