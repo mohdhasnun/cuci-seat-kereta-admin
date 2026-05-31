@@ -1386,7 +1386,12 @@
             </div>
           </div>
           <div class="card-buttons">
-            <button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">💬 WhatsApp Confirm</button>
+            <button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">
+              ${b.status === 'Enquiry' || b.status === 'Pending' ? '💰 Send Pricing' : 
+                b.status === 'Confirmed' ? '✅ Send Confirmation' : 
+                b.status === 'Completed' || b.status === 'Complete' ? '🚗 Service Done' : 
+                '💬 WhatsApp'}
+            </button>
             <button class="btn btn-edit" onclick="editBooking('${b.id}')">✏️ Edit</button>
             <button class="btn btn-convert" onclick="showReceipt('${b.id}')">📄 Receipt</button>
             <button class="btn btn-secondary" onclick="deleteBooking('${b.id}')">🗑️ Delete</button>
@@ -1399,10 +1404,81 @@
     // Functions
     function sendWhatsApp(id) {
       const booking = state.bookings.find(b => b.id == id);
-      if (booking) {
-        const msg = `Hi ${booking.name}, here are your booking details: 🚗 ${booking.car} 💺 ${booking.service} 📅 ${booking.date} 💵 RM${booking.price}. Please confirm.`;
-        alert('WhatsApp message:\n\n' + msg);
+      if (!booking) return;
+
+      const name = booking.name;
+      const phone = booking.phone;
+      const car = booking.car;
+      const plate = booking.plate || '';
+      const service = booking.service;
+      const price = booking.price;
+      const date = booking.date;
+      const time = booking.time;
+      const deposit = booking.deposit || 0;
+      const bankName = 'Maybank';
+      const bankAccount = '5521 8951 6033';
+      const bankAccName = 'Northern Hope Enterprise';
+
+      let msg = '';
+
+      if (booking.status === 'Enquiry' || booking.status === 'Pending') {
+        // First message: Send pricing + bank details for deposit
+        msg = `Halo ${name},\n\n` +
+              `Terima kasih atas tempahan servis anda. Berikut adalah butiran:\n\n` +
+              `━━━━━━━━━━━━━━━━━━━━━\n` +
+              `📅 Tarikh: ${date}\n` +
+              `🕐 Masa: ${time}\n` +
+              `🚗 Kenderaan: ${car} (${plate})\n` +
+              `✨ Servis: ${service}\n` +
+              `💵 Harga: RM${price}\n` +
+              `━━━━━━━━━━━━━━━━━━━━━\n\n` +
+              `💰 DEPOSIT DIPERLUKAN: 30%\n` +
+              `Jumlah Deposit: RM${(price * 0.3).toFixed(2)}\n\n` +
+              `🏦 BANK DETAILS:\n` +
+              `Bank: ${bankName}\n` +
+              `No. Akaun: ${bankAccount}\n` +
+              `Nama: ${bankAccName}\n\n` +
+              `Sila transfer deposit dan hantar bukti bayaran.\n` +
+              `Terima kasih!`;
+      } 
+      else if (booking.status === 'Confirmed') {
+        // Second message: Confirmation + slot confirmed
+        msg = `Alhamdulillah ${name},\n\n` +
+              `Deposit anda telah diterima. Tempahan anda sudah CONFIRMED! ✅\n\n` +
+              `━━━━━━━━━━━━━━━━━━━━━\n` +
+              `📅 Tarikh: ${date}\n` +
+              `🕐 Masa: ${time}\n` +
+              `🚗 Kenderaan: ${car} (${plate})\n` +
+              `✨ Servis: ${service}\n` +
+              `💵 Harga: RM${price}\n` +
+              `━━━━━━━━━━━━━━━━━━━━━\n\n` +
+              `Slot anda sudah ditempah. Kami akan melayan kenderaan anda pada tarikh dan masa yang telah ditetapkan.\n\n` +
+              `Jika ada pertanyaan, sila hubungi kami.\n` +
+              `Terima kasih!`;
       }
+      else if (booking.status === 'Completed' || booking.status === 'Complete') {
+        // Third message: Service completed
+        msg = `Halo ${name},\n\n` +
+              `Servis kenderaan anda SUDAH SELESAI! 🚗✅\n\n` +
+              `🚗 ${car} (${plate})\n` +
+              `✨ Servis: ${service}\n\n` +
+              `Kenderaan anda sudah boleh diambil. Terima kasih telah memilih perkhidmatan kami!\n\n` +
+              `Kami harap anda berpuas hati. Jumpa lagi! 😊`;
+      }
+      else {
+        // Default message for other statuses
+        msg = `Halo ${name},\n\n` +
+              `Status booking anda: ${booking.status}\n\n` +
+              `🚗 ${car}\n` +
+              `✨ ${service}\n` +
+              `📅 ${date} ${time}\n` +
+              `💵 RM${price}\n\n` +
+              `Sila hubungi kami untuk maklumat lanjut.`;
+      }
+
+      // Open WhatsApp with message
+      const waUrl = 'https://wa.me/60176993876?text=' + encodeURIComponent(msg);
+      window.open(waUrl, '_blank');
     }
 
     function editPrice(id) {
