@@ -1393,12 +1393,13 @@
     function renderBookings() {
       const search = (document.getElementById('search-box')?.value || '').toLowerCase();
       
-      // If no search and coming from normal render (not filter), reset the subtitle
-      if (!search && currentStatusFilter === null) {
-        const subtitle = document.getElementById('bookings-subtitle');
-        if (subtitle) {
-          subtitle.textContent = 'All confirmed bookings';
-        }
+      // Reset filter if not coming from a status filter click
+      currentStatusFilter = null;
+      
+      // Update subtitle to default
+      const subtitle = document.getElementById('bookings-subtitle');
+      if (subtitle) {
+        subtitle.textContent = 'All confirmed bookings';
       }
       
       let bookings = state.bookings.filter(b => b.status !== 'Enquiry');
@@ -1650,7 +1651,16 @@
         booking.status = status;
         persistLocal();
         fbSet('bookings', booking.id, booking);
-        renderAll();
+        // Don't call renderAll() - just re-render the current section being viewed
+        // Get current page from DOM
+        const currentPage = document.querySelector('.page.active')?.id || 'dashboard';
+        if (currentPage === 'dashboard') {
+          updateDashboard(); // Only update KPI counts
+        } else if (currentPage === 'bookings') {
+          renderBookings(); // Only re-render bookings list
+        } else if (currentPage === 'enquiries') {
+          renderEnquiries(); // Only re-render enquiries list
+        }
       }
     }
 
@@ -1659,7 +1669,15 @@
         state.bookings = state.bookings.filter(b => b.id != id);
         persistLocal();
         fbDelete('bookings', id);
-        renderAll();
+        // Only re-render current section, don't renderAll
+        const currentPage = document.querySelector('.page.active')?.id || 'dashboard';
+        if (currentPage === 'dashboard') {
+          updateDashboard();
+        } else if (currentPage === 'bookings') {
+          renderBookings();
+        } else if (currentPage === 'enquiries') {
+          renderEnquiries();
+        }
       }
     }
 
