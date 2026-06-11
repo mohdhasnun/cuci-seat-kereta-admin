@@ -1528,29 +1528,35 @@
         return;
       }
 
-      const items = (booking.serviceItems && booking.serviceItems.length)
-        ? booking.serviceItems.map(it => '• ' + it.name + ' — ' + ((Number(it.price) || 0) > 0 ? 'RM' + it.price : 'PERCUMA')).join('\n')
-        : '• ' + (booking.service || '-');
+      const price = Number(booking.price) || 0;
+      const deposit = Number(booking.deposit) || 0;
+      const baki = price - deposit;
+      const line = '─────────────────';
 
-      let msg;
-      if (booking.status === 'Enquiry') {
-        msg =
-          'Hai ' + booking.name + '! 👋\n\n' +
-          'Terima kasih hubungi *Cuci Seat Kereta*. Berikut sebut harga untuk anda:\n\n' +
-          '🚗 Kenderaan: ' + booking.car + (booking.plate ? ' (' + booking.plate + ')' : '') + '\n' +
-          '🧾 Servis:\n' + items + '\n\n' +
-          '💵 *Jumlah: RM' + booking.price + '*\n\n' +
-          'Untuk tempah slot, mohon balas mesej ini & bayar deposit ya. Terima kasih!';
-      } else {
-        msg =
-          'Hai ' + booking.name + '! 👋\n\n' +
-          'Berikut pengesahan booking anda dengan *Cuci Seat Kereta*:\n\n' +
-          '🚗 Kenderaan: ' + booking.car + (booking.plate ? ' (' + booking.plate + ')' : '') + '\n' +
-          '📅 Tarikh: ' + formatDMY(booking.date) + (booking.time ? ' • ' + booking.time : '') + '\n' +
-          '🧾 Servis:\n' + items + '\n\n' +
-          '💵 *Jumlah: RM' + booking.price + '*\n\n' +
-          'Mohon sahkan booking ini ya. Terima kasih!';
-      }
+      const msg =
+        'Hai ' + booking.name + ',\n' +
+        'Berikut adalah butiran tempahan servis anda:\n' +
+        line + '\n' +
+        '🚗 Vehicle   : ' + booking.car + '\n' +
+        '🔢 No. Plat  : ' + (booking.plate || '-') + '\n' +
+        '📱 Phone     : ' + (booking.phone || '-') + '\n' +
+        '💺 Servis    : ' + (booking.service || '-') + '\n' +
+        '📅 Tarikh    : ' + formatDMY(booking.date) + '\n' +
+        '🕐 Masa      : ' + (booking.time || '-') + '\n' +
+        '💳 Harga     : RM' + price + '\n' +
+        line + '\n' +
+        '✅ Deposit diterima : RM' + deposit + '\n' +
+        '💵 Baki : RM' + baki + ' (dibayar selepas servis selesai)\n' +
+        'Sila pastikan anda hadir pada tarikh dan masa yang ditetapkan.\n' +
+        line + '\n' +
+        '📍 Lokasi kami\n' +
+        '🗺️ Google Maps : https://maps.app.goo.gl/jRbBBuKDn7JsiBLy8\n' +
+        '🔵 Waze        : https://waze.com/ul/hw282cr7ky\n' +
+        '🏢 Cuci Seat Kereta:\n' +
+        '📞 Tel  : 017-699 3876\n' +
+        '🌐 Web  : cuciseatkereta.com\n' +
+        line + '\n' +
+        'Terima kasih kerana memilih perkhidmatan kami! Jumpa nanti';
 
       window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
     }
