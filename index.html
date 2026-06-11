@@ -699,7 +699,11 @@
             <div class="form-row">
               <div>
                 <label>Date *</label>
-                <input type="date" id="date" required>
+                <div style="position:relative;">
+                  <input type="date" id="date" required onchange="syncDateDisplay()" onclick="try{this.showPicker()}catch(e){}"
+                    style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; z-index:2; margin:0; cursor:pointer;">
+                  <div id="date-display" style="padding:13px 14px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:16px; color:#cbd5e1; background:#fff; min-height:24px; display:flex; align-items:center;">dd/mm/yyyy</div>
+                </div>
               </div>
               <div>
                 <label>Time</label>
@@ -1052,6 +1056,21 @@
       return dd + '/' + mm + '/' + String(dt.getFullYear()).slice(2);
     }
 
+    // Show dd/mm/yyyy over the native date picker (which follows phone locale)
+    function syncDateDisplay() {
+      const inp = document.getElementById('date');
+      const disp = document.getElementById('date-display');
+      if (!inp || !disp) return;
+      if (inp.value && /^\d{4}-\d{2}-\d{2}/.test(inp.value)) {
+        const [y, m, d] = inp.value.split('-');
+        disp.textContent = d + '/' + m + '/' + y;
+        disp.style.color = '#0f2044';
+      } else {
+        disp.textContent = 'dd/mm/yyyy';
+        disp.style.color = '#cbd5e1';
+      }
+    }
+
     /* ====== SYNC STATUS & OFFLINE SAFETY ====== */
     function countPending() {
       const b = state.bookings.filter(x => x._synced === false).length;
@@ -1290,6 +1309,7 @@
       renderAll();
       document.querySelector('#add-booking form').reset();
       resetServiceRows();
+      syncDateDisplay();
 
       const synced = await fbSet('bookings', booking.id, booking);
       booking._synced = synced;
@@ -1500,6 +1520,7 @@
         document.getElementById('car').value = booking.car;
         document.getElementById('plate').value = booking.plate || '';
         document.getElementById('date').value = booking.date;
+        syncDateDisplay();
         document.getElementById('time').value = booking.time || '';
         document.getElementById('material').value = booking.material || 0;
         document.getElementById('notes').value = booking.notes || '';
