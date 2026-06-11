@@ -484,17 +484,13 @@
             <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Enquiries</div>
             <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-enquiry">0</div>
           </div>
-          <div class="status-card" onclick="filterByStatus('Booking')" style="cursor: pointer; background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%); color: #4f46e5; border: 2px solid #c7d2fe;">
-            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Booking</div>
-            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-booking">0</div>
-          </div>
           <div class="status-card" onclick="filterByStatus('Pending')" style="cursor: pointer; background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); color: #d97706; border: 2px solid #fde68a;">
             <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Pending</div>
             <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-pending">0</div>
           </div>
-          <div class="status-card" onclick="filterByStatus('Confirmed')" style="cursor: pointer; background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%); color: #059669; border: 2px solid #a7f3d0;">
-            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Confirmed</div>
-            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-confirmed">0</div>
+          <div class="status-card" onclick="filterByStatus('Booking')" style="cursor: pointer; background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%); color: #4f46e5; border: 2px solid #c7d2fe;">
+            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Booking</div>
+            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-booking">0</div>
           </div>
           <div class="status-card" onclick="filterByStatus('Postponed')" style="cursor: pointer; background: linear-gradient(135deg, #bfdbfe 0%, #eff6ff 100%); color: #0284c7; border: 2px solid #7dd3fc;">
             <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Postponed</div>
@@ -507,10 +503,6 @@
           <div class="status-card" onclick="filterByStatus('Cancelled')" style="cursor: pointer; background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%); color: #dc2626; border: 2px solid #fca5a5;">
             <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Cancelled</div>
             <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-cancelled">0</div>
-          </div>
-          <div class="status-card" onclick="filterByStatus('No-Show')" style="cursor: pointer; background: linear-gradient(135deg, #1f2937 0%, #374151 100%); color: white; border: 2px solid #4b5563;">
-            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">No-Show</div>
-            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-noshow">0</div>
           </div>
         </div>
       </section>
@@ -880,14 +872,18 @@
       document.getElementById('kpi-overhead').textContent = 'RM' + overhead.toLocaleString();
       document.getElementById('kpi-profit').textContent = 'RM' + profit.toLocaleString();
 
-      document.getElementById('status-enquiry').textContent = enquiries;
-      document.getElementById('status-booking').textContent = booking;
-      document.getElementById('status-pending').textContent = state.bookings.filter(b => b.status === 'Pending').length;
-      document.getElementById('status-confirmed').textContent = state.bookings.filter(b => b.status === 'Confirmed').length;
-      document.getElementById('status-postponed').textContent = state.bookings.filter(b => b.status === 'Postponed').length;
-      document.getElementById('status-complete').textContent = completeCount;
-      document.getElementById('status-cancelled').textContent = state.bookings.filter(b => b.status === 'Cancelled').length;
-      document.getElementById('status-noshow').textContent = state.bookings.filter(b => b.status === 'No-Show').length;
+      const statusEnquiry = document.getElementById('status-enquiry');
+      if (statusEnquiry) statusEnquiry.textContent = enquiries;
+      const statusBooking = document.getElementById('status-booking');
+      if (statusBooking) statusBooking.textContent = booking;
+      const statusPending = document.getElementById('status-pending');
+      if (statusPending) statusPending.textContent = state.bookings.filter(b => b.status === 'Pending').length;
+      const statusPostponed = document.getElementById('status-postponed');
+      if (statusPostponed) statusPostponed.textContent = state.bookings.filter(b => b.status === 'Postponed').length;
+      const statusComplete = document.getElementById('status-complete');
+      if (statusComplete) statusComplete.textContent = completeCount;
+      const statusCancelled = document.getElementById('status-cancelled');
+      if (statusCancelled) statusCancelled.textContent = state.bookings.filter(b => b.status === 'Cancelled').length;
     }
 
     function calculateRevenue() {
@@ -989,11 +985,10 @@
               <select onchange="updateStatus('${b.id}', this.value)" style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
                 <option value="Enquiry" ${b.status === 'Enquiry' ? 'selected' : ''}>Enquiry</option>
                 <option value="Pending" ${b.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                <option value="Confirmed" ${b.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
+                <option value="Booking" ${b.status === 'Booking' ? 'selected' : ''}>Booking</option>
                 <option value="Postponed" ${b.status === 'Postponed' ? 'selected' : ''}>Postponed</option>
                 <option value="Completed" ${b.status === 'Completed' || b.status === 'Complete' ? 'selected' : ''}>Completed</option>
                 <option value="Cancelled" ${b.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-                <option value="No-Show" ${b.status === 'No-Show' ? 'selected' : ''}>No-Show</option>
               </select>
             </div>
           </div>
@@ -1053,11 +1048,10 @@
     function convertToBooking(id) {
       const booking = state.bookings.find(b => b.id == id);
       if (booking) {
-        booking.status = 'Confirmed';
+        booking.status = 'Booking';
         persistLocal();
         fbSet('bookings', booking.id, booking);
-        renderAll();
-        goToPage('bookings');
+        updateDashboard();
       }
     }
 
@@ -1067,7 +1061,7 @@
         booking.status = status;
         persistLocal();
         fbSet('bookings', booking.id, booking);
-        renderAll();
+        updateDashboard();
       }
     }
 
@@ -1140,23 +1134,22 @@
             <!-- Service Details -->
             <div style="margin-bottom: 20px;">
               <div style="font-weight: 700; color: #0f2044; margin-bottom: 12px; font-size: 12px;">SERVICE DETAILS</div>
-              <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
-                <tr style="border-bottom: 1px solid #e0e0e0;">
-                  <td style="padding: 8px 0; font-weight: 600; color: #666; width: 30px;">NO</td>
-                  <td style="padding: 8px 0; font-weight: 600; color: #666;">DESCRIPTION</td>
-                  <td style="padding: 8px 0; font-weight: 600; color: #666; text-align: right; width: 80px;">PRICE</td>
-                </tr>
+              <div style="font-size: 11px;">
                 ${
                   booking.service.split('+').map((svc, idx) => 
-                    `<tr style="border-bottom: 1px solid #f0f0f0;">
-                      <td style="padding: 10px 0;">${idx + 1}</td>
-                      <td style="padding: 10px 0;">${svc.trim()}</td>
-                      ${idx === 0 ? `<td style="padding: 10px 0; text-align: right; font-weight: 700;">RM${booking.price}</td>` : '<td style="padding: 10px 0;"></td>'}
-                    </tr>`
+                    `<div style="display: grid; grid-template-columns: 30px 1fr 80px; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; align-items: center;">
+                      <div style="font-weight: 600;">${idx + 1}</div>
+                      <div>${svc.trim()}</div>
+                      <div style="text-align: right; font-weight: 600;">${idx === 0 ? 'RM' + booking.price : 'FOC'}</div>
+                    </div>`
                   ).join('')
                 }
-                ${booking.material ? '<tr style="border-bottom: 1px solid #f0f0f0;"><td style="padding: 10px 0;">Service Total</td><td style="padding: 10px 0;"></td><td style="padding: 10px 0; text-align: right; font-weight: 700;">RM' + booking.price + '</td></tr>' : ''}
-              </table>
+              </div>
+              <div style="display: grid; grid-template-columns: 30px 1fr 80px; gap: 10px; padding: 12px 0; border-top: 2px solid #0f2044; font-weight: 700; margin-top: 8px;">
+                <div></div>
+                <div style="text-align: left;">TOTAL</div>
+                <div style="text-align: right;">RM${booking.price}</div>
+              </div>
             </div>
 
             <!-- Payment Summary -->
@@ -1353,11 +1346,10 @@
               <select onchange="updateStatus('${b.id}', this.value)" style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
                 <option value="Enquiry" ${b.status === 'Enquiry' ? 'selected' : ''}>Enquiry</option>
                 <option value="Pending" ${b.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                <option value="Confirmed" ${b.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
+                <option value="Booking" ${b.status === 'Booking' ? 'selected' : ''}>Booking</option>
                 <option value="Postponed" ${b.status === 'Postponed' ? 'selected' : ''}>Postponed</option>
                 <option value="Completed" ${b.status === 'Completed' || b.status === 'Complete' ? 'selected' : ''}>Completed</option>
                 <option value="Cancelled" ${b.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-                <option value="No-Show" ${b.status === 'No-Show' ? 'selected' : ''}>No-Show</option>
               </select>
             </div>
           </div>
