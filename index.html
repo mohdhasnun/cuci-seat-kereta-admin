@@ -1000,6 +1000,7 @@
         const s = localStorage.getItem(STORE_KEY);
         if (s) { const p = JSON.parse(s); state.bookings = Array.isArray(p) ? p : (p.bookings || []); }
       } catch (e) { console.error('cache bookings parse', e); }
+      state.bookings.forEach(normalizeBooking); // fix legacy statuses in cache too
       try {
         const se = localStorage.getItem(EXP_KEY);
         if (se) { const p = JSON.parse(se); state.expenses = Array.isArray(p) ? p : (p.expenses || []); }
@@ -1011,6 +1012,8 @@
         try {
           const bSnap = await firebase.firestore().collection('bookings').get();
           const fbBookings = bSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), _synced: true }));
+          // Fix legacy records (e.g. status "Confirmed") so they appear & count correctly
+          fbBookings.forEach(b => { if (normalizeBooking(b)) fbSet('bookings', b.id, b); });
           const fbIds = new Set(fbBookings.map(b => String(b.id)));
 
           // Any local record NOT in Firebase = write yang gagal naik dulu.
@@ -1057,6 +1060,20 @@
       const dd = String(dt.getDate()).padStart(2, '0');
       const mm = String(dt.getMonth() + 1).padStart(2, '0');
       return dd + '/' + mm + '/' + String(dt.getFullYear()).slice(2);
+    }
+
+    // Normalize legacy records (old app versions) so they show & count correctly
+    const LEGACY_STATUS = { 'Confirmed': 'Booking', 'Complete': 'Completed', 'Cancel': 'Cancelled', 'Done': 'Completed', 'Paid': 'Completed' };
+    function normalizeBooking(b) {
+      let changed = false;
+      if (b.status && LEGACY_STATUS[b.status]) { b.status = LEGACY_STATUS[b.status]; changed = true; }
+      if (!b.status) { b.status = 'Pending'; changed = true; }
+      // old schema stored a `services` array of names instead of serviceItems
+      if ((!b.serviceItems || !b.serviceItems.length) && Array.isArray(b.services) && b.services.length && !b.service) {
+        b.service = b.services.join(' + ');
+        changed = true;
+      }
+      return changed;
     }
 
     // Show dd/mm/yyyy over the native date picker (which follows phone locale)
