@@ -703,7 +703,28 @@
               </div>
               <div>
                 <label>Time</label>
-                <input type="time" id="time">
+                <select id="time">
+                  <option value="">— Pilih masa —</option>
+                  <option value="9:00 AM">9:00 AM</option>
+                  <option value="9:30 AM">9:30 AM</option>
+                  <option value="10:00 AM">10:00 AM</option>
+                  <option value="10:30 AM">10:30 AM</option>
+                  <option value="11:00 AM">11:00 AM</option>
+                  <option value="11:30 AM">11:30 AM</option>
+                  <option value="12:00 PM">12:00 PM</option>
+                  <option value="12:30 PM">12:30 PM</option>
+                  <option value="1:00 PM">1:00 PM</option>
+                  <option value="1:30 PM">1:30 PM</option>
+                  <option value="2:00 PM">2:00 PM</option>
+                  <option value="2:30 PM">2:30 PM</option>
+                  <option value="3:00 PM">3:00 PM</option>
+                  <option value="3:30 PM">3:30 PM</option>
+                  <option value="4:00 PM">4:00 PM</option>
+                  <option value="4:30 PM">4:30 PM</option>
+                  <option value="5:00 PM">5:00 PM</option>
+                  <option value="5:30 PM">5:30 PM</option>
+                  <option value="6:00 PM">6:00 PM</option>
+                </select>
               </div>
             </div>
           </div>
@@ -1015,6 +1036,20 @@
     function persistLocal() {
       localStorage.setItem(STORE_KEY, JSON.stringify({ bookings: state.bookings }));
       localStorage.setItem(EXP_KEY, JSON.stringify({ expenses: state.expenses }));
+    }
+
+    // Format any date to dd/mm/yy for display (storage stays yyyy-mm-dd for sorting)
+    function formatDMY(d) {
+      if (!d) return '';
+      if (/^\d{4}-\d{2}-\d{2}/.test(d)) {
+        const [y, m, day] = d.slice(0, 10).split('-');
+        return day + '/' + m + '/' + y.slice(2);
+      }
+      const dt = new Date(d);
+      if (isNaN(dt)) return d;
+      const dd = String(dt.getDate()).padStart(2, '0');
+      const mm = String(dt.getMonth() + 1).padStart(2, '0');
+      return dd + '/' + mm + '/' + String(dt.getFullYear()).slice(2);
     }
 
     /* ====== SYNC STATUS & OFFLINE SAFETY ====== */
@@ -1348,7 +1383,7 @@
               <span class="card-badge badge-enquiry">ENQUIRY</span>
               <div class="card-name">${e.name}</div>
             </div>
-            <div class="card-date">${e.date}</div>
+            <div class="card-date">${formatDMY(e.date)}</div>
           </div>
           <div class="card-detail-box">
             <div class="detail-row">
@@ -1391,7 +1426,7 @@
               <span class="card-badge badge-confirmed">${b.status}</span>
               <div class="card-name">${b.name}</div>
             </div>
-            <div class="card-date">${b.date} ${b.time || ''}</div>
+            <div class="card-date">${formatDMY(b.date)} ${b.time || ''}</div>
           </div>
           <div class="card-detail-box">
             <div class="detail-row">
@@ -1439,7 +1474,7 @@
     function sendWhatsApp(id) {
       const booking = state.bookings.find(b => b.id == id);
       if (booking) {
-        const msg = `Hi ${booking.name}, here are your booking details: 🚗 ${booking.car} 💺 ${booking.service} 📅 ${booking.date} 💵 RM${booking.price}. Please confirm.`;
+        const msg = `Hi ${booking.name}, here are your booking details: 🚗 ${booking.car} 💺 ${booking.service} 📅 ${formatDMY(booking.date)} 💵 RM${booking.price}. Please confirm.`;
         alert('WhatsApp message:\n\n' + msg);
       }
     }
@@ -1523,7 +1558,7 @@
       if (booking) {
         const receiptNo = 'RCP' + String(booking.id).slice(-6);
         const today = new Date();
-        const date = today.toLocaleDateString('en-MY');
+        const date = formatDMY(today);
         const time = today.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' });
 
         const receiptHTML = `
@@ -1778,7 +1813,7 @@
               <span class="card-badge badge-confirmed">${b.status}</span>
               <div class="card-name">${b.name}</div>
             </div>
-            <div class="card-date">${b.date} ${b.time || ''}</div>
+            <div class="card-date">${formatDMY(b.date)} ${b.time || ''}</div>
           </div>
           <div class="card-detail-box">
             <div class="detail-row">
@@ -1946,7 +1981,7 @@
           <div>
             <span class="fin-cat-badge" style="background:${CAT_COLORS[e.category] || '#64748b'};color:#fff;">${e.category}</span>
             <div style="font-weight:600;color:#0f2044;margin-top:4px;">${e.desc}</div>
-            <div style="font-size:11px;color:#94a3b8;">${e.date}</div>
+            <div style="font-size:11px;color:#94a3b8;">${formatDMY(e.date)}</div>
           </div>
           <div style="text-align:right;display:flex;align-items:center;gap:10px;">
             <div style="font-weight:700;color:#dc2626;">RM${(e.amount||0).toLocaleString()}</div>
