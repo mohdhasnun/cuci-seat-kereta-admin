@@ -1511,12 +1511,48 @@
     }
 
     // Functions
+    // Format MY phone to wa.me international format (60...)
+    function waPhone(phone) {
+      let p = (phone || '').replace(/[^0-9]/g, '');
+      if (p.startsWith('0')) p = '60' + p.slice(1);
+      else if (!p.startsWith('60')) p = '60' + p;
+      return p;
+    }
+
     function sendWhatsApp(id) {
       const booking = state.bookings.find(b => b.id == id);
-      if (booking) {
-        const msg = `Hi ${booking.name}, here are your booking details: 🚗 ${booking.car} 💺 ${booking.service} 📅 ${formatDMY(booking.date)} 💵 RM${booking.price}. Please confirm.`;
-        alert('WhatsApp message:\n\n' + msg);
+      if (!booking) return;
+      const phone = waPhone(booking.phone);
+      if (phone.length < 10) {
+        alert('⚠️ Nombor telefon customer tak sah atau kosong. Sila edit booking & isi nombor dulu.');
+        return;
       }
+
+      const items = (booking.serviceItems && booking.serviceItems.length)
+        ? booking.serviceItems.map(it => '• ' + it.name + ' — ' + ((Number(it.price) || 0) > 0 ? 'RM' + it.price : 'PERCUMA')).join('\n')
+        : '• ' + (booking.service || '-');
+
+      let msg;
+      if (booking.status === 'Enquiry') {
+        msg =
+          'Hai ' + booking.name + '! 👋\n\n' +
+          'Terima kasih hubungi *Cuci Seat Kereta*. Berikut sebut harga untuk anda:\n\n' +
+          '🚗 Kenderaan: ' + booking.car + (booking.plate ? ' (' + booking.plate + ')' : '') + '\n' +
+          '🧾 Servis:\n' + items + '\n\n' +
+          '💵 *Jumlah: RM' + booking.price + '*\n\n' +
+          'Untuk tempah slot, mohon balas mesej ini & bayar deposit ya. Terima kasih!';
+      } else {
+        msg =
+          'Hai ' + booking.name + '! 👋\n\n' +
+          'Berikut pengesahan booking anda dengan *Cuci Seat Kereta*:\n\n' +
+          '🚗 Kenderaan: ' + booking.car + (booking.plate ? ' (' + booking.plate + ')' : '') + '\n' +
+          '📅 Tarikh: ' + formatDMY(booking.date) + (booking.time ? ' • ' + booking.time : '') + '\n' +
+          '🧾 Servis:\n' + items + '\n\n' +
+          '💵 *Jumlah: RM' + booking.price + '*\n\n' +
+          'Mohon sahkan booking ini ya. Terima kasih!';
+      }
+
+      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
     }
 
     function editPrice(id) {
