@@ -1084,7 +1084,7 @@
         const time = today.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' });
 
         const receiptHTML = `
-          <div style="max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; position: relative;">
+          <div id="receipt-printable" style="width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; position: relative;">
             <!-- Header -->
             <div style="background: linear-gradient(135deg, #0f2044 0%, #1a3a5c 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
               <div style="font-size: 20px; font-weight: 700;">Cuci Seat, Kusyen, Karpet Kereta</div>
@@ -1137,16 +1137,14 @@
               <div style="font-size: 11px;">
                 ${
                   booking.service.split('+').map((svc, idx) => 
-                    `<div style="display: grid; grid-template-columns: 30px 1fr 80px; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; align-items: center;">
+                    `<div style="display: grid; grid-template-columns: 30px 1fr; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; align-items: center;">
                       <div style="font-weight: 600;">${idx + 1}</div>
                       <div>${svc.trim()}</div>
-                      <div style="text-align: right; font-weight: 600;">${idx === 0 ? 'RM' + booking.price : 'FOC'}</div>
                     </div>`
                   ).join('')
                 }
               </div>
-              <div style="display: grid; grid-template-columns: 30px 1fr 80px; gap: 10px; padding: 12px 0; border-top: 2px solid #0f2044; font-weight: 700; margin-top: 8px;">
-                <div></div>
+              <div style="display: grid; grid-template-columns: 1fr 80px; gap: 10px; padding: 12px 0; border-top: 2px solid #0f2044; font-weight: 700; margin-top: 8px;">
                 <div style="text-align: left;">TOTAL</div>
                 <div style="text-align: right;">RM${booking.price}</div>
               </div>
@@ -1193,53 +1191,50 @@
         alert('Please open a receipt first');
         return;
       }
-      
-      // First, save the PDF
+
       const receiptNo = 'RCP' + String(booking.id).slice(-6);
       const filename = `${receiptNo}_${booking.name}.pdf`;
-      
-      const receiptContent = document.getElementById('receipt-content');
-      if (!receiptContent) {
-        alert('Receipt not found');
-        return;
-      }
-      
-      // Generate PDF
-      const opt = {
-        margin: 10,
-        filename: filename,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
-      };
-      
-      // Save PDF
-      html2pdf().set(opt).from(receiptContent).save().then(() => {
-        // After PDF is saved, open WhatsApp
+
+      // Save PDF first (downloads to device), then open WhatsApp
+      generateReceiptPDF(booking, filename, true).then(() => {
         setTimeout(() => {
-          // Format phone with country code
           let phone = booking.phone || '';
           if (phone.startsWith('0')) {
             phone = '60' + phone.substring(1);
           } else if (!phone.startsWith('60')) {
             phone = '60' + phone;
           }
-          
-          // Create message
-          const message = `*RECEIPT - ${receiptNo}*\n\n` +
-            `📋 Customer: ${booking.name}\n` +
-            `🚗 Vehicle: ${booking.car} (${booking.plate})\n` +
-            `💺 Service: ${booking.service.split('+')[0].trim()}\n` +
-            `💵 Amount: RM${booking.price}\n\n` +
-            `*Receipt PDF has been downloaded.*\n` +
-            `Please attach the file: ${filename}\n\n` +
-            `Thank you for using our service!`;
-          
-          // Open WhatsApp
+
+          const message = `*RESIT - ${receiptNo}*\n\n` +
+            `📋 Pelanggan: ${booking.name}\n` +
+            `🚗 Kenderaan: ${booking.car} (${booking.plate || '-'})\n` +
+            `💵 Jumlah: RM${booking.price}\n\n` +
+            `Resit PDF telah dimuat turun ke peranti anda.\n` +
+            `Sila lampirkan fail: ${filename}\n\n` +
+            `Terima kasih kerana memilih perkhidmatan kami! 😊`;
+
           const encodedMsg = encodeURIComponent(message);
           window.open(`https://wa.me/${phone}?text=${encodedMsg}`, '_blank');
-        }, 500);
+        }, 600);
       });
+    }
+
+    // Shared PDF generator - returns a promise
+    function generateReceiptPDF(booking, filename, save) {
+      const el = document.getElementById('receipt-printable');
+      if (!el) { alert('Receipt not found'); return Promise.reject(); }
+
+      const opt = {
+        margin: [5, 5, 5, 5],
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 560 },
+        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' },
+        pagebreak: { mode: ['avoid-all'] }
+      };
+
+      const worker = html2pdf().set(opt).from(el);
+      return save ? worker.save() : worker.outputPdf('blob');
     }
 
     function savePDF() {
@@ -1248,28 +1243,9 @@
         alert('Please open a receipt first');
         return;
       }
-      
       const receiptNo = 'RCP' + String(booking.id).slice(-6);
       const filename = `${receiptNo}_${booking.name}.pdf`;
-      
-      // Get receipt content
-      const receiptContent = document.getElementById('receipt-content');
-      if (!receiptContent) {
-        alert('Receipt not found');
-        return;
-      }
-      
-      // Use html2pdf library to download PDF directly
-      const opt = {
-        margin: 10,
-        filename: filename,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
-      };
-      
-      // Download PDF directly - no print dialog!
-      html2pdf().set(opt).from(receiptContent).save();
+      generateReceiptPDF(booking, filename, true);
     }
 
     function logout() {
