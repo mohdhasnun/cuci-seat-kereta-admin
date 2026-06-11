@@ -1085,6 +1085,14 @@
         b.service = b.services.join(' + ');
         changed = true;
       }
+      // Borang online versi lama tulis status "Booking" terus. Kalau belum diproses
+      // (takde harga & deposit), ia sepatutnya Enquiry supaya boleh minta deposit dulu.
+      const price = Number(b.price) || 0;
+      const dep = (Number(b.deposit) || 0) + (Number(b.depositAmount) || 0);
+      if (b.source === 'Online Form' && b.status === 'Booking' && price === 0 && dep === 0) {
+        b.status = 'Enquiry';
+        changed = true;
+      }
       return changed;
     }
 
