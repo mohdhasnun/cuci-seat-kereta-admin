@@ -269,170 +269,7 @@
       font-family: inherit;
     }
 
-    /* Service checkboxes styling */
-    #services-checkboxes {
-      background: #fff;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      max-height: 280px;
-      overflow-y: auto;
-    }
-    .service-item {
-      display: flex;
-      align-items: center;
-      padding: 10px 8px;
-      border-bottom: 1px solid #f5f5f5;
-      gap: 10px;
-    }
-    .service-item:last-child {
-      border-bottom: none;
-    }
-    .service-checkbox {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-      flex-shrink: 0;
-      accent-color: #3b82f6;
-    }
-    .service-label {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex: 1;
-      cursor: pointer;
-      gap: 12px;
-      font-size: 14px;
-    }
-
-    /* Service items with price inputs */
-    .service-item-with-price {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 10px;
-      border-bottom: 1px solid #f0f0f0;
-      gap: 16px;
-    }
-    .service-item-with-price:last-child {
-      border-bottom: none;
-    }
-    .service-price-input {
-      font-family: inherit;
-    }
-    .service-price-input:focus {
-      outline: none;
-      border-color: #3b82f6 !important;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    /* Professional Booking Form */
-    .booking-form {
-      display: grid;
-      gap: 0;
-      background: white;
-      border-radius: 0;
-    }
-    .form-section {
-      padding: 20px;
-      border-bottom: 1px solid #e5e7eb;
-      background: white;
-    }
-    .form-section:first-of-type {
-      border-radius: 12px 12px 0 0;
-    }
-    .form-section:last-of-type {
-      border-bottom: none;
-      border-radius: 0 0 12px 12px;
-    }
-    .form-section-header {
-      font-size: 16px;
-      font-weight: 700;
-      color: #0f2044;
-      margin: 0 0 16px 0;
-      padding: 0;
-    }
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-    .form-row:last-child {
-      margin-bottom: 0;
-    }
-    .form-col {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .form-col label {
-      font-weight: 600;
-      font-size: 14px;
-      color: #0f2044;
-    }
-    .form-col input,
-    .form-col select {
-      padding: 11px 12px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-family: inherit;
-      font-size: 14px;
-    }
-    .form-col input:focus,
-    .form-col select:focus {
-      outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    .booking-form label {
-      font-weight: 600;
-      color: #0f2044;
-      font-size: 14px;
-    }
-    .booking-form textarea {
-      width: 100%;
-      padding: 11px 12px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-family: inherit;
-      font-size: 14px;
-    }
-
-    /* Price Summary Box */
-    .price-summary {
-      background: white;
-      padding: 16px;
-      border-radius: 8px;
-      border: 1px solid #e0e0e0;
-    }
-    .price-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 0;
-      font-size: 14px;
-    }
-    .price-label {
-      font-weight: 600;
-      color: #475569;
-    }
-    .price-value {
-      font-weight: 700;
-      color: #10b981;
-      font-size: 16px;
-    }
-
-    @media (max-width: 640px) {
-      .form-row {
-        grid-template-columns: 1fr;
-        gap: 12px;
-      }
-    }
+    /* Receipt */
     .receipt {
       background: white;
       padding: 20px;
@@ -604,34 +441,6 @@
       <!-- Dashboard -->
       <section id="dashboard" class="page active">
         <h2 class="section-title">Dashboard</h2>
-        <h3 style="font-size: 16px; font-weight: 600; margin: 30px 0 12px; color: #0f2044;">Booking Status</h3>
-        <div class="status-grid-2">
-          <div class="status-card" onclick="filterByStatus('Enquiry')" style="cursor: pointer; background: linear-gradient(135deg, #e9d5ff 0%, #f3e8ff 100%); color: #7c3aed; border: 2px solid #d8b4fe;">
-            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Enquiries</div>
-            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-enquiry">0</div>
-          </div>
-          <div class="status-card" onclick="filterByStatus('Pending')" style="cursor: pointer; background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); color: #d97706; border: 2px solid #fde68a;">
-            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Pending</div>
-            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-pending">0</div>
-          </div>
-          <div class="status-card" onclick="filterByStatus('Booking')" style="cursor: pointer; background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%); color: #4f46e5; border: 2px solid #c7d2fe;">
-            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Booking</div>
-            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-booking">0</div>
-          </div>
-          <div class="status-card" onclick="filterByStatus('Postponed')" style="cursor: pointer; background: linear-gradient(135deg, #bfdbfe 0%, #eff6ff 100%); color: #0284c7; border: 2px solid #7dd3fc;">
-            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Postponed</div>
-            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-postponed">0</div>
-          </div>
-          <div class="status-card" onclick="filterByStatus('Completed')" style="cursor: pointer; background: linear-gradient(135deg, #a7f3d0 0%, #ecfdf5 100%); color: #0d9488; border: 2px solid #5eead4;">
-            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Complete</div>
-            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-complete">0</div>
-          </div>
-          <div class="status-card" onclick="filterByStatus('Cancelled')" style="cursor: pointer; background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%); color: #dc2626; border: 2px solid #fca5a5;">
-            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Cancelled</div>
-            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-cancelled">0</div>
-          </div>
-        </div>
-
         <p class="section-subtitle">Business overview & quick stats</p>
 
         <div class="kpi-grid">
@@ -666,6 +475,42 @@
             <div style="font-size: 11px; color: #999; margin-top: 5px;">Revenue minus costs</div>
           </div>
         </div>
+
+        <h3 style="font-size: 16px; font-weight: 600; margin: 30px 0 12px; color: #0f2044;">Booking Status</h3>
+        <div class="status-grid-2">
+          <div class="status-card" onclick="filterByStatus('Enquiry')" style="cursor: pointer; background: linear-gradient(135deg, #e9d5ff 0%, #f3e8ff 100%); color: #7c3aed; border: 2px solid #d8b4fe;">
+            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Enquiries</div>
+            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-enquiry">0</div>
+          </div>
+          <div class="status-card" onclick="filterByStatus('Booking')" style="cursor: pointer; background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%); color: #4f46e5; border: 2px solid #c7d2fe;">
+            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Booking</div>
+            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-booking">0</div>
+          </div>
+          <div class="status-card" onclick="filterByStatus('Pending')" style="cursor: pointer; background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); color: #d97706; border: 2px solid #fde68a;">
+            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Pending</div>
+            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-pending">0</div>
+          </div>
+          <div class="status-card" onclick="filterByStatus('Confirmed')" style="cursor: pointer; background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%); color: #059669; border: 2px solid #a7f3d0;">
+            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Confirmed</div>
+            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-confirmed">0</div>
+          </div>
+          <div class="status-card" onclick="filterByStatus('Postponed')" style="cursor: pointer; background: linear-gradient(135deg, #bfdbfe 0%, #eff6ff 100%); color: #0284c7; border: 2px solid #7dd3fc;">
+            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Postponed</div>
+            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-postponed">0</div>
+          </div>
+          <div class="status-card" onclick="filterByStatus('Completed')" style="cursor: pointer; background: linear-gradient(135deg, #a7f3d0 0%, #ecfdf5 100%); color: #0d9488; border: 2px solid #5eead4;">
+            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Complete</div>
+            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-complete">0</div>
+          </div>
+          <div class="status-card" onclick="filterByStatus('Cancelled')" style="cursor: pointer; background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%); color: #dc2626; border: 2px solid #fca5a5;">
+            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Cancelled</div>
+            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-cancelled">0</div>
+          </div>
+          <div class="status-card" onclick="filterByStatus('No-Show')" style="cursor: pointer; background: linear-gradient(135deg, #1f2937 0%, #374151 100%); color: white; border: 2px solid #4b5563;">
+            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">No-Show</div>
+            <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-noshow">0</div>
+          </div>
+        </div>
       </section>
 
       <!-- Enquiries -->
@@ -678,7 +523,7 @@
       <!-- Bookings -->
       <section id="bookings" class="page">
         <h2 class="section-title">Bookings</h2>
-        <p class="section-subtitle" id="bookings-subtitle">All confirmed bookings</p>
+        <p class="section-subtitle">All confirmed bookings</p>
         <div style="background: white; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
           <input type="text" id="search-box" placeholder="Search customer name or phone..." 
             oninput="renderBookings()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
@@ -690,100 +535,48 @@
       <section id="add-booking" class="page">
         <h2 class="section-title">Add Booking</h2>
         <p class="section-subtitle">Create new booking record</p>
-        <form onsubmit="saveBooking(event)" class="booking-form">
-          
-          <!-- Your Details -->
-          <div class="form-section">
-            <h3 class="form-section-header">👤 Your Details</h3>
-            <div class="form-row">
-              <div class="form-col">
-                <label>Customer Name *</label>
-                <input type="text" id="name" placeholder="e.g. Ahmad Ali" required>
-              </div>
-              <div class="form-col">
-                <label>Phone Number *</label>
-                <input type="tel" id="phone" placeholder="e.g. 011-2345 6789" required>
-              </div>
-            </div>
+        <form onsubmit="saveBooking(event)" class="form-group">
+          <div>
+            <label>Customer Name *</label>
+            <input type="text" id="name" placeholder="Full name" required>
           </div>
-
-          <!-- Your Vehicle -->
-          <div class="form-section">
-            <h3 class="form-section-header">🚗 Your Vehicle</h3>
-            <div class="form-row">
-              <div class="form-col">
-                <label>Car Model *</label>
-                <input type="text" id="car" placeholder="e.g. Perodua Myvi, Honda City" required>
-              </div>
-              <div class="form-col">
-                <label>Plate Number</label>
-                <input type="text" id="plate" placeholder="e.g. WXY 1234">
-              </div>
-            </div>
-
-            <!-- Date & Time (Below Vehicle Details) -->
-            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
-              <div class="form-row">
-                <div class="form-col">
-                  <label>Date *</label>
-                  <input type="date" id="date" required>
-                </div>
-                <div class="form-col">
-                  <label>Time *</label>
-                  <select id="time" required>
-                    <option value="">-- Select Time --</option>
-                  </select>
-                </div>
-              </div>
-            </div>
+          <div>
+            <label>Phone Number *</label>
+            <input type="tel" id="phone" placeholder="Phone" required>
           </div>
-
-          <!-- Services with Individual Pricing -->
-          <div class="form-section">
-            <h3 class="form-section-header">✨ Services & Pricing <span style="color: #ef4444;">*</span></h3>
-            <p style="font-size: 12px; color: #666; margin-bottom: 12px;">Check services + enter price for each (includes all costs)</p>
-            <div id="services-checkboxes">
-              <!-- populated by JS with price inputs -->
-            </div>
-            
-            <!-- Price Summary (blue box) -->
-            <div style="background: linear-gradient(135deg, #f0f9ff 0%, #f5fbff 100%); border: 2px solid #3b82f6; padding: 16px; border-radius: 8px; margin-top: 16px;">
-              <div style="display: grid; gap: 12px; font-size: 14px;">
-                <!-- Total -->
-                <div style="display: flex; justify-content: space-between; padding-bottom: 12px; border-bottom: 2px solid #3b82f6;">
-                  <span style="font-weight: 700; color: #0f2044; font-size: 16px;">Total Service:</span>
-                  <span style="font-weight: 700; color: #10b981; font-size: 18px;" id="service-total">RM 0.00</span>
-                </div>
-                
-                <!-- Deposit -->
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
-                  <label style="font-weight: 600; color: #0f2044;">Deposit Received (RM):</label>
-                  <input type="number" id="deposit" placeholder="0" min="0" step="0.01" 
-                    onchange="calculateBalanceDue()" 
-                    oninput="calculateBalanceDue()"
-                    style="width: 100px; padding: 8px 10px; border: 1px solid #3b82f6; border-radius: 6px; text-align: right; font-weight: 600; background: white;">
-                </div>
-                
-                <!-- Balance Due -->
-                <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 2px solid #3b82f6;">
-                  <span style="font-weight: 700; color: #0f2044; font-size: 16px;">Balance Due:</span>
-                  <span style="font-weight: 700; color: #ef4444; font-size: 18px;" id="balance-display">RM 0.00</span>
-                </div>
-              </div>
-            </div>
-            
-            <input type="hidden" id="price" value="0">
-            <input type="hidden" id="material" value="0">
-            <input type="hidden" id="balance-due" value="0">
+          <div>
+            <label>Car Model *</label>
+            <input type="text" id="car" placeholder="e.g., Toyota Vios" required>
           </div>
-
-          <!-- Notes Only -->
-          <div class="form-section">
-            <h3 class="form-section-header">📝 Notes</h3>
-            <textarea id="notes" placeholder="Any special requests or notes..." style="height: 80px; width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;"></textarea>
+          <div>
+            <label>Plate Number</label>
+            <input type="text" id="plate" placeholder="e.g., ABC 1234">
           </div>
-
-          <button type="submit" class="btn btn-whatsapp">✅ Save Booking</button>
+          <div>
+            <label>Service *</label>
+            <input type="text" id="service" placeholder="Service description" required>
+          </div>
+          <div>
+            <label>Date *</label>
+            <input type="date" id="date" required>
+          </div>
+          <div>
+            <label>Time</label>
+            <input type="time" id="time">
+          </div>
+          <div>
+            <label>Price (RM) *</label>
+            <input type="number" id="price" placeholder="0" required>
+          </div>
+          <div>
+            <label>Material Cost (RM)</label>
+            <input type="number" id="material" placeholder="0">
+          </div>
+          <div>
+            <label>Notes</label>
+            <textarea id="notes" placeholder="Any notes..." style="height: 80px;"></textarea>
+          </div>
+          <button type="submit" class="btn btn-whatsapp">Save Booking</button>
         </form>
       </section>
 
@@ -791,8 +584,10 @@
       <section id="receipt" class="page">
         <h2 class="section-title">Receipt</h2>
         <div id="receipt-content"></div>
-        <div style="text-align: center; margin-top: 20px;">
-          <button onclick="printReceipt()" class="print-btn">🖨️ Print Receipt</button>
+        <div style="text-align: center; margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+          <button onclick="shareToWhatsApp()" class="btn" style="background: #25D366; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; flex: 1; min-width: 120px;">💬 WhatsApp</button>
+          <button onclick="savePDF()" class="btn" style="background: #FF6B6B; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; flex: 1; min-width: 120px;">📄 Save PDF</button>
+          <button onclick="printReceipt()" class="print-btn" style="background: #4A90E2; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; flex: 1; min-width: 120px;">🖨️ Print</button>
         </div>
       </section>
 
@@ -848,11 +643,6 @@
         <div class="fin-card">
           <h3 style="font-size:15px;font-weight:700;color:#0f2044;margin-bottom:12px;">Expense Breakdown</h3>
           <div class="chart-wrap"><canvas id="finPie"></canvas></div>
-        </div>
-
-        <div class="fin-card">
-          <h3 style="font-size:15px;font-weight:700;color:#0f2044;margin-bottom:12px;">💰 Service Price List</h3>
-          <div id="service-prices-list" style="max-height:300px;overflow-y:auto;"></div>
         </div>
 
         <div class="fin-card">
@@ -920,35 +710,10 @@
   <script>
     const STORE_KEY = 'cuciSeatAdmin.bookings.v1';
     const EXP_KEY = 'cuciSeatAdmin.expenses.v1';
-    const SVC_KEY = 'cuciSeatAdmin.services.v1';
-    let state = { bookings: [], expenses: [], services: {} };
-    let currentStatusFilter = null;  // Track which status is being filtered
+    let state = { bookings: [], expenses: [] };
     let currentReceiptId = null;
     let calMonth = new Date();
     let finChart = null, finPie = null;
-
-    // Service list
-    const DEFAULT_SERVICES = [
-      'Cuci Semua Seat (Tanpa Buka Seat)',
-      'Cuci Semua Seat (Buka Seat)',
-      'Leather Seat Cleaning (Tanpa Buka Seat)',
-      'Leather Seat Cleaning (Buka Seat)',
-      'Cuci Satu Seat Sahaja (Tanpa Buka Seat)',
-      'Cuci Satu Seat Sahaja (Buka Seat)',
-      'Cuci Bumbung Kereta',
-      'Cuci Carpet Lantai',
-      'Cuci Carpet Lantai (Satu Bahagian Sahaja)',
-      'Cuci Carpet Kaki',
-      'Cuci Dashboard & Console Tengah',
-      'Cuci Door Panel',
-      'Cuci Seat Belt',
-      'Cuci Boot Belakang',
-      'Cuci Frame Body Kereta',
-      'Interior Wax',
-      'Odor Treatment',
-      'Sanitize Dalaman Kereta',
-      'Steam Cleaning (For Deep Cleaning)'
-    ];
 
     // PIN
     function checkPIN() {
@@ -983,17 +748,6 @@
       loadData();
       updateClock();
       setInterval(updateClock, 1000);
-      // Load saved page state (after a delay to ensure PAGE_NAV is defined)
-      setTimeout(() => {
-        const savedPage = localStorage.getItem('currentPage');
-        if (savedPage && document.getElementById(savedPage)) {
-          goToPage(savedPage);
-        } else {
-          goToPage('dashboard');
-        }
-        // Render after page is set
-        renderAll();
-      }, 100);
     }
 
     // Firebase helpers (best-effort, never block UI)
@@ -1011,7 +765,7 @@
 
     // Load: show cached data instantly, then refresh from Firebase
     async function loadData() {
-      // 1) Seed from localStorage first
+      // 1) Seed from localStorage first so dashboard is never empty
       try {
         const s = localStorage.getItem(STORE_KEY);
         if (s) { const p = JSON.parse(s); state.bookings = Array.isArray(p) ? p : (p.bookings || []); }
@@ -1020,21 +774,15 @@
         const se = localStorage.getItem(EXP_KEY);
         if (se) { const p = JSON.parse(se); state.expenses = Array.isArray(p) ? p : (p.expenses || []); }
       } catch (e) { console.error('cache expenses parse', e); }
-      try {
-        const ss = localStorage.getItem(SVC_KEY);
-        if (ss) state.services = JSON.parse(ss) || {};
-        if (!Object.keys(state.services).length) initServices();
-      } catch (e) { console.error('cache services parse', e); initServices(); }
-      // Don't render here - let initApp handle page restoration first
+      renderAll();
 
-      // 2) Overlay live data from Firebase
+      // 2) Overlay live data from Firebase (each collection independent)
       if (fbReady()) {
         try {
           const bSnap = await firebase.firestore().collection('bookings').get();
           state.bookings = bSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           localStorage.setItem(STORE_KEY, JSON.stringify({ bookings: state.bookings }));
           console.log('✅ Loaded', state.bookings.length, 'bookings from Firebase');
-          renderAll(); // Refresh after Firebase update
         } catch (err) { console.error('Firebase bookings load failed (keeping cache):', err); }
         try {
           const eSnap = await firebase.firestore().collection('expenses').get();
@@ -1042,33 +790,15 @@
           localStorage.setItem(EXP_KEY, JSON.stringify({ expenses: state.expenses }));
           console.log('✅ Loaded', state.expenses.length, 'expenses from Firebase');
         } catch (err) { console.error('Firebase expenses load failed (keeping cache):', err); }
-        try {
-          const docSnap = await firebase.firestore().collection('config').doc('serviceprices').get();
-          if (docSnap.exists) {
-            state.services = docSnap.data() || {};
-            localStorage.setItem(SVC_KEY, JSON.stringify(state.services));
-          }
-        } catch (err) { console.error('Firebase services load failed (keeping cache):', err); }
         renderAll();
       } else {
         console.log('Firebase not available — using local cache only');
       }
     }
 
-    function initServices() {
-      state.services = {};
-      DEFAULT_SERVICES.forEach(svc => { state.services[svc] = 0; });
-      persistServices();
-    }
-
     function persistLocal() {
       localStorage.setItem(STORE_KEY, JSON.stringify({ bookings: state.bookings }));
       localStorage.setItem(EXP_KEY, JSON.stringify({ expenses: state.expenses }));
-    }
-
-    function persistServices() {
-      localStorage.setItem(SVC_KEY, JSON.stringify(state.services));
-      fbSet('config', 'serviceprices', state.services);
     }
 
     // Navigation
@@ -1081,151 +811,23 @@
       if (PAGE_NAV[page] !== undefined && navItems[PAGE_NAV[page]]) {
         navItems[PAGE_NAV[page]].classList.add('active');
       }
-      localStorage.setItem('currentPage', page);  // Save current page
       renderAll();
       window.scrollTo(0, 0);
-    }
-
-    // Auto-fill price when service is selected
-    function populateServiceCheckboxes() {
-      const container = document.getElementById('services-checkboxes');
-      if (!container || container.children.length > 0) return;
-      container.innerHTML = DEFAULT_SERVICES.map((svc, idx) => {
-        return `<div class="service-item" key="${idx}">
-          <input type="checkbox" value="${svc}" class="service-checkbox" id="svc_${idx}" />
-          <label for="svc_${idx}" class="service-label">
-            <span class="service-name">${svc}</span>
-          </label>
-        </div>`;
-      }).join('');
-    }
-
-    function populateServiceCheckboxes() {
-      const container = document.getElementById('services-checkboxes');
-      if (!container || container.children.length > 0) return;
-      container.innerHTML = DEFAULT_SERVICES.map((svc, idx) => {
-        return `<div class="service-item-with-price">
-          <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
-            <input type="checkbox" value="${svc}" class="service-checkbox" id="svc_${idx}" onchange="calculateServiceTotal()" />
-            <label for="svc_${idx}" style="cursor: pointer; flex: 1; font-weight: 500; color: #333;">${svc}</label>
-          </div>
-          <div style="display: flex; align-items: center; gap: 6px; min-width: 130px;">
-            <span style="font-weight: 600; color: #666; font-size: 13px;">RM</span>
-            <input type="number" class="service-price-input" value="0" min="0" step="0.01" 
-              placeholder="0" id="price_${idx}" 
-              onchange="calculateServiceTotal()" 
-              oninput="calculateServiceTotal()"
-              style="width: 70px; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; text-align: right; font-weight: 600;" />
-          </div>
-        </div>`;
-      }).join('');
-    }
-
-    function calculateBalanceDue() {
-      const serviceTotalEl = document.getElementById('service-total');
-      const serviceTotalText = serviceTotalEl ? serviceTotalEl.textContent : 'RM 0.00';
-      const serviceTotal = parseFloat(serviceTotalText.replace('RM ', '').replace(',', '')) || 0;
-      const depositEl = document.getElementById('deposit');
-      const deposit = (depositEl ? Number(depositEl.value) : 0) || 0;
-      const balanceDue = Math.max(0, serviceTotal - deposit);
-      
-      const balanceDisplay = document.getElementById('balance-display');
-      if (balanceDisplay) balanceDisplay.textContent = 'RM ' + balanceDue.toLocaleString('en-MY', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-      
-      const balanceDueEl = document.getElementById('balance-due');
-      if (balanceDueEl) balanceDueEl.value = balanceDue.toFixed(2);
-    }
-
-    function calculateServiceTotal() {
-      let serviceTotal = 0;
-      const checkedServices = [];
-      
-      document.querySelectorAll('.service-checkbox:checked').forEach(cb => {
-        const idx = cb.id.replace('svc_', '');
-        const priceInput = document.getElementById('price_' + idx);
-        const price = Number(priceInput ? priceInput.value : 0) || 0;
-        serviceTotal += price;
-        checkedServices.push({service: cb.value, price: price});
-      });
-      
-      // Update display (no material calculation, just service total)
-      const serviceTotalEl = document.getElementById('service-total');
-      if (serviceTotalEl) {
-        serviceTotalEl.textContent = 'RM ' + serviceTotal.toLocaleString('en-MY', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-      }
-      
-      // Store in hidden field
-      const priceEl = document.getElementById('price');
-      if (priceEl) priceEl.value = serviceTotal;
-      
-      const materialEl = document.getElementById('material');
-      if (materialEl) materialEl.value = 0; // Not used anymore
-      
-      // Auto-update balance due if deposit already filled
-      calculateBalanceDue();
-    }
-
-    function calculateMaterialAndTotal() {
-      // Alias for consistency
-      calculateServiceTotal();
-    }
-
-    function autoFillPrice() {
-      // no longer needed
-    }
-
-    function populateTimeDropdown() {
-      const select = document.getElementById('time');
-      if (!select || select.children.length > 1) return;
-      
-      const times = [];
-      for (let h = 9; h <= 18; h++) {
-        for (let m = 0; m < 60; m += 30) {
-          if (h === 18 && m > 0) break; // stop at 6:00 PM
-          const hour12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
-          const ampm = h >= 12 ? 'PM' : 'AM';
-          const timeStr = String(hour12).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ' ' + ampm;
-          const timeVal = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
-          times.push({val: timeVal, str: timeStr});
-        }
-      }
-      
-      times.forEach(t => {
-        const opt = document.createElement('option');
-        opt.value = t.val;
-        opt.textContent = t.str;
-        select.appendChild(opt);
-      });
     }
 
     // Save booking
     function saveBooking(e) {
       e.preventDefault();
-      const checkboxes = document.querySelectorAll('.service-checkbox:checked');
-      const services = Array.from(checkboxes).map(cb => cb.value);
-      const serviceStr = services.join(' + ');
-      const price = Number(document.getElementById('price').value);
-      
-      // Update service prices if changed from stored defaults
-      services.forEach(svc => {
-        const currentPrice = state.services[svc] || 0;
-        // If user entered different total, don't update individual service prices
-        // (they did custom pricing for this booking)
-      });
-
       const booking = {
         id: Date.now(),
         name: document.getElementById('name').value,
         phone: document.getElementById('phone').value,
         car: document.getElementById('car').value,
         plate: document.getElementById('plate').value,
-        service: serviceStr,  // store as "Service 1 + Service 2 + Service 3"
-        services: services,   // also store array for processing
+        service: document.getElementById('service').value,
         date: document.getElementById('date').value,
         time: document.getElementById('time').value,
-        price: price,
-        deposit: Number(document.getElementById('deposit').value) || 0,
-        balanceDue: Number(document.getElementById('balance-due').value) || 0,
+        price: Number(document.getElementById('price').value),
         material: Number(document.getElementById('material').value) || 0,
         notes: document.getElementById('notes').value,
         status: 'Pending',
@@ -1237,13 +839,6 @@
       fbSet('bookings', booking.id, booking);
       renderAll();
       document.querySelector('#add-booking form').reset();
-      // Reset checkboxes and displays
-      document.querySelectorAll('.service-checkbox').forEach(cb => cb.checked = false);
-      document.querySelectorAll('.service-price-input').forEach(inp => inp.value = '0');
-      document.getElementById('service-total').textContent = 'RM 0.00';
-      document.getElementById('balance-display').textContent = 'RM 0.00';
-      document.getElementById('balance-due').value = '0.00';
-      document.getElementById('material').value = 0;
       alert('✅ Booking saved!');
       goToPage('bookings');
     }
@@ -1255,8 +850,6 @@
       renderBookings();
       renderCalendar();
       renderFinance();
-      populateServiceCheckboxes();
-      populateTimeDropdown();
     }
 
     // Dashboard
@@ -1279,40 +872,20 @@
       const profit = revenue - material - overhead;
       const completeCount = state.bookings.filter(isComplete).length;
 
-      // Update KPI cards (with null checks)
-      const kpiTotal = document.getElementById('kpi-total');
-      if (kpiTotal) kpiTotal.textContent = total;
-      
-      const kpiRevenue = document.getElementById('kpi-revenue');
-      if (kpiRevenue) kpiRevenue.textContent = 'RM' + revenue.toLocaleString();
-      
-      const kpiMaterial = document.getElementById('kpi-material');
-      if (kpiMaterial) kpiMaterial.textContent = 'RM' + material.toLocaleString();
-      
-      const kpiOverhead = document.getElementById('kpi-overhead');
-      if (kpiOverhead) kpiOverhead.textContent = 'RM' + overhead.toLocaleString();
-      
-      const kpiProfit = document.getElementById('kpi-profit');
-      if (kpiProfit) kpiProfit.textContent = 'RM' + profit.toLocaleString();
+      document.getElementById('kpi-total').textContent = total;
+      document.getElementById('kpi-revenue').textContent = 'RM' + revenue.toLocaleString();
+      document.getElementById('kpi-material').textContent = 'RM' + material.toLocaleString();
+      document.getElementById('kpi-overhead').textContent = 'RM' + overhead.toLocaleString();
+      document.getElementById('kpi-profit').textContent = 'RM' + profit.toLocaleString();
 
-      // Update status cards (with null checks)
-      const statusEnquiry = document.getElementById('status-enquiry');
-      if (statusEnquiry) statusEnquiry.textContent = enquiries;
-      
-      const statusBooking = document.getElementById('status-booking');
-      if (statusBooking) statusBooking.textContent = booking;
-      
-      const statusPending = document.getElementById('status-pending');
-      if (statusPending) statusPending.textContent = state.bookings.filter(b => b.status === 'Pending').length;
-      
-      const statusPostponed = document.getElementById('status-postponed');
-      if (statusPostponed) statusPostponed.textContent = state.bookings.filter(b => b.status === 'Postponed').length;
-      
-      const statusComplete = document.getElementById('status-complete');
-      if (statusComplete) statusComplete.textContent = completeCount;
-      
-      const statusCancelled = document.getElementById('status-cancelled');
-      if (statusCancelled) statusCancelled.textContent = state.bookings.filter(b => b.status === 'Cancelled').length;
+      document.getElementById('status-enquiry').textContent = enquiries;
+      document.getElementById('status-booking').textContent = booking;
+      document.getElementById('status-pending').textContent = state.bookings.filter(b => b.status === 'Pending').length;
+      document.getElementById('status-confirmed').textContent = state.bookings.filter(b => b.status === 'Confirmed').length;
+      document.getElementById('status-postponed').textContent = state.bookings.filter(b => b.status === 'Postponed').length;
+      document.getElementById('status-complete').textContent = completeCount;
+      document.getElementById('status-cancelled').textContent = state.bookings.filter(b => b.status === 'Cancelled').length;
+      document.getElementById('status-noshow').textContent = state.bookings.filter(b => b.status === 'No-Show').length;
     }
 
     function calculateRevenue() {
@@ -1337,8 +910,7 @@
 
     // Enquiries
     function renderEnquiries() {
-      let enquiries = state.bookings.filter(b => b.status === 'Enquiry');
-      enquiries = enquiries.sort((a, b) => b.id - a.id);  // Latest first
+      const enquiries = state.bookings.filter(b => b.status === 'Enquiry');
       const html = enquiries.length ? enquiries.map(e => `
         <div class="enquiry-card">
           <div class="card-header">
@@ -1374,39 +946,10 @@
       document.getElementById('enquiries-list').innerHTML = html;
     }
 
-    // Format date: YYYY-MM-DD → dd/mm/yy
-    function formatDateCard(dateStr) {
-      if (!dateStr) return '';
-      const [year, month, day] = dateStr.split('-');
-      const yy = year.slice(-2);
-      return `${day}/${month}/${yy}`;
-    }
-
-    // Format time: 13:00 → 1:00pm
-    function formatTimeCard(timeStr) {
-      if (!timeStr) return '';
-      const [hours, mins] = timeStr.split(':');
-      const h = parseInt(hours);
-      const period = h >= 12 ? 'pm' : 'am';
-      const h12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
-      return `${h12}:${mins}${period}`;
-    }
-
     // Bookings
     function renderBookings() {
       const search = (document.getElementById('search-box')?.value || '').toLowerCase();
-      
-      // Reset filter if not coming from a status filter click
-      currentStatusFilter = null;
-      
-      // Update subtitle to default
-      const subtitle = document.getElementById('bookings-subtitle');
-      if (subtitle) {
-        subtitle.textContent = 'All confirmed bookings';
-      }
-      
       let bookings = state.bookings.filter(b => b.status !== 'Enquiry');
-      bookings = bookings.sort((a, b) => b.id - a.id);  // Latest first
       if (search) {
         bookings = bookings.filter(b => b.name.toLowerCase().includes(search) || (b.phone || '').includes(search));
       }
@@ -1418,7 +961,7 @@
               <span class="card-badge badge-confirmed">${b.status}</span>
               <div class="card-name">${b.name}</div>
             </div>
-            <div class="card-date" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 13px;">${formatDateCard(b.date)} ${b.time ? formatTimeCard(b.time) : ""}</div>
+            <div class="card-date">${b.date} ${b.time || ''}</div>
           </div>
           <div class="card-detail-box">
             <div class="detail-row">
@@ -1444,20 +987,16 @@
               <select onchange="updateStatus('${b.id}', this.value)" style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
                 <option value="Enquiry" ${b.status === 'Enquiry' ? 'selected' : ''}>Enquiry</option>
                 <option value="Pending" ${b.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                <option value="Booking" ${b.status === 'Booking' ? 'selected' : ''}>Booking</option>
+                <option value="Confirmed" ${b.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
                 <option value="Postponed" ${b.status === 'Postponed' ? 'selected' : ''}>Postponed</option>
                 <option value="Completed" ${b.status === 'Completed' || b.status === 'Complete' ? 'selected' : ''}>Completed</option>
                 <option value="Cancelled" ${b.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                <option value="No-Show" ${b.status === 'No-Show' ? 'selected' : ''}>No-Show</option>
               </select>
             </div>
           </div>
           <div class="card-buttons">
-            <button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">
-              ${b.status === 'Enquiry' || b.status === 'Pending' ? '💰 Send Pricing' : 
-                b.status === 'Confirmed' ? '✅ Send Confirmation' : 
-                b.status === 'Completed' || b.status === 'Complete' ? '🚗 Service Done' : 
-                '💬 WhatsApp'}
-            </button>
+            <button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">💬 WhatsApp Confirm</button>
             <button class="btn btn-edit" onclick="editBooking('${b.id}')">✏️ Edit</button>
             <button class="btn btn-convert" onclick="showReceipt('${b.id}')">📄 Receipt</button>
             <button class="btn btn-secondary" onclick="deleteBooking('${b.id}')">🗑️ Delete</button>
@@ -1470,118 +1009,10 @@
     // Functions
     function sendWhatsApp(id) {
       const booking = state.bookings.find(b => b.id == id);
-      if (!booking) return;
-
-      const name = booking.name;
-      const phone = booking.phone;
-      const car = booking.car;
-      const plate = booking.plate || '';
-      const service = booking.service;
-      const price = booking.price;
-      const bankName = 'Maybank';
-      const bankAccount = '5521 8951 6033';
-      const bankAccName = 'Northern Hope Enterprise';
-
-      // Format date: 2026-05-31 → 31/05/26
-      const dateObj = new Date(booking.date + 'T00:00:00');
-      const formattedDate = String(dateObj.getDate()).padStart(2, '0') + '/' + 
-                           String(dateObj.getMonth() + 1).padStart(2, '0') + '/' + 
-                           String(dateObj.getFullYear()).slice(-2);
-
-      // Format time: 13:00 → 1:00 PM
-      let formattedTime = booking.time;
-      if (booking.time && booking.time.includes(':')) {
-        const [hours, mins] = booking.time.split(':');
-        const h = parseInt(hours);
-        const period = h >= 12 ? 'PM' : 'AM';
-        const h12 = h > 12 ? h - 12 : (h === 0 ? 12 : h);
-        formattedTime = h12 + ':' + mins + ' ' + period;
+      if (booking) {
+        const msg = `Hi ${booking.name}, here are your booking details: 🚗 ${booking.car} 💺 ${booking.service} 📅 ${booking.date} 💵 RM${booking.price}. Please confirm.`;
+        alert('WhatsApp message:\n\n' + msg);
       }
-
-      let msg = '';
-
-      if (booking.status === 'Enquiry' || booking.status === 'Pending') {
-        // First message: Send pricing + bank details for deposit
-        const depositAmount = booking.deposit || (price * 0.3).toFixed(2);
-        msg = `Hai ${name},\n\n` +
-              `Berikut adalah butiran tempahan servis cuci kereta anda:\n` +
-              `─────────────────\n` +
-              `🚗 Vehicle   : ${car}\n` +
-              `🔢 No. Plat  : ${plate}\n` +
-              `💺 Servis    : ${service}\n` +
-              `📅 Tarikh    : ${formattedDate}\n` +
-              `🕐 Masa      : ${formattedTime}\n` +
-              `💳 Harga     : RM${price}\n` +
-              `─────────────────\n\n` +
-              `💰 MAKLUMAT DEPOSIT\n` +
-              `─────────────────\n` +
-              `⚠️ Deposit Diperlukan : RM${depositAmount}\n\n` +
-              `Sila transfer deposit ke:\n` +
-              `🏦 Bank     : ${bankName}\n` +
-              `👤 Nama     : ${bankAccName}\n` +
-              `🔢 Akaun    : ${bankAccount}\n\n` +
-              `Hantar bukti bayaran ke sini untuk kami sahkan slot anda.\n` +
-              `─────────────────\n\n` +
-              `Terima kasih kerana memilih perkhidmatan kami! 😊`;
-      }
-      else if (booking.status === 'Booking' || booking.status === 'Confirmed') {
-        // Booking confirmed: Deposit received message
-        const balanceDue = price - (booking.deposit || 0);
-        msg = `Hai ${name},\n\n` +
-              `Berikut adalah butiran tempahan servis anda:\n` +
-              `─────────────────\n` +
-              `🚗 Vehicle   : ${car}\n` +
-              `🔢 No. Plat  : ${plate}\n` +
-              `📱 Phone     : ${phone}\n` +
-              `💺 Servis    : ${service}\n` +
-              `📅 Tarikh    : ${formattedDate}\n` +
-              `🕐 Masa      : ${formattedTime}\n` +
-              `💳 Harga     : RM${price}\n` +
-              `─────────────────\n` +
-              `✅ Deposit diterima : RM${booking.deposit || 0}\n` +
-              `💵 Baki : RM${balanceDue} (dibayar selepas servis selesai)\n\n` +
-              `Sila pastikan anda hadir pada tarikh dan masa yang ditetapkan.\n` +
-              `─────────────────\n` +
-              `📍 Lokasi kami\n` +
-              `🗺️ Google Maps : https://maps.app.goo.gl/jRbBBuKDn7JsiBLy8\n` +
-              `🔵 Waze        : https://waze.com/ul/hw282cr7ky\n\n` +
-              `🏢 Cuci Seat Kereta:\n` +
-              `📞 Tel  : 017-699 3876\n` +
-              `🌐 Web  : cuciseatkereta.com\n` +
-              `─────────────────\n\n` +
-              `Terima kasih kerana memilih perkhidmatan kami! Jumpa nanti 😊`;
-      }
-      else if (booking.status === 'Completed' || booking.status === 'Complete') {
-        // Third message: Service completed
-        msg = `Hai ${name},\n\n` +
-              `Servis kenderaan anda SUDAH SELESAI! 🚗✅\n\n` +
-              `🚗 ${car} (${plate})\n` +
-              `✨ Servis: ${service}\n\n` +
-              `Kenderaan anda sudah boleh diambil. Terima kasih telah memilih perkhidmatan kami!\n\n` +
-              `Kami harap anda berpuas hati. Jumpa lagi! 😊`;
-      }
-      else {
-        // Default message for other statuses
-        msg = `Hai ${name},\n\n` +
-              `Status booking anda: ${booking.status}\n\n` +
-              `🚗 ${car} (${plate})\n` +
-              `✨ ${service}\n` +
-              `📅 ${formattedDate} ${formattedTime}\n` +
-              `💵 RM${price}\n\n` +
-              `Sila hubungi kami untuk maklumat lanjut.`;
-      }
-
-      // Open WhatsApp with message
-      // Format phone for WhatsApp (add country code if needed)
-      let waPhone = booking.phone.replace(/[^0-9]/g, '');  // Remove all non-digits
-      if (waPhone.startsWith('0')) {
-        waPhone = '60' + waPhone.substring(1);  // Replace leading 0 with 60
-      } else if (!waPhone.startsWith('60')) {
-        waPhone = '60' + waPhone;  // Add 60 if missing
-      }
-      
-      const waUrl = 'https://wa.me/' + waPhone + '?text=' + encodeURIComponent(msg);
-      window.open(waUrl, '_blank');
     }
 
     function editPrice(id) {
@@ -1604,31 +1035,12 @@
         document.getElementById('phone').value = booking.phone;
         document.getElementById('car').value = booking.car;
         document.getElementById('plate').value = booking.plate || '';
+        document.getElementById('service').value = booking.service;
         document.getElementById('date').value = booking.date;
         document.getElementById('time').value = booking.time || '';
-        document.getElementById('deposit').value = booking.deposit || 0;
+        document.getElementById('price').value = booking.price;
+        document.getElementById('material').value = booking.material || 0;
         document.getElementById('notes').value = booking.notes || '';
-        
-        // Restore selected services and their prices
-        populateServiceCheckboxes();
-        populateTimeDropdown();
-        const services = booking.services || booking.service.split(' + ');
-        
-        // Check services and restore prices
-        services.forEach(svc => {
-          const idx = DEFAULT_SERVICES.indexOf(svc);
-          if (idx >= 0) {
-            document.getElementById('svc_' + idx).checked = true;
-            // For now, user will need to re-enter prices when editing
-          }
-        });
-        
-        // Recalculate from restored prices
-        setTimeout(() => {
-          calculateServiceTotal();
-          calculateBalanceDue();
-        }, 100);
-        
         state.bookings = state.bookings.filter(b => b.id != id);
         persistLocal();
         fbDelete('bookings', id);
@@ -1653,8 +1065,7 @@
         booking.status = status;
         persistLocal();
         fbSet('bookings', booking.id, booking);
-        // Only update dashboard KPI, don't touch other pages
-        updateDashboard();
+        renderAll();
       }
     }
 
@@ -1663,8 +1074,7 @@
         state.bookings = state.bookings.filter(b => b.id != id);
         persistLocal();
         fbDelete('bookings', id);
-        // Only update dashboard KPI
-        updateDashboard();
+        renderAll();
       }
     }
 
@@ -1739,24 +1149,21 @@
                   <td style="padding: 10px 0;">${booking.service}</td>
                   <td style="padding: 10px 0; text-align: right; font-weight: 700;">RM${booking.price}</td>
                 </tr>
+                ${booking.material ? '<tr style="border-bottom: 1px solid #f0f0f0;"><td style="padding: 10px 0;">2</td><td style="padding: 10px 0;">Material Cost</td><td style="padding: 10px 0; text-align: right; font-weight: 700;">RM' + booking.material + '</td></tr>' : ''}
               </table>
             </div>
 
             <!-- Payment Summary -->
             <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 12px;">
               <div style="display: grid; grid-template-columns: 150px 1fr; gap: 10px;">
-                <div style="color: #666; font-weight: 600;">TOTAL</div>
-                <div style="font-weight: 700;">RM${booking.price}</div>
+                <div style="color: #666; font-weight: 600;">PAYMENT METHOD</div>
+                <div style="font-weight: 700;">TBD</div>
                 
-                ${booking.deposit ? '<div style="color: #666; font-weight: 600;">DEPOSIT RECEIVED</div><div style="font-weight: 700; color: #10b981;">- RM' + booking.deposit + '</div>' : ''}
+                <div style="color: #666; font-weight: 600;">PAYMENT STATUS</div>
+                <div style="font-weight: 700; color: #10b981;">${isComplete(booking) ? 'PAID' : 'PENDING'}</div>
                 
-                <div style="border-top: 2px solid #0f2044; padding-top: 10px; margin-top: 10px; color: #0f2044; font-weight: 700; font-size: 14px;">BALANCE DUE</div>
-                <div style="border-top: 2px solid #0f2044; padding-top: 10px; margin-top: 10px; text-align: right; color: #0f2044; font-weight: 700; font-size: 16px;">RM${Math.max(0, booking.price - (booking.deposit || 0))}</div>
-                
-                <div style="color: #666; font-weight: 600; margin-top: 10px;">PAYMENT STATUS</div>
-                <div style="font-weight: 700; margin-top: 10px; ${booking.deposit >= booking.price ? "color: #10b981;" : (booking.deposit > 0 ? "color: #f59e0b;" : "color: #ef4444;")}">
-                  ${isComplete(booking) ? 'PAID' : (booking.deposit >= booking.price ? 'PAID' : (booking.deposit > 0 ? 'DEPOSIT RECEIVED, BALANCE DUE' : 'UNPAID'))}
-                </div>
+                <div style="border-top: 2px solid #0f2044; padding-top: 10px; margin-top: 10px; color: #0f2044; font-weight: 700; font-size: 14px;">TOTAL</div>
+                <div style="border-top: 2px solid #0f2044; padding-top: 10px; margin-top: 10px; text-align: right; color: #0f2044; font-weight: 700; font-size: 16px;">RM${booking.price + (booking.material || 0)}</div>
               </div>
             </div>
 
@@ -1779,6 +1186,62 @@
 
     function printReceipt() {
       window.print();
+    }
+
+    function shareToWhatsApp() {
+      const booking = state.bookings.find(b => b.id == currentReceiptId);
+      if (!booking) {
+        alert('Please open a receipt first');
+        return;
+      }
+      
+      // Format phone with country code
+      let phone = booking.phone || '';
+      if (phone.startsWith('0')) {
+        phone = '60' + phone.substring(1);
+      } else if (!phone.startsWith('60')) {
+        phone = '60' + phone;
+      }
+      
+      // Create message
+      const receiptNo = 'RCP' + String(booking.id).slice(-6);
+      const message = `*CUCI SEAT KERETA - RECEIPT*\n\n` +
+        `Receipt No: ${receiptNo}\n` +
+        `Customer: ${booking.name}\n` +
+        `Vehicle: ${booking.car} (${booking.plate})\n` +
+        `Service: ${booking.service}\n` +
+        `Amount: RM${booking.price}\n\n` +
+        `Thank you for using our service!`;
+      
+      // Open WhatsApp
+      const encodedMsg = encodeURIComponent(message);
+      window.open(`https://wa.me/${phone}?text=${encodedMsg}`, '_blank');
+    }
+
+    function savePDF() {
+      const booking = state.bookings.find(b => b.id == currentReceiptId);
+      if (!booking) {
+        alert('Please open a receipt first');
+        return;
+      }
+      
+      const receiptNo = 'RCP' + String(booking.id).slice(-6);
+      const filename = `${receiptNo}_${booking.name}.pdf`;
+      
+      // Use browser's print to PDF
+      const printWindow = window.open('', '', 'width=800,height=600');
+      const receiptContent = document.getElementById('receipt-content');
+      
+      if (receiptContent) {
+        printWindow.document.write(receiptContent.innerHTML);
+        printWindow.document.close();
+        
+        // Trigger print dialog with PDF option
+        setTimeout(() => {
+          printWindow.print();
+          printWindow.close();
+        }, 250);
+      }
     }
 
     function logout() {
@@ -1811,26 +1274,6 @@
       // Navigate to bookings page
       goToPage('bookings');
       
-      // Update filter tracking
-      currentStatusFilter = status;
-      
-      // Update subtitle based on status
-      const subtitles = {
-        'Enquiry': 'Customers from online form. Send deposit & convert to booking.',
-        'Booking': 'Customers with deposit paid. Ready for service.',
-        'Pending': 'Waiting for deposit payment or confirmation.',
-        'Confirmed': 'Confirmed bookings.',
-        'Postponed': 'Postponed bookings.',
-        'Completed': 'Completed services.',
-        'Cancelled': 'Cancelled bookings.',
-        'No-Show': 'No-show customers.'
-      };
-      
-      const subtitle = document.getElementById('bookings-subtitle');
-      if (subtitle) {
-        subtitle.textContent = subtitles[status] || status + ' bookings';
-      }
-      
       // Filter and display
       let bookings;
       if (status === 'Enquiry') {
@@ -1849,7 +1292,7 @@
               <span class="card-badge badge-confirmed">${b.status}</span>
               <div class="card-name">${b.name}</div>
             </div>
-            <div class="card-date" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 13px;">${formatDateCard(b.date)} ${b.time ? formatTimeCard(b.time) : ""}</div>
+            <div class="card-date">${b.date} ${b.time || ''}</div>
           </div>
           <div class="card-detail-box">
             <div class="detail-row">
@@ -1875,10 +1318,11 @@
               <select onchange="updateStatus('${b.id}', this.value)" style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
                 <option value="Enquiry" ${b.status === 'Enquiry' ? 'selected' : ''}>Enquiry</option>
                 <option value="Pending" ${b.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                <option value="Booking" ${b.status === 'Booking' ? 'selected' : ''}>Booking</option>
+                <option value="Confirmed" ${b.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
                 <option value="Postponed" ${b.status === 'Postponed' ? 'selected' : ''}>Postponed</option>
                 <option value="Completed" ${b.status === 'Completed' || b.status === 'Complete' ? 'selected' : ''}>Completed</option>
                 <option value="Cancelled" ${b.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                <option value="No-Show" ${b.status === 'No-Show' ? 'selected' : ''}>No-Show</option>
               </select>
             </div>
           </div>
@@ -1993,30 +1437,6 @@
       }
     }
 
-    function renderServicePrices() {
-      const list = document.getElementById('service-prices-list');
-      if (!list) return;
-      list.innerHTML = DEFAULT_SERVICES.map(svc => {
-        const price = state.services[svc] || 0;
-        return `<div class="fin-row">
-          <div style="font-weight:600;flex:1;min-width:0;">${svc}</div>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <span style="color:#0f2044;font-weight:700;">RM</span>
-            <input type="number" value="${price}" min="0" step="0.01" 
-              style="width:70px;padding:6px;border:1px solid #ddd;border-radius:4px;text-align:right;"
-              onchange="updateServicePrice('${svc}', this.value)" />
-          </div>
-        </div>`;
-      }).join('');
-    }
-
-    function updateServicePrice(service, price) {
-      const p = Number(price) || 0;
-      state.services[service] = p;
-      persistServices();
-      renderServicePrices();
-    }
-
     function renderFinance() {
       if (!document.getElementById('fin-revenue')) return;
       const exp = state.expenses || [];
@@ -2047,7 +1467,6 @@
         </div>`).join('') : '<div style="text-align:center;color:#94a3b8;padding:16px;">No expenses recorded yet</div>';
 
       renderFinCharts();
-      renderServicePrices();
     }
 
     function renderFinCharts() {
