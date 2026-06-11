@@ -323,35 +323,47 @@
     }
     .form-submit-btn:active { transform: scale(0.99); }
 
-    /* Service checklist - clear custom checkbox */
-    .svc-check {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 28px;
-      height: 28px;
-      border: 2.5px solid #cbd5e1;
-      border-radius: 8px;
+    /* Service checklist - clear custom checkbox
+       (scoped with #service-checklist to beat .form-group input specificity) */
+    #service-checklist .svc-check {
+      -webkit-appearance: none !important;
+      appearance: none !important;
+      width: 28px !important;
+      height: 28px !important;
+      min-width: 28px;
+      padding: 0 !important;
+      margin: 0;
+      border: 2.5px solid #cbd5e1 !important;
+      border-radius: 8px !important;
       background: #fff;
       position: relative;
       cursor: pointer;
       flex-shrink: 0;
+      box-shadow: none;
       transition: all 0.15s ease;
     }
-    .svc-check:checked {
+    #service-checklist .svc-check:checked {
       background: #2563eb;
-      border-color: #2563eb;
+      border-color: #2563eb !important;
       box-shadow: 0 2px 6px rgba(37,99,235,0.4);
     }
-    .svc-check:checked::after {
+    #service-checklist .svc-check:checked::after {
       content: '';
       position: absolute;
-      left: 9px;
-      top: 4px;
+      left: 8px;
+      top: 3px;
       width: 7px;
       height: 13px;
       border: solid #fff;
       border-width: 0 3.5px 3.5px 0;
       transform: rotate(45deg);
+    }
+    #service-checklist .svc-price {
+      width: 72px !important;
+      padding: 9px !important;
+      font-size: 15px !important;
+      border: 1px solid #ddd !important;
+      border-radius: 6px !important;
     }
     .svc-item.selected { background: #eff6ff !important; }
     .svc-item.selected .svc-label { color: #1d4ed8 !important; font-weight: 700 !important; }
@@ -366,6 +378,25 @@
       letter-spacing: 0.3px;
     }
     .svc-item.is-foc .svc-foc-tag { display: inline-block; }
+
+    /* Override broad .form-group input rule (specificity fix) so checklist
+       checkbox & price keep their proper size instead of stretching 100% */
+    .svc-item input.svc-check {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 2.5px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    .svc-item input.svc-check:checked {
+      border-color: #2563eb;
+    }
+    .svc-item input.svc-price {
+      width: 72px;
+      padding: 9px;
+      font-size: 15px;
+    }
 
     /* Receipt */
     .receipt {
@@ -539,12 +570,19 @@
       <button class="add-btn" onclick="goToPage('add-booking')">+ Add</button>
     </div>
     <div class="datetime-bar" id="live-clock">--</div>
+    <div id="sync-banner" onclick="syncPending(true)" style="display:none; max-width:600px; margin:0 auto; cursor:pointer; text-align:center; font-size:12.5px; font-weight:700; padding:9px 12px;"></div>
 
     <div class="content">
       <!-- Dashboard -->
       <section id="dashboard" class="page active">
         <h2 class="section-title">Dashboard</h2>
         <p class="section-subtitle">Business overview & quick stats</p>
+
+        <div style="display:flex; gap:10px; margin-bottom:18px;">
+          <button onclick="backupData()" style="flex:1; padding:11px; border:none; border-radius:10px; background:#0f2044; color:#fff; font-weight:700; font-size:13px; cursor:pointer;">⬇️ Backup Data</button>
+          <button onclick="document.getElementById('restore-file').click()" style="flex:1; padding:11px; border:1.5px solid #cbd5e1; border-radius:10px; background:#fff; color:#334155; font-weight:700; font-size:13px; cursor:pointer;">⬆️ Restore</button>
+          <input type="file" id="restore-file" accept="application/json" style="display:none" onchange="restoreData(event)">
+        </div>
 
         <div class="kpi-grid">
           <div class="kpi-card" onclick="alert('Total Bookings: ' + state.bookings.length)">
@@ -907,6 +945,9 @@
       setInterval(updateClock, 1000);
       // Build the service checklist in the add form
       buildServiceChecklist([]);
+      // Auto-retry sync bila internet kembali / berkala
+      window.addEventListener('online', () => { console.log('🌐 Online — cuba sync'); syncPending(false); });
+      setInterval(() => { if (countPending() > 0) syncPending(false); }, 20000);
     }
 
     // Firebase helpers (best-effort, never block UI)
@@ -941,16 +982,13 @@
       if (fbReady()) {
         try {
           const bSnap = await firebase.firestore().collection('bookings').get();
-          const fbBookings = bSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          const fbBookings = bSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), _synced: true }));
           const fbIds = new Set(fbBookings.map(b => String(b.id)));
 
           // Any local record NOT in Firebase = write yang gagal naik dulu.
           // Jangan buang — simpan & cuba hantar semula (auto re-sync).
-          const localOnly = state.bookings.filter(b => !fbIds.has(String(b.id)) && !b._deleted);
-          localOnly.forEach(b => {
-            console.warn('⏫ Re-syncing unsynced booking to Firebase:', b.name, b.id);
-            fbSet('bookings', b.id, b);
-          });
+          const localOnly = state.bookings.filter(b => !fbIds.has(String(b.id)) && !b._deleted)
+            .map(b => ({ ...b, _synced: false }));
 
           state.bookings = [...fbBookings, ...localOnly];
           localStorage.setItem(STORE_KEY, JSON.stringify({ bookings: state.bookings }));
@@ -958,19 +996,118 @@
         } catch (err) { console.error('Firebase bookings load failed (keeping cache):', err); }
         try {
           const eSnap = await firebase.firestore().collection('expenses').get();
-          state.expenses = eSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          const fbExp = eSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), _synced: true }));
+          const eIds = new Set(fbExp.map(e => String(e.id)));
+          const expOnly = (state.expenses || []).filter(e => !eIds.has(String(e.id)) && !e._deleted)
+            .map(e => ({ ...e, _synced: false }));
+          state.expenses = [...fbExp, ...expOnly];
           localStorage.setItem(EXP_KEY, JSON.stringify({ expenses: state.expenses }));
-          console.log('✅ Loaded', state.expenses.length, 'expenses from Firebase');
+          console.log('✅ Loaded', fbExp.length, 'expenses from Firebase +', expOnly.length, 'pending');
         } catch (err) { console.error('Firebase expenses load failed (keeping cache):', err); }
         renderAll();
+        syncPending(false); // push anything still local-only
       } else {
         console.log('Firebase not available — using local cache only');
+        renderAll();
       }
     }
 
     function persistLocal() {
       localStorage.setItem(STORE_KEY, JSON.stringify({ bookings: state.bookings }));
       localStorage.setItem(EXP_KEY, JSON.stringify({ expenses: state.expenses }));
+    }
+
+    /* ====== SYNC STATUS & OFFLINE SAFETY ====== */
+    function countPending() {
+      const b = state.bookings.filter(x => x._synced === false).length;
+      const e = (state.expenses || []).filter(x => x._synced === false).length;
+      return b + e;
+    }
+
+    function updateSyncStatus() {
+      const banner = document.getElementById('sync-banner');
+      if (!banner) return;
+      const pending = countPending();
+      if (!fbReady()) {
+        banner.style.display = 'block';
+        banner.style.background = '#fef3c7';
+        banner.style.color = '#92400e';
+        banner.textContent = '⚠️ OFFLINE — cloud tak connect. Data tersimpan dalam phone je' + (pending ? ' (' + pending + ' belum sync)' : '') + '. Tap untuk cuba sync.';
+      } else if (pending > 0) {
+        banner.style.display = 'block';
+        banner.style.background = '#dbeafe';
+        banner.style.color = '#1e40af';
+        banner.textContent = '🔄 ' + pending + ' rekod belum naik cloud. Tap untuk sync sekarang.';
+      } else {
+        banner.style.display = 'none';
+      }
+    }
+
+    // Push any local-only / failed records up to Firebase
+    async function syncPending(manual) {
+      if (!fbReady()) {
+        if (manual) alert('⚠️ Masih tak boleh connect ke cloud.\n\nCheck internet kau. Kalau buka link ni dari dalam WhatsApp/Instagram, buka guna Chrome biasa — in-app browser selalu block & padam data.');
+        updateSyncStatus();
+        return;
+      }
+      let pushed = 0;
+      for (const b of state.bookings) {
+        if (b._synced === false) {
+          const ok = await fbSet('bookings', b.id, b);
+          if (ok) { b._synced = true; pushed++; }
+        }
+      }
+      for (const e of (state.expenses || [])) {
+        if (e._synced === false) {
+          const ok = await fbSet('expenses', e.id, e);
+          if (ok) { e._synced = true; pushed++; }
+        }
+      }
+      persistLocal();
+      updateSyncStatus();
+      if (manual) alert(pushed ? ('✅ ' + pushed + ' rekod berjaya sync ke cloud!') : '✅ Semua dah sync, takde yang tertinggal.');
+    }
+
+    /* ====== MANUAL BACKUP / RESTORE (safety net) ====== */
+    function backupData() {
+      const data = { bookings: state.bookings, expenses: state.expenses, exportedAt: new Date().toISOString() };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0,10);
+      a.href = URL.createObjectURL(blob);
+      a.download = 'cuciseat_backup_' + stamp + '.json';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+
+    function restoreData(ev) {
+      const file = ev.target.files && ev.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          const bks = Array.isArray(data) ? data : (data.bookings || []);
+          const exps = (data && data.expenses) || [];
+          // Merge by id (jangan timpa, gabung)
+          const byId = {};
+          state.bookings.forEach(b => byId[String(b.id)] = b);
+          bks.forEach(b => { byId[String(b.id)] = { ...byId[String(b.id)], ...b, _synced: false }; });
+          state.bookings = Object.values(byId);
+          const eById = {};
+          (state.expenses || []).forEach(e => eById[String(e.id)] = e);
+          exps.forEach(e => { eById[String(e.id)] = { ...eById[String(e.id)], ...e, _synced: false }; });
+          state.expenses = Object.values(eById);
+          persistLocal();
+          renderAll();
+          syncPending(false);
+          alert('✅ Restore berjaya! ' + bks.length + ' booking + ' + exps.length + ' expense digabung.');
+        } catch (err) {
+          alert('❌ Fail backup tak sah / rosak.');
+        }
+        ev.target.value = '';
+      };
+      reader.readAsText(file);
     }
 
     // Navigation
@@ -1110,6 +1247,7 @@
         notes: document.getElementById('notes').value,
         status: 'Pending',
         source: 'Manual',
+        _synced: false,
         createdAt: new Date().toISOString()
       };
       state.bookings.push(booking);
@@ -1119,10 +1257,13 @@
       resetServiceRows();
 
       const synced = await fbSet('bookings', booking.id, booking);
+      booking._synced = synced;
+      persistLocal();
+      updateSyncStatus();
       if (synced) {
         alert('✅ Booking disimpan & sync ke cloud!');
       } else {
-        alert('⚠️ Booking DAH disimpan dalam phone, tapi GAGAL sync ke cloud (network?).\n\nDia akan auto-sync sendiri bila app dibuka semula dengan internet. Jangan risau — data tak hilang.');
+        alert('⚠️ Booking DAH disimpan dalam phone, tapi GAGAL sync ke cloud.\n\nSebab biasa: internet lemah, ATAU kau buka link ni dalam in-app browser (WhatsApp/IG). Buka guna Chrome biasa untuk sync.\n\nData TAK hilang — dia auto-sync bila connect semula. Boleh juga tekan banner kuning untuk Sync.');
       }
       goToPage('bookings');
     }
@@ -1134,6 +1275,7 @@
       renderBookings();
       renderCalendar();
       renderFinance();
+      updateSyncStatus();
     }
 
     // Dashboard
@@ -1385,26 +1527,26 @@
         const time = today.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' });
 
         const receiptHTML = `
-          <div id="receipt-printable" style="width: 480px; margin: 0 auto; background: #ffffff; font-family: 'Plus Jakarta Sans', Arial, sans-serif; color: #1a1a2e; overflow: hidden; border: 1px solid #eee;">
+          <div id="receipt-printable" style="width: 480px; margin: 0 auto; background: #ffffff; font-family: 'Plus Jakarta Sans', Arial, sans-serif; color: #3a414c; overflow: hidden; border: 1px solid #eceef2;">
             <!-- Header Band -->
-            <div style="background: linear-gradient(135deg, #0f2044 0%, #1a3a5c 100%); color: white; padding: 28px 30px;">
+            <div style="background: linear-gradient(135deg, #3f4754 0%, #525c6b 100%); color: #f3f4f6; padding: 28px 30px;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
-                  <div style="font-size: 22px; font-weight: 800; letter-spacing: -0.3px;">Cuci Seat Kereta</div>
-                  <div style="font-size: 11px; color: #9db4d4; margin-top: 4px; letter-spacing: 1px; text-transform: uppercase;">Pakar Hygiene Dalaman Kereta</div>
+                  <div style="font-size: 22px; font-weight: 700; letter-spacing: -0.3px;">Cuci Seat Kereta</div>
+                  <div style="font-size: 11px; color: #b4bcc8; margin-top: 4px; letter-spacing: 1px; text-transform: uppercase;">Pakar Hygiene Dalaman Kereta</div>
                 </div>
-                <div style="text-align: right; font-size: 10px; color: #9db4d4; line-height: 1.6;">
+                <div style="text-align: right; font-size: 10px; color: #b4bcc8; line-height: 1.6;">
                   Northern Hope Enterprise<br>(00374641-A)
                 </div>
               </div>
-              <div style="font-size: 10px; color: #9db4d4; margin-top: 14px; line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 12px;">
+              <div style="font-size: 10px; color: #b4bcc8; margin-top: 14px; line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.14); padding-top: 12px;">
                 📍 Blok D-00-01, Pangsapuri Mawar, Jln KP 4/4, Taman Kota Perdana, 43300 Seri Kembangan, Selangor<br>
                 📱 017-699 3876 &nbsp;|&nbsp; 🌐 cuciseatkereta.com
               </div>
             </div>
 
             <!-- Accent strip -->
-            <div style="height: 4px; background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);"></div>
+            <div style="height: 3px; background: #c2a878;"></div>
 
             <!-- Body -->
             <div style="padding: 26px 30px;">
@@ -1412,43 +1554,43 @@
               <!-- Receipt title + meta -->
               <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
                 <div>
-                  <div style="font-size: 26px; font-weight: 800; color: #0f2044; letter-spacing: -0.5px;">RESIT</div>
-                  <div style="font-size: 13px; color: #f59e0b; font-weight: 700; margin-top: 2px;">${receiptNo}</div>
+                  <div style="font-size: 25px; font-weight: 700; color: #2b3340; letter-spacing: -0.5px;">RESIT</div>
+                  <div style="font-size: 13px; color: #b08d57; font-weight: 600; margin-top: 2px;">${receiptNo}</div>
                 </div>
                 <div style="text-align: right;">
-                  <div style="font-size: 10px; color: #999; font-weight: 600; letter-spacing: 0.5px;">TARIKH</div>
-                  <div style="font-size: 14px; font-weight: 700; color: #0f2044;">${date}</div>
-                  <div style="font-size: 10px; color: #999; margin-top: 2px;">${time}</div>
+                  <div style="font-size: 10px; color: #9aa3b0; font-weight: 600; letter-spacing: 0.5px;">TARIKH</div>
+                  <div style="font-size: 14px; font-weight: 600; color: #2b3340;">${date}</div>
+                  <div style="font-size: 10px; color: #9aa3b0; margin-top: 2px;">${time}</div>
                 </div>
               </div>
 
               <!-- Customer & Vehicle -->
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px;">
-                <div style="background: #f7f9fc; border-left: 3px solid #0f2044; padding: 14px;">
-                  <div style="color: #94a3b8; font-weight: 700; font-size: 9px; letter-spacing: 0.5px; margin-bottom: 6px;">PELANGGAN</div>
-                  <div style="font-weight: 700; color: #0f2044; font-size: 14px;">${booking.name}</div>
-                  <div style="color: #64748b; font-size: 12px; margin-top: 4px;">${booking.phone}</div>
+                <div style="background: #f7f8fa; border-left: 3px solid #8a93a0; padding: 14px; border-radius: 0 6px 6px 0;">
+                  <div style="color: #9aa3b0; font-weight: 700; font-size: 9px; letter-spacing: 0.5px; margin-bottom: 6px;">PELANGGAN</div>
+                  <div style="font-weight: 600; color: #2b3340; font-size: 14px;">${booking.name}</div>
+                  <div style="color: #6b7480; font-size: 12px; margin-top: 4px;">${booking.phone}</div>
                 </div>
-                <div style="background: #f7f9fc; border-left: 3px solid #f59e0b; padding: 14px;">
-                  <div style="color: #94a3b8; font-weight: 700; font-size: 9px; letter-spacing: 0.5px; margin-bottom: 6px;">KENDERAAN</div>
-                  <div style="font-weight: 700; color: #0f2044; font-size: 14px;">${booking.car}</div>
-                  <div style="color: #64748b; font-size: 12px; margin-top: 4px;">${booking.plate || '-'}</div>
+                <div style="background: #f7f8fa; border-left: 3px solid #c2a878; padding: 14px; border-radius: 0 6px 6px 0;">
+                  <div style="color: #9aa3b0; font-weight: 700; font-size: 9px; letter-spacing: 0.5px; margin-bottom: 6px;">KENDERAAN</div>
+                  <div style="font-weight: 600; color: #2b3340; font-size: 14px;">${booking.car}</div>
+                  <div style="color: #6b7480; font-size: 12px; margin-top: 4px;">${booking.plate || '-'}</div>
                 </div>
               </div>
 
               <!-- Service Details -->
               <div style="margin-bottom: 22px;">
-                <div style="font-weight: 700; color: #0f2044; margin-bottom: 10px; font-size: 11px; letter-spacing: 0.5px;">📋 BUTIRAN SERVIS</div>
-                <div style="border: 1px solid #eef2f7; border-radius: 8px; overflow: hidden;">
+                <div style="font-weight: 700; color: #6b7480; margin-bottom: 10px; font-size: 11px; letter-spacing: 0.5px;">📋 BUTIRAN SERVIS</div>
+                <div style="border: 1px solid #eceef2; border-radius: 8px; overflow: hidden;">
                   ${
                     (booking.serviceItems && booking.serviceItems.length
                       ? booking.serviceItems
                       : booking.service.split('+').map((s, i) => ({ name: s.trim(), price: i === 0 ? booking.price : 0 }))
                     ).map((it, idx) => 
-                      `<div style="display: flex; gap: 12px; padding: 11px 14px; align-items: center; background: ${idx % 2 === 0 ? '#ffffff' : '#f9fafc'}; ${idx > 0 ? 'border-top: 1px solid #f0f3f7;' : ''}">
-                        <div style="width: 22px; height: 22px; background: #0f2044; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;">${idx + 1}</div>
-                        <div style="font-size: 12px; color: #334155; flex: 1;">${it.name}</div>
-                        <div style="font-size: 12px; font-weight: 700; white-space: nowrap;">${(Number(it.price) || 0) > 0 ? '<span style="color:#0f2044;">RM' + it.price + '</span>' : '<span style="color:#10b981;font-weight:800;letter-spacing:0.3px;">FOC</span>'}</div>
+                      `<div style="display: flex; gap: 12px; padding: 11px 14px; align-items: center; background: ${idx % 2 === 0 ? '#ffffff' : '#fafbfc'}; ${idx > 0 ? 'border-top: 1px solid #f1f3f6;' : ''}">
+                        <div style="width: 22px; height: 22px; background: #eef0f4; color: #6b7480; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;">${idx + 1}</div>
+                        <div style="font-size: 12px; color: #4a525e; flex: 1;">${it.name}</div>
+                        <div style="font-size: 12px; font-weight: 700; white-space: nowrap;">${(Number(it.price) || 0) > 0 ? '<span style="color:#2b3340;">RM' + it.price + '</span>' : '<span style="color:#7a9b76;font-weight:700;letter-spacing:0.3px;">FOC</span>'}</div>
                       </div>`
                     ).join('')
                   }
@@ -1456,26 +1598,26 @@
               </div>
 
               <!-- Total + Payment -->
-              <div style="background: #0f2044; border-radius: 10px; padding: 18px 20px; margin-bottom: 20px;">
+              <div style="background: #f4f6f9; border: 1px solid #e7ebf1; border-radius: 10px; padding: 18px 20px; margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                  <span style="color: #9db4d4; font-size: 11px; font-weight: 600;">STATUS BAYARAN</span>
-                  <span style="background: ${isComplete(booking) ? '#10b981' : '#f59e0b'}; color: white; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px;">${isComplete(booking) ? '✓ PAID' : 'PENDING'}</span>
+                  <span style="color: #8a93a0; font-size: 11px; font-weight: 600;">STATUS BAYARAN</span>
+                  <span style="background: ${isComplete(booking) ? '#6f9b7e' : '#bd9a5f'}; color: #fff; font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px;">${isComplete(booking) ? '✓ PAID' : 'PENDING'}</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 12px;">
-                  <span style="color: white; font-size: 15px; font-weight: 700;">JUMLAH</span>
-                  <span style="color: #fbbf24; font-size: 26px; font-weight: 800;">RM${booking.price}</span>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e1e6ed; padding-top: 12px;">
+                  <span style="color: #4a525e; font-size: 15px; font-weight: 600;">JUMLAH</span>
+                  <span style="color: #2b3340; font-size: 26px; font-weight: 800;">RM${booking.price}</span>
                 </div>
               </div>
 
               <!-- Footer -->
               <div style="text-align: center; padding-top: 8px;">
-                <div style="font-weight: 700; color: #0f2044; font-size: 13px; margin-bottom: 6px;">Terima kasih kerana memilih kami! 🙏</div>
-                <div style="font-size: 10px; color: #94a3b8; line-height: 1.6;">Resit ini dijana secara digital. Tiada tandatangan diperlukan.<br>Simpan resit ini sebagai bukti pembayaran anda.</div>
+                <div style="font-weight: 600; color: #4a525e; font-size: 13px; margin-bottom: 6px;">Terima kasih kerana memilih kami! 🙏</div>
+                <div style="font-size: 10px; color: #9aa3b0; line-height: 1.6;">Resit ini dijana secara digital. Tiada tandatangan diperlukan.<br>Simpan resit ini sebagai bukti pembayaran anda.</div>
               </div>
             </div>
 
             <!-- Bottom brand band -->
-            <div style="background: #f7f9fc; padding: 12px; text-align: center; font-size: 10px; color: #94a3b8; border-top: 1px solid #eef2f7;">
+            <div style="background: #f7f8fa; padding: 12px; text-align: center; font-size: 10px; color: #9aa3b0; border-top: 1px solid #eceef2;">
               Cuci Seat, Kusyen, Karpet Kereta • Pakar Hygiene Dalaman Kereta
             </div>
           </div>
@@ -1753,7 +1895,7 @@
       'Equipment': '#10b981', 'Transport': '#ef4444', 'Other': '#64748b'
     };
 
-    function saveExpense(e) {
+    async function saveExpense(e) {
       e.preventDefault();
       const expense = {
         id: Date.now(),
@@ -1761,13 +1903,16 @@
         desc: document.getElementById('exp-desc').value,
         amount: Number(document.getElementById('exp-amount').value),
         date: document.getElementById('exp-date').value,
+        _synced: false,
         createdAt: new Date().toISOString()
       };
       state.expenses.push(expense);
       persistLocal();
-      fbSet('expenses', expense.id, expense);
       renderAll();
       document.querySelector('#finance form').reset();
+      expense._synced = await fbSet('expenses', expense.id, expense);
+      persistLocal();
+      updateSyncStatus();
       alert('✅ Expense saved!');
     }
 
@@ -1825,7 +1970,7 @@
       }
       const barCtx = document.getElementById('finChart');
       if (barCtx) {
-        if (finChart) finChart.destroy();
+        if (finChart && finChart.destroy) finChart.destroy();
         finChart = new Chart(barCtx, {
           type: 'bar',
           data: { labels, datasets: [
@@ -1840,7 +1985,7 @@
       const catLabels = Object.keys(cats);
       const pieCtx = document.getElementById('finPie');
       if (pieCtx) {
-        if (finPie) finPie.destroy();
+        if (finPie && finPie.destroy) finPie.destroy();
         if (catLabels.length) {
           finPie = new Chart(pieCtx, {
             type: 'doughnut',
