@@ -980,7 +980,10 @@
     async function fbSet(coll, id, data) {
       if (!fbReady()) return false;
       try {
-        await firebase.firestore().collection(coll).doc(String(id)).set(data);
+        // Buang flag dalaman (mula dengan _) supaya dokumen cloud bersih
+        const clean = {};
+        for (const k in data) { if (!k.startsWith('_')) clean[k] = data[k]; }
+        await firebase.firestore().collection(coll).doc(String(id)).set(clean);
         return true;
       } catch (e) { console.error('fbSet error', e); return false; }
     }
