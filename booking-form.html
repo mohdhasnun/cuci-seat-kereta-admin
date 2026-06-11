@@ -634,7 +634,7 @@
       id: Date.now(),
       createdAt: new Date().toISOString(),
       source: 'Online Form',
-      status: 'Booking',
+      status: 'Enquiry',
       paymentStatus: 'Belum Bayar',
       paymentMethod: 'TBD',
       name: document.getElementById('f-name').value.trim(),
@@ -647,6 +647,7 @@
       notes: document.getElementById('f-notes').value.trim(),
       price: 0,
       material: 0,
+      deposit: 0,
       depositAmount: 0,
       review: 'Not Yet'
     };
