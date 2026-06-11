@@ -323,6 +323,50 @@
     }
     .form-submit-btn:active { transform: scale(0.99); }
 
+    /* Service checklist - clear custom checkbox */
+    .svc-check {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 28px;
+      height: 28px;
+      border: 2.5px solid #cbd5e1;
+      border-radius: 8px;
+      background: #fff;
+      position: relative;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+    }
+    .svc-check:checked {
+      background: #2563eb;
+      border-color: #2563eb;
+      box-shadow: 0 2px 6px rgba(37,99,235,0.4);
+    }
+    .svc-check:checked::after {
+      content: '';
+      position: absolute;
+      left: 9px;
+      top: 4px;
+      width: 7px;
+      height: 13px;
+      border: solid #fff;
+      border-width: 0 3.5px 3.5px 0;
+      transform: rotate(45deg);
+    }
+    .svc-item.selected { background: #eff6ff !important; }
+    .svc-item.selected .svc-label { color: #1d4ed8 !important; font-weight: 700 !important; }
+    .svc-foc-tag {
+      display: none;
+      font-size: 10px;
+      font-weight: 800;
+      color: #10b981;
+      background: #d1fae5;
+      padding: 2px 7px;
+      border-radius: 20px;
+      letter-spacing: 0.3px;
+    }
+    .svc-item.is-foc .svc-foc-tag { display: inline-block; }
+
     /* Receipt */
     .receipt {
       background: white;
@@ -466,6 +510,9 @@
   </style>
   <!-- html2pdf for PDF download -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- html2canvas + jsPDF (reliable mobile PDF) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
   <!-- PIN Modal -->
@@ -951,13 +998,14 @@
       container.innerHTML = DEFAULT_SERVICES.map((svc, idx) => {
         const isChecked = preset.hasOwnProperty(svc);
         const priceVal = isChecked ? preset[svc] : '';
+        const isFoc = isChecked && (Number(preset[svc]) || 0) === 0;
         return `
-          <div class="svc-item" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; ${idx > 0 ? 'border-top: 1px solid #f1f5f9;' : ''} background: ${isChecked ? '#f0f9ff' : '#ffffff'};">
-            <input type="checkbox" class="svc-check" data-name="${svc.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="toggleService(this)" style="width: 18px; height: 18px; flex-shrink: 0; cursor: pointer;">
-            <label style="flex: 1; font-size: 13px; color: #334155; cursor: pointer;" onclick="this.previousElementSibling.click()">${svc}</label>
+          <div class="svc-item ${isChecked ? 'selected' : ''} ${isFoc ? 'is-foc' : ''}" style="display: flex; align-items: center; gap: 12px; padding: 12px; ${idx > 0 ? 'border-top: 1px solid #f1f5f9;' : ''}">
+            <input type="checkbox" class="svc-check" data-name="${svc.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} onchange="toggleService(this)">
+            <label class="svc-label" style="flex: 1; font-size: 13.5px; color: #334155; cursor: pointer; line-height: 1.35;" onclick="this.previousElementSibling.click()">${svc} <span class="svc-foc-tag">FOC</span></label>
             <div style="display: flex; align-items: center; gap: 4px;">
               <span style="font-size: 12px; color: #94a3b8;">RM</span>
-              <input type="number" class="svc-price" placeholder="0" value="${priceVal}" ${isChecked ? '' : 'disabled'} oninput="recalcTotal()" style="width: 70px; padding: 7px; border: 1px solid #ddd; border-radius: 6px; text-align: right; ${isChecked ? '' : 'background: #f8fafc;'}">
+              <input type="number" class="svc-price" placeholder="0" value="${priceVal}" ${isChecked ? '' : 'disabled'} oninput="recalcTotal()" style="width: 72px; padding: 9px; border: 1px solid #ddd; border-radius: 6px; text-align: right; font-size: 15px; ${isChecked ? '' : 'background: #f8fafc;'}">
             </div>
           </div>
         `;
@@ -971,13 +1019,13 @@
       if (checkbox.checked) {
         priceInput.disabled = false;
         priceInput.style.background = '';
-        row.style.background = '#f0f9ff';
+        row.classList.add('selected');
         priceInput.focus();
       } else {
         priceInput.disabled = true;
         priceInput.value = '';
         priceInput.style.background = '#f8fafc';
-        row.style.background = '#ffffff';
+        row.classList.remove('selected', 'is-foc');
       }
       recalcTotal();
     }
@@ -987,7 +1035,11 @@
       document.querySelectorAll('#service-checklist .svc-item').forEach(row => {
         const check = row.querySelector('.svc-check');
         if (check && check.checked) {
-          total += Number(row.querySelector('.svc-price').value) || 0;
+          const p = Number(row.querySelector('.svc-price').value) || 0;
+          total += p;
+          row.classList.toggle('is-foc', p === 0);
+        } else {
+          row.classList.remove('is-foc');
         }
       });
       const totalEl = document.getElementById('form-total');
@@ -1396,7 +1448,7 @@
                       `<div style="display: flex; gap: 12px; padding: 11px 14px; align-items: center; background: ${idx % 2 === 0 ? '#ffffff' : '#f9fafc'}; ${idx > 0 ? 'border-top: 1px solid #f0f3f7;' : ''}">
                         <div style="width: 22px; height: 22px; background: #0f2044; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;">${idx + 1}</div>
                         <div style="font-size: 12px; color: #334155; flex: 1;">${it.name}</div>
-                        <div style="font-size: 12px; color: #0f2044; font-weight: 700; white-space: nowrap;">RM${it.price}</div>
+                        <div style="font-size: 12px; font-weight: 700; white-space: nowrap;">${(Number(it.price) || 0) > 0 ? '<span style="color:#0f2044;">RM' + it.price + '</span>' : '<span style="color:#10b981;font-weight:800;letter-spacing:0.3px;">FOC</span>'}</div>
                       </div>`
                     ).join('')
                   }
@@ -1471,8 +1523,8 @@
       });
     }
 
-    // Shared PDF generator - clones into clean off-screen container to avoid whitespace/centering issues
-    function generateReceiptPDF(booking, filename, save) {
+    // Reliable PDF generator: html2canvas -> jsPDF (page sized to content = valid single-page PDF on mobile)
+    async function generateReceiptPDF(booking, filename, save) {
       const source = document.getElementById('receipt-printable');
       if (!source) { alert('Receipt not found'); return Promise.reject(); }
 
@@ -1490,23 +1542,39 @@
       holder.appendChild(clone);
       document.body.appendChild(holder);
 
-      const opt = {
-        margin: 0,
-        filename: filename,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 3, backgroundColor: '#ffffff', windowWidth: 480 },
-        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
-      };
+      try {
+        const canvas = await html2canvas(clone, {
+          scale: 2,
+          backgroundColor: '#ffffff',
+          useCORS: true,
+          windowWidth: 480,
+          width: 480
+        });
 
-      const worker = html2pdf().set(opt).from(clone);
-      const action = save ? worker.save() : worker.outputPdf('blob');
-      return Promise.resolve(action).then((res) => {
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const JsPDF = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : null;
+        if (!JsPDF) throw new Error('jsPDF not loaded');
+
+        // Page size = image size (in px) -> no cropping, no blank A4 area, valid PDF
+        const pdf = new JsPDF({
+          orientation: 'portrait',
+          unit: 'px',
+          format: [canvas.width, canvas.height],
+          hotfixes: ['px_scaling']
+        });
+        pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+
+        const blob = pdf.output('blob');
+        if (save) pdf.save(filename);
+
         if (document.body.contains(holder)) document.body.removeChild(holder);
-        return res;
-      }).catch((err) => {
+        return blob;
+      } catch (err) {
         if (document.body.contains(holder)) document.body.removeChild(holder);
+        console.error('PDF generation failed:', err);
+        alert('⚠️ Gagal jana PDF. Cuba guna butang Print untuk save sebagai PDF.');
         throw err;
-      });
+      }
     }
 
     function savePDF() {
