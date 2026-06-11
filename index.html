@@ -6,7 +6,7 @@
   <title>Cuci Seat Kereta - Admin</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- Chart.js for finance graphs -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- Firebase (loaded before app so data is available immediately) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -20,6 +20,11 @@
         messagingSenderId: '1001122712482',
         appId: '1:1001122712482:web:5452d31571af55b4ea00fb'
       });
+      // Cache offline: data dari IndexedDB load serta-merta, sync di belakang.
+      try {
+        firebase.firestore().enablePersistence({ synchronizeTabs: true })
+          .catch(function (err) { console.warn('Persistence not enabled:', err && err.code); });
+      } catch (e) { console.warn('Persistence error:', e); }
       console.log('✅ Firebase initialized');
     }
   </script>
@@ -539,11 +544,8 @@
       font-weight: 600;
     }
   </style>
-  <!-- html2pdf for PDF download -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <!-- html2canvas + jsPDF (reliable mobile PDF) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- PDF libraries (html2canvas + jsPDF) are lazy-loaded only when Save PDF is used -->
+
 </head>
 <body>
   <!-- PIN Modal -->
@@ -975,6 +977,13 @@
       setInterval(() => { if (countPending() > 0) syncPending(false); }, 20000);
     }
 
+    // chart.js dimuat secara defer — bila siap, lukis semula carta
+    window.addEventListener('load', () => {
+      if (typeof Chart !== 'undefined' && document.getElementById('app-main') && document.getElementById('app-main').style.display !== 'none') {
+        try { renderAll(); } catch (e) {}
+      }
+    });
+
     // Firebase helpers (best-effort, never block UI)
     function fbReady() { return typeof firebase !== 'undefined' && firebase.firestore; }
     async function fbSet(coll, id, data) {
@@ -1009,6 +1018,9 @@
 
       // 2) Overlay live data from Firebase (MERGE, never blindly overwrite cache)
       if (fbReady()) {
+        // Tunjuk penanda "memuatkan" supaya 0 sekejap tak nampak macam data hilang
+        const _b = document.getElementById('sync-banner');
+        if (_b) { _b.style.display = 'block'; _b.style.background = '#dbeafe'; _b.style.color = '#1e40af'; _b.textContent = '🔄 Memuatkan data terkini dari cloud...'; }
         try {
           const bSnap = await firebase.firestore().collection('bookings').get();
           const fbBookings = bSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), _synced: true }));
@@ -1784,7 +1796,29 @@
     }
 
     // Reliable PDF generator: html2canvas -> jsPDF (page sized to content = valid single-page PDF on mobile)
+    // Lazy-load PDF libraries only when needed (keeps app start fast)
+    let _pdfLibsPromise = null;
+    function loadPdfLibs() {
+      if (window.jspdf && window.html2canvas) return Promise.resolve();
+      if (_pdfLibsPromise) return _pdfLibsPromise;
+      _pdfLibsPromise = new Promise((resolve, reject) => {
+        let loaded = 0;
+        const done = () => { if (++loaded === 2) resolve(); };
+        const s1 = document.createElement('script');
+        s1.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        s1.onload = done; s1.onerror = () => reject(new Error('html2canvas load failed'));
+        const s2 = document.createElement('script');
+        s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        s2.onload = done; s2.onerror = () => reject(new Error('jspdf load failed'));
+        document.head.appendChild(s1);
+        document.head.appendChild(s2);
+      });
+      return _pdfLibsPromise;
+    }
+
     async function generateReceiptPDF(booking, filename, save) {
+      try { await loadPdfLibs(); }
+      catch (e) { alert('⚠️ Gagal muat library PDF. Check internet & cuba lagi.'); throw e; }
       const source = document.getElementById('receipt-printable');
       if (!source) { alert('Receipt not found'); return Promise.reject(); }
 
