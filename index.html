@@ -20,11 +20,6 @@
         messagingSenderId: '1001122712482',
         appId: '1:1001122712482:web:5452d31571af55b4ea00fb'
       });
-      // Cache offline: data dari IndexedDB load serta-merta, sync di belakang.
-      try {
-        firebase.firestore().enablePersistence({ synchronizeTabs: true })
-          .catch(function (err) { console.warn('Persistence not enabled:', err && err.code); });
-      } catch (e) { console.warn('Persistence error:', e); }
       console.log('✅ Firebase initialized');
     }
   </script>
@@ -581,7 +576,8 @@
         <p class="section-subtitle">Business overview & quick stats</p>
 
         <div style="display:flex; gap:10px; margin-bottom:18px;">
-          <button onclick="backupData()" style="flex:1; padding:11px; border:none; border-radius:10px; background:#0f2044; color:#fff; font-weight:700; font-size:13px; cursor:pointer;">⬇️ Backup Data</button>
+          <button onclick="refreshFromCloud()" style="flex:1.3; padding:11px; border:none; border-radius:10px; background:#2563eb; color:#fff; font-weight:700; font-size:13px; cursor:pointer;">🔄 Refresh Cloud</button>
+          <button onclick="backupData()" style="flex:1; padding:11px; border:none; border-radius:10px; background:#0f2044; color:#fff; font-weight:700; font-size:13px; cursor:pointer;">⬇️ Backup</button>
           <button onclick="document.getElementById('restore-file').click()" style="flex:1; padding:11px; border:1.5px solid #cbd5e1; border-radius:10px; background:#fff; color:#334155; font-weight:700; font-size:13px; cursor:pointer;">⬆️ Restore</button>
           <input type="file" id="restore-file" accept="application/json" style="display:none" onchange="restoreData(event)">
         </div>
@@ -1022,7 +1018,7 @@
         const _b = document.getElementById('sync-banner');
         if (_b) { _b.style.display = 'block'; _b.style.background = '#dbeafe'; _b.style.color = '#1e40af'; _b.textContent = '🔄 Memuatkan data terkini dari cloud...'; }
         try {
-          const bSnap = await firebase.firestore().collection('bookings').get();
+          const bSnap = await firebase.firestore().collection('bookings').get({ source: 'server' });
           const fbBookings = bSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), _synced: true }));
           // Fix legacy records (e.g. status "Confirmed") so they appear & count correctly
           fbBookings.forEach(b => { if (normalizeBooking(b)) fbSet('bookings', b.id, b); });
@@ -1038,7 +1034,7 @@
           console.log('✅ Loaded', fbBookings.length, 'from Firebase +', localOnly.length, 'pending re-sync');
         } catch (err) { console.error('Firebase bookings load failed (keeping cache):', err); }
         try {
-          const eSnap = await firebase.firestore().collection('expenses').get();
+          const eSnap = await firebase.firestore().collection('expenses').get({ source: 'server' });
           const fbExp = eSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), _synced: true }));
           const eIds = new Set(fbExp.map(e => String(e.id)));
           const expOnly = (state.expenses || []).filter(e => !eIds.has(String(e.id)) && !e._deleted)
@@ -1060,6 +1056,29 @@
       localStorage.setItem(EXP_KEY, JSON.stringify({ expenses: state.expenses }));
     }
 
+    // Force-pull the freshest data straight from Firebase server (bypass any cache)
+    async function refreshFromCloud() {
+      if (!fbReady()) {
+        alert('⚠️ Firebase tak connect.\n\nPastikan: (1) ada internet, (2) buka guna Chrome biasa — BUKAN in-app browser WhatsApp/IG, (3) buka URL deploy (mohdhasnun.github.io), bukan fail download dalam komputer.');
+        return;
+      }
+      try {
+        const bSnap = await firebase.firestore().collection('bookings').get({ source: 'server' });
+        const fbBookings = bSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), _synced: true }));
+        fbBookings.forEach(b => { if (normalizeBooking(b)) fbSet('bookings', b.id, b); });
+        state.bookings = fbBookings;
+        const eSnap = await firebase.firestore().collection('expenses').get({ source: 'server' });
+        state.expenses = eSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), _synced: true }));
+        persistLocal();
+        renderAll();
+        const enq = state.bookings.filter(b => b.status === 'Enquiry').length;
+        const names = state.bookings.filter(b => b.status === 'Enquiry').map(b => b.name).join(', ');
+        alert('✅ Data SEGAR dari cloud!\n\nJumlah booking : ' + fbBookings.length + '\nEnquiry : ' + enq + (names ? '\n(' + names + ')' : ''));
+      } catch (e) {
+        alert('⚠️ Gagal tarik dari cloud:\n' + (e && e.message ? e.message : e));
+      }
+    }
+
     // Format any date to dd/mm/yy for display (storage stays yyyy-mm-dd for sorting)
     function formatDMY(d) {
       if (!d) return '';
@@ -1075,7 +1094,7 @@
     }
 
     // Normalize legacy records (old app versions) so they show & count correctly
-    const LEGACY_STATUS = { 'Confirmed': 'Booking', 'Complete': 'Completed', 'Cancel': 'Cancelled', 'Done': 'Completed', 'Paid': 'Completed' };
+    const LEGACY_STATUS = { 'Confirmed': 'Booking', 'Complete': 'Completed', 'Cancel': 'Cancelled', 'Done': 'Completed', 'Paid': 'Completed', 'Enquiries': 'Enquiry', 'Enquire': 'Enquiry', 'Inquiry': 'Enquiry', 'Pending Deposit': 'Pending' };
     function normalizeBooking(b) {
       let changed = false;
       if (b.status && LEGACY_STATUS[b.status]) { b.status = LEGACY_STATUS[b.status]; changed = true; }
