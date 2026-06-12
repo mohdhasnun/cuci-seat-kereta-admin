@@ -566,7 +566,7 @@
           <p>Pakar Hygiene Dalaman Kereta</p>
         </div>
       </div>
-      <button class="add-btn" onclick="goToPage('add-booking')">+ Add</button>
+      <button class="add-btn" onclick="newBooking()">+ Add</button>
     </div>
     <div class="datetime-bar" id="live-clock">--</div>
     <div id="sync-banner" onclick="syncPending(true)" style="display:none; max-width:600px; margin:0 auto; cursor:pointer; text-align:center; font-size:12.5px; font-weight:700; padding:9px 12px;"></div>
@@ -666,7 +666,7 @@
 
       <!-- Add Booking -->
       <section id="add-booking" class="page">
-        <h2 class="section-title">Add Booking</h2>
+        <h2 class="section-title" id="add-booking-title">Add Booking</h2>
         <p class="section-subtitle">Create new booking record</p>
         <form onsubmit="saveBooking(event)" class="form-group">
 
@@ -773,7 +773,7 @@
           <input type="hidden" id="service">
           <input type="hidden" id="price">
 
-          <button type="submit" class="form-submit-btn">💾 Save Booking</button>
+          <button type="submit" id="save-booking-btn" class="form-submit-btn">💾 Save Booking</button>
         </form>
       </section>
 
@@ -885,7 +885,7 @@
         <div class="nav-icon">📊</div>
         <div class="nav-label">Dashboard</div>
       </button>
-      <button class="nav-item" onclick="goToPage('add-booking')">
+      <button class="nav-item" onclick="newBooking()">
         <div class="nav-icon">➕</div>
         <div class="nav-label">Add</div>
       </button>
@@ -909,6 +909,7 @@
     const EXP_KEY = 'cuciSeatAdmin.expenses.v1';
     let state = { bookings: [], expenses: [] };
     let currentReceiptId = null;
+    let editingBookingId = null;
     let calMonth = new Date();
 
     // Senarai servis (latest)
@@ -1346,6 +1347,37 @@
       const total = serviceItems.reduce((s, it) => s + it.price, 0);
       const serviceStr = serviceItems.map(it => it.name).join(' + ');
 
+      // EDIT MODE: kemaskini rekod sedia ada (id & status kekal), bukan buat baru
+      if (editingBookingId !== null) {
+        const existing = state.bookings.find(b => b.id == editingBookingId);
+        if (existing) {
+          existing.name = document.getElementById('name').value;
+          existing.phone = document.getElementById('phone').value;
+          existing.car = document.getElementById('car').value;
+          existing.plate = document.getElementById('plate').value;
+          existing.service = serviceStr;
+          existing.serviceItems = serviceItems;
+          existing.date = document.getElementById('date').value;
+          existing.time = document.getElementById('time').value;
+          existing.price = total;
+          existing.deposit = Number(document.getElementById('deposit').value) || 0;
+          existing.material = Number(document.getElementById('material').value) || 0;
+          existing.notes = document.getElementById('notes').value;
+          existing._synced = false;
+          persistLocal();
+          renderAll();
+          const ok = await fbSet('bookings', existing.id, existing);
+          existing._synced = ok;
+          persistLocal();
+          updateSyncStatus();
+          resetEditMode();
+          alert(ok ? '✅ Booking dikemaskini & sync ke cloud!' : '⚠️ Dikemaskini dalam phone, akan auto-sync bila connect.');
+          goToPage('bookings');
+          return;
+        }
+        resetEditMode();
+      }
+
       const booking = {
         id: Date.now(),
         name: document.getElementById('name').value,
@@ -1685,6 +1717,24 @@
       }
     }
 
+    function resetEditMode() {
+      editingBookingId = null;
+      const sb = document.getElementById('save-booking-btn');
+      if (sb) sb.textContent = '💾 Save Booking';
+      const hdr = document.getElementById('add-booking-title');
+      if (hdr) hdr.textContent = 'Add Booking';
+    }
+
+    // Buka borang KOSONG untuk booking baru (reset mod edit dulu)
+    function newBooking() {
+      resetEditMode();
+      const form = document.querySelector('#add-booking form');
+      if (form) form.reset();
+      resetServiceRows();
+      syncDateDisplay();
+      goToPage('add-booking');
+    }
+
     function editBooking(id) {
       const booking = state.bookings.find(b => b.id == id);
       if (booking) {
@@ -1710,9 +1760,13 @@
         buildServiceChecklist(items);
         recalcTotal();
 
-        state.bookings = state.bookings.filter(b => b.id != id);
-        persistLocal();
-        fbDelete('bookings', id);
+        // EDIT-IN-PLACE: jangan padam rekod. Tandakan id yang sedang diedit;
+        // saveBooking akan kemaskini rekod yang sama (id & status kekal).
+        editingBookingId = id;
+        const sb = document.getElementById('save-booking-btn');
+        if (sb) sb.textContent = '💾 Update Booking';
+        const hdr = document.getElementById('add-booking-title');
+        if (hdr) hdr.textContent = 'Edit Booking';
         goToPage('add-booking');
       }
     }
