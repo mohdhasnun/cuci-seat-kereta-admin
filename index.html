@@ -244,6 +244,8 @@
     }
     .btn-whatsapp { background: #10b981; color: white; }
     .btn-whatsapp:hover { background: #059669; }
+    .btn-deposit { background: #f59e0b; color: white; }
+    .btn-deposit:hover { background: #d97706; }
     .btn-edit { background: #3b82f6; color: white; }
     .btn-edit:hover { background: #2563eb; }
     .btn-convert { background: #8b5cf6; color: white; }
@@ -1481,7 +1483,7 @@
             ${e.notes ? '<div class="detail-row"><div class="detail-label">📝 Notes:</div><div class="detail-value">' + e.notes + '</div></div>' : ''}
           </div>
           <div class="card-buttons">
-            <button class="btn btn-whatsapp" onclick="requestDeposit('${e.id}')">💬 Minta Deposit</button>
+            <button class="btn btn-deposit" onclick="requestDeposit('${e.id}')">💰 Minta Deposit</button>
             <button class="btn btn-edit" onclick="editPrice('${e.id}')">✏️ Edit & Set Price</button>
             <button class="btn btn-convert" onclick="convertToBooking('${e.id}')">✅ Convert to Booking</button>
           </div>
@@ -1539,7 +1541,9 @@
             </div>
           </div>
           <div class="card-buttons">
-            <button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">💬 WhatsApp Confirm</button>
+            ${b.status === 'Pending'
+              ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button>`
+              : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
             <button class="btn btn-edit" onclick="editBooking('${b.id}')">✏️ Edit</button>
             <button class="btn btn-convert" onclick="showReceipt('${b.id}')">📄 Receipt</button>
             <button class="btn btn-secondary" onclick="deleteBooking('${b.id}')">🗑️ Delete</button>
@@ -1580,17 +1584,20 @@
         if (!price || price <= 0) { alert('⚠️ Harga tak sah.'); return; }
       }
 
-      // 2) Jumlah deposit — set sendiri
-      const depInp = prompt('Jumlah deposit diperlukan (RM):', '');
-      if (depInp === null) return;
-      const deposit = Number(depInp);
-      if (!deposit || deposit <= 0) { alert('⚠️ Jumlah deposit tak sah.'); return; }
+      // 2) Jumlah deposit — guna yang dah set, atau tanya
+      let deposit = Number(booking.deposit) || 0;
+      if (deposit <= 0) {
+        const depInp = prompt('Jumlah deposit diperlukan (RM):', '');
+        if (depInp === null) return;
+        deposit = Number(depInp);
+        if (!deposit || deposit <= 0) { alert('⚠️ Jumlah deposit tak sah.'); return; }
+      }
       if (deposit > price) { alert('⚠️ Deposit tak boleh lebih dari harga (RM' + price + ').'); return; }
 
-      // 3) Simpan harga + deposit, tukar status ke Pending (tunggu deposit)
+      // 3) Simpan harga + deposit; Enquiry -> Pending (tunggu deposit)
       booking.price = price;
       booking.deposit = deposit;
-      booking.status = 'Pending';
+      if (booking.status === 'Enquiry') booking.status = 'Pending';
       booking._synced = false;
       persistLocal();
       renderAll();
@@ -2056,7 +2063,9 @@
             </div>
           </div>
           <div class="card-buttons">
-            <button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">💬 WhatsApp Confirm</button>
+            ${b.status === 'Pending'
+              ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button>`
+              : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
             <button class="btn btn-edit" onclick="editBooking('${b.id}')">✏️ Edit</button>
             <button class="btn btn-convert" onclick="showReceipt('${b.id}')">📄 Receipt</button>
             <button class="btn btn-secondary" onclick="deleteBooking('${b.id}')">🗑️ Delete</button>
