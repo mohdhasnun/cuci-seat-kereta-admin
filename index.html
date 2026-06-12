@@ -1481,7 +1481,7 @@
             ${e.notes ? '<div class="detail-row"><div class="detail-label">📝 Notes:</div><div class="detail-value">' + e.notes + '</div></div>' : ''}
           </div>
           <div class="card-buttons">
-            <button class="btn btn-whatsapp" onclick="sendWhatsApp('${e.id}')">💬 Send Deposit Request</button>
+            <button class="btn btn-whatsapp" onclick="requestDeposit('${e.id}')">💬 Minta Deposit</button>
             <button class="btn btn-edit" onclick="editPrice('${e.id}')">✏️ Edit & Set Price</button>
             <button class="btn btn-convert" onclick="convertToBooking('${e.id}')">✅ Convert to Booking</button>
           </div>
@@ -1556,6 +1556,71 @@
       if (p.startsWith('0')) p = '60' + p.slice(1);
       else if (!p.startsWith('60')) p = '60' + p;
       return p;
+    }
+
+    // Bank details for deposit transfer
+    const BANK_INFO = { bank: 'Maybank', name: 'Northern Hope Enterprise', account: '5521 8951 6033' };
+
+    // Minta deposit (untuk Enquiry): tanya harga & deposit, hantar mesej transfer bank, tukar ke Pending
+    function requestDeposit(id) {
+      const booking = state.bookings.find(b => b.id == id);
+      if (!booking) return;
+      const phone = waPhone(booking.phone);
+      if (phone.length < 10) {
+        alert('⚠️ Nombor telefon customer tak sah atau kosong. Sila Edit & isi nombor dulu.');
+        return;
+      }
+
+      // 1) Harga — kalau belum set, tanya
+      let price = Number(booking.price) || 0;
+      if (price <= 0) {
+        const inp = prompt('Harga servis untuk ' + booking.name + ' (RM):', '');
+        if (inp === null) return;
+        price = Number(inp);
+        if (!price || price <= 0) { alert('⚠️ Harga tak sah.'); return; }
+      }
+
+      // 2) Jumlah deposit — set sendiri
+      const depInp = prompt('Jumlah deposit diperlukan (RM):', '');
+      if (depInp === null) return;
+      const deposit = Number(depInp);
+      if (!deposit || deposit <= 0) { alert('⚠️ Jumlah deposit tak sah.'); return; }
+      if (deposit > price) { alert('⚠️ Deposit tak boleh lebih dari harga (RM' + price + ').'); return; }
+
+      // 3) Simpan harga + deposit, tukar status ke Pending (tunggu deposit)
+      booking.price = price;
+      booking.deposit = deposit;
+      booking.status = 'Pending';
+      booking._synced = false;
+      persistLocal();
+      renderAll();
+      fbSet('bookings', booking.id, booking).then(ok => { booking._synced = ok; persistLocal(); updateSyncStatus(); });
+
+      // 4) Bina mesej minta deposit
+      const line = '─────────────────';
+      const msg =
+        'Hai ' + booking.name + ',\n\n' +
+        'Berikut adalah butiran tempahan servis cuci kereta anda:\n' +
+        line + '\n' +
+        '🚗 Vehicle   : ' + booking.car + '\n' +
+        '🔢 No. Plat  : ' + (booking.plate || '-') + '\n' +
+        '💺 Servis    : ' + (booking.service || '-') + '\n' +
+        '📅 Tarikh    : ' + formatDMY(booking.date) + '\n' +
+        '🕐 Masa      : ' + (booking.time || '-') + '\n' +
+        '💳 Harga     : RM' + price + '\n' +
+        line + '\n' +
+        '💰 MAKLUMAT DEPOSIT\n' +
+        line + '\n' +
+        '⚠️ Deposit Diperlukan : RM' + deposit + '\n' +
+        'Sila transfer deposit ke:\n' +
+        '🏦 Bank     : ' + BANK_INFO.bank + '\n' +
+        '👤 Nama     : ' + BANK_INFO.name + '\n' +
+        '🔢 Akaun    : ' + BANK_INFO.account + '\n\n' +
+        'Hantar bukti bayaran ke sini untuk kami sahkan slot anda.\n' +
+        line + '\n' +
+        'Terima kasih kerana memilih perkhidmatan kami! 😊';
+
+      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
     }
 
     function sendWhatsApp(id) {
