@@ -197,6 +197,14 @@
     }
     .card-name { font-size: 18px; font-weight: 700; color: #0f2044; }
     .card-date { font-size: 12px; color: #888; background: #f0f0f0; padding: 4px 8px; border-radius: 4px; }
+    .card-datetime {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      background: #fef9c3; border: 1.5px solid #fde047; color: #713f12;
+      font-weight: 800; font-size: 15px; letter-spacing: 0.2px;
+      padding: 10px 14px; border-radius: 10px; margin: 0 0 12px 0;
+    }
+    .btn-pickup { background: #0ea5e9; color: white; }
+    .btn-pickup:hover { background: #0284c7; }
     .card-badge {
       display: inline-block;
       font-size: 11px;
@@ -499,11 +507,12 @@
     .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
     .cal-nav-btn { background: #0f2044; color: #fff; border: none; width: 38px; height: 38px; border-radius: 10px; font-size: 18px; cursor: pointer; }
     .cal-month { font-size: 17px; font-weight: 800; color: #0f2044; }
-    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-    .cal-dow { text-align: center; font-size: 11px; font-weight: 700; color: #94a3b8; padding: 6px 0; text-transform: uppercase; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; width: 100%; max-width: 100%; }
+    .cal-dow { text-align: center; font-size: 11px; font-weight: 700; color: #94a3b8; padding: 6px 0; text-transform: uppercase; min-width: 0; }
     .cal-cell {
       min-height: 64px; background: #fff; border-radius: 9px; padding: 5px;
       border: 1px solid #eef1f5; display: flex; flex-direction: column; gap: 3px;
+      min-width: 0; overflow: hidden;
     }
     .cal-cell.empty-cell { background: transparent; border: none; }
     .cal-cell.today { border: 2px solid #3b82f6; }
@@ -511,6 +520,7 @@
     .cal-dot {
       font-size: 9px; font-weight: 700; color: #fff; border-radius: 5px;
       padding: 2px 4px; line-height: 1.2; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer;
+      max-width: 100%;
     }
     .cal-more { font-size: 9px; color: #64748b; font-weight: 700; }
 
@@ -839,7 +849,8 @@
 
         <div class="fin-card">
           <h3 style="font-size:15px;font-weight:700;color:#0f2044;margin-bottom:12px;">Expense Breakdown</h3>
-          <div class="chart-wrap"><canvas id="finPie"></canvas></div>
+          <div id="expense-breakdown"></div>
+          <div class="chart-wrap" id="finPie-wrap" style="margin-top:12px;"><canvas id="finPie"></canvas></div>
         </div>
 
         <div class="fin-card">
@@ -1094,6 +1105,24 @@
       const dd = String(dt.getDate()).padStart(2, '0');
       const mm = String(dt.getMonth() + 1).padStart(2, '0');
       return dd + '/' + mm + '/' + String(dt.getFullYear()).slice(2);
+    }
+
+    // Nama hari dalam BM
+    const HARI = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+    function dayName(d) {
+      if (!d) return '';
+      let dt;
+      if (/^\d{4}-\d{2}-\d{2}/.test(d)) { const [y, m, day] = d.slice(0, 10).split('-'); dt = new Date(Number(y), Number(m) - 1, Number(day)); }
+      else dt = new Date(d);
+      if (isNaN(dt)) return '';
+      return HARI[dt.getDay()];
+    }
+    // Highlighted date+time bar for a booking
+    function dateTimeBar(b) {
+      const hari = dayName(b.date);
+      const tarikh = formatDMY(b.date);
+      const masa = b.time ? '&nbsp;&nbsp;🕐 ' + b.time : '';
+      return '<div class="card-datetime">📅 ' + (hari ? hari + ', ' : '') + tarikh + masa + '</div>';
     }
 
     // Normalize legacy records (old app versions) so they show & count correctly
@@ -1531,6 +1560,8 @@
       if (search) {
         bookings = bookings.filter(b => b.name.toLowerCase().includes(search) || (b.phone || '').includes(search));
       }
+      // Newest customer at top (id = Date.now() at creation; larger = newer)
+      bookings = bookings.slice().sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
 
       const html = bookings.length ? bookings.map(b => `
         <div class="booking-card">
@@ -1539,8 +1570,8 @@
               <span class="card-badge badge-confirmed">${b.status}</span>
               <div class="card-name">${b.name}</div>
             </div>
-            <div class="card-date">${formatDMY(b.date)} ${b.time || ''}</div>
           </div>
+          ${dateTimeBar(b)}
           <div class="card-detail-box">
             <div class="detail-row">
               <div class="detail-label">📱 Phone:</div>
@@ -1575,7 +1606,9 @@
           <div class="card-buttons">
             ${b.status === 'Pending'
               ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button>`
-              : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
+              : (b.status === 'Completed' || b.status === 'Complete')
+                ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
+                : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
             <button class="btn btn-edit" onclick="editBooking('${b.id}')">✏️ Edit</button>
             <button class="btn btn-convert" onclick="showReceipt('${b.id}')">📄 Receipt</button>
             <button class="btn btn-secondary" onclick="deleteBooking('${b.id}')">🗑️ Delete</button>
@@ -1701,6 +1734,38 @@
         line + '\n' +
         'Terima kasih kerana memilih perkhidmatan kami! Jumpa nanti';
 
+      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+    }
+
+    // Mesej kereta dah siap untuk pickup (untuk status Completed)
+    function sendPickup(id) {
+      const booking = state.bookings.find(b => b.id == id);
+      if (!booking) return;
+      const phone = waPhone(booking.phone);
+      if (phone.length < 10) { alert('⚠️ Nombor telefon customer tak sah atau kosong.'); return; }
+      const line = '─────────────────';
+      const price = Number(booking.price) || 0;
+      const deposit = Number(booking.deposit) || 0;
+      const baki = price - deposit;
+      const bakiLine = baki > 0 ? '\n💵 Baki untuk dijelaskan : RM' + baki + '\n' : '\n';
+      const msg =
+        'Hai ' + booking.name + ',\n\n' +
+        'Kereta anda sudah SIAP! 🚗✨\n' +
+        line + '\n' +
+        '🚗 Vehicle   : ' + booking.car + '\n' +
+        '🔢 No. Plat  : ' + (booking.plate || '-') + '\n' +
+        '💺 Servis    : ' + (booking.service || '-') + '\n' +
+        line + '\n' +
+        'Seat/kusyen kereta anda dah siap dibersihkan dan boleh diambil sekarang.\n' +
+        bakiLine +
+        line + '\n' +
+        '📍 Lokasi kami\n' +
+        '🗺️ Google Maps : https://maps.app.goo.gl/jRbBBuKDn7JsiBLy8\n' +
+        '🔵 Waze        : https://waze.com/ul/hw282cr7ky\n\n' +
+        '🏢 Cuci Seat Kereta:\n' +
+        '📞 Tel : 017-699 3876\n' +
+        line + '\n' +
+        'Terima kasih kerana memilih perkhidmatan kami! 😊';
       window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
     }
 
@@ -2075,6 +2140,7 @@
       } else {
         bookings = state.bookings.filter(b => b.status === status && b.status !== 'Enquiry');
       }
+      bookings = bookings.slice().sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
       
       const html = bookings.length ? bookings.map(b => `
         <div class="booking-card">
@@ -2083,8 +2149,8 @@
               <span class="card-badge badge-confirmed">${b.status}</span>
               <div class="card-name">${b.name}</div>
             </div>
-            <div class="card-date">${formatDMY(b.date)} ${b.time || ''}</div>
           </div>
+          ${dateTimeBar(b)}
           <div class="card-detail-box">
             <div class="detail-row">
               <div class="detail-label">📱 Phone:</div>
@@ -2119,7 +2185,9 @@
           <div class="card-buttons">
             ${b.status === 'Pending'
               ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button>`
-              : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
+              : (b.status === 'Completed' || b.status === 'Complete')
+                ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
+                : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
             <button class="btn btn-edit" onclick="editBooking('${b.id}')">✏️ Edit</button>
             <button class="btn btn-convert" onclick="showReceipt('${b.id}')">📄 Receipt</button>
             <button class="btn btn-secondary" onclick="deleteBooking('${b.id}')">🗑️ Delete</button>
@@ -2262,6 +2330,31 @@
         </div>`).join('') : '<div style="text-align:center;color:#94a3b8;padding:16px;">No expenses recorded yet</div>';
 
       renderFinCharts();
+
+      // Text breakdown by category (never blank — works even without Chart.js)
+      const bd = document.getElementById('expense-breakdown');
+      if (bd) {
+        const cats = {};
+        exp.forEach(e => { cats[e.category] = (cats[e.category] || 0) + (e.amount || 0); });
+        const catKeys = Object.keys(cats).sort((a, b) => cats[b] - cats[a]);
+        if (!catKeys.length || totalExp === 0) {
+          bd.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:16px;">Tiada perbelanjaan direkod lagi</div>';
+          const wrap = document.getElementById('finPie-wrap'); if (wrap) wrap.style.display = 'none';
+        } else {
+          const wrap = document.getElementById('finPie-wrap'); if (wrap) wrap.style.display = '';
+          bd.innerHTML = catKeys.map(c => {
+            const amt = cats[c]; const pct = Math.round((amt / totalExp) * 100);
+            const color = CAT_COLORS[c] || '#64748b';
+            return '<div style="margin-bottom:10px;">' +
+              '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
+              '<span style="font-weight:600;color:#0f2044;font-size:13px;"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:' + color + ';margin-right:6px;"></span>' + c + '</span>' +
+              '<span style="font-weight:700;color:#dc2626;font-size:13px;">RM' + amt.toLocaleString() + ' <span style="color:#94a3b8;font-weight:600;">(' + pct + '%)</span></span>' +
+              '</div>' +
+              '<div style="background:#f1f5f9;border-radius:6px;height:8px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:' + color + ';"></div></div>' +
+              '</div>';
+          }).join('');
+        }
+      }
     }
 
     function renderFinCharts() {
