@@ -573,12 +573,16 @@
   <div id="pin-modal">
     <div class="pin-box">
       <div style="font-size: 48px;">🔐</div>
-      <h2>Admin Login</h2>
-      <p>Masukkan email & password admin</p>
+      <h2 id="auth-title">Admin Login</h2>
+      <p id="auth-subtitle">Masukkan email & password admin</p>
       <input type="email" id="login-email" placeholder="Email" autocomplete="username" style="width:100%;box-sizing:border-box;margin-bottom:10px;" />
       <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" style="width:100%;box-sizing:border-box;" />
       <div id="login-error" style="color:#dc2626;font-size:13px;font-weight:600;margin-top:10px;min-height:18px;"></div>
-      <button class="pin-submit" onclick="doLogin()" id="login-btn">Log Masuk</button>
+      <button class="pin-submit" onclick="authSubmit()" id="login-btn">Log Masuk</button>
+      <div style="margin-top:14px;font-size:13px;color:#64748b;">
+        <span id="auth-switch-login" style="display:none;">Dah ada akaun? <a onclick="showLoginMode()" style="color:#2563eb;font-weight:700;cursor:pointer;">Log masuk</a></span>
+        <span id="auth-switch-signup">Kali pertama? <a onclick="showSignupMode()" style="color:#2563eb;font-weight:700;cursor:pointer;">Daftar akaun di sini</a></span>
+      </div>
     </div>
   </div>
 
@@ -609,7 +613,8 @@
           <button onclick="document.getElementById('restore-file').click()" style="flex:1; padding:11px; border:1.5px solid #cbd5e1; border-radius:10px; background:#fff; color:#334155; font-weight:700; font-size:13px; cursor:pointer;">⬆️ Restore</button>
           <input type="file" id="restore-file" accept="application/json" style="display:none" onchange="restoreData(event)">
         </div>
-        <div style="display:flex; justify-content:flex-end; margin-bottom:18px;">
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-bottom:18px;">
+          <button onclick="showMyUID()" style="padding:9px 16px; border:1.5px solid #bfdbfe; border-radius:9px; background:#fff; color:#2563eb; font-weight:700; font-size:13px; cursor:pointer;">🔑 UID Saya</button>
           <button onclick="logout()" style="padding:9px 16px; border:1.5px solid #fecaca; border-radius:9px; background:#fff; color:#dc2626; font-weight:700; font-size:13px; cursor:pointer;">🚪 Log Keluar</button>
         </div>
 
@@ -983,6 +988,28 @@
 
     // ===== Firebase Auth Login =====
     let appStarted = false;
+    let authMode = 'login';
+
+    function showSignupMode() {
+      authMode = 'signup';
+      document.getElementById('auth-title').textContent = 'Daftar Akaun Admin';
+      document.getElementById('auth-subtitle').textContent = 'Cipta akaun (kali pertama sahaja)';
+      document.getElementById('login-btn').textContent = 'Daftar';
+      document.getElementById('login-error').textContent = '';
+      document.getElementById('auth-switch-signup').style.display = 'none';
+      document.getElementById('auth-switch-login').style.display = 'inline';
+    }
+    function showLoginMode() {
+      authMode = 'login';
+      document.getElementById('auth-title').textContent = 'Admin Login';
+      document.getElementById('auth-subtitle').textContent = 'Masukkan email & password admin';
+      document.getElementById('login-btn').textContent = 'Log Masuk';
+      document.getElementById('login-error').textContent = '';
+      document.getElementById('auth-switch-signup').style.display = 'inline';
+      document.getElementById('auth-switch-login').style.display = 'none';
+    }
+    function authSubmit() { if (authMode === 'signup') doSignup(); else doLogin(); }
+
     function doLogin() {
       const email = document.getElementById('login-email').value.trim();
       const pass = document.getElementById('login-password').value;
@@ -998,11 +1025,46 @@
           btn.textContent = 'Log Masuk'; btn.disabled = false;
           const code = err && err.code ? err.code : '';
           if (code === 'auth/invalid-email') errEl.textContent = 'Email tak sah.';
-          else if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') errEl.textContent = 'Email atau password salah.';
+          else if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') errEl.textContent = 'Email atau password salah. (Kali pertama? Tekan Daftar di bawah.)';
           else if (code === 'auth/too-many-requests') errEl.textContent = 'Terlalu banyak cubaan. Cuba sekejap lagi.';
+          else if (code === 'auth/operation-not-allowed') errEl.textContent = 'Email/Password belum diaktifkan dalam Firebase. (Lihat arahan.)';
           else errEl.textContent = 'Gagal log masuk: ' + (err && err.message ? err.message : code);
         });
-      // onAuthStateChanged akan handle bila berjaya
+    }
+
+    function doSignup() {
+      const email = document.getElementById('login-email').value.trim();
+      const pass = document.getElementById('login-password').value;
+      const errEl = document.getElementById('login-error');
+      const btn = document.getElementById('login-btn');
+      errEl.textContent = '';
+      if (!email || !pass) { errEl.textContent = 'Sila isi email & password.'; return; }
+      if (pass.length < 6) { errEl.textContent = 'Password mesti sekurang-kurangnya 6 aksara.'; return; }
+      if (typeof firebase === 'undefined' || !firebase.auth) { errEl.textContent = 'Tiada sambungan. Cuba lagi.'; return; }
+      btn.textContent = 'Sedang daftar...'; btn.disabled = true;
+      firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .then(() => firebase.auth().createUserWithEmailAndPassword(email, pass))
+        .then((cred) => {
+          const uid = cred.user.uid;
+          localStorage.setItem('myAdminUid', uid);
+          alert('✅ Akaun berjaya dicipta & log masuk!\n\n🔑 UID kau:\n' + uid + '\n\nSALIN UID ni untuk update Firestore Rules.\nKau juga boleh lihat semula di Dashboard → butang "🔑 UID Saya".');
+        })
+        .catch((err) => {
+          btn.textContent = 'Daftar'; btn.disabled = false;
+          const code = err && err.code ? err.code : '';
+          if (code === 'auth/email-already-in-use') errEl.textContent = 'Email ni dah ada akaun. Tekan "Log masuk" di bawah.';
+          else if (code === 'auth/invalid-email') errEl.textContent = 'Email tak sah.';
+          else if (code === 'auth/weak-password') errEl.textContent = 'Password terlalu lemah (guna 6+ aksara).';
+          else if (code === 'auth/operation-not-allowed') errEl.textContent = 'Email/Password belum diaktifkan dalam Firebase Console. Aktifkan dulu (lihat arahan).';
+          else errEl.textContent = 'Gagal daftar: ' + (err && err.message ? err.message : code);
+        });
+    }
+
+    function showMyUID() {
+      const u = (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) ? firebase.auth().currentUser : null;
+      const uid = u ? u.uid : (localStorage.getItem('myAdminUid') || '(tiada)');
+      const email = u ? u.email : '';
+      alert('🔑 UID Admin kau:\n\n' + uid + '\n\nEmail: ' + email + '\n\nGuna UID ni dalam Firestore Rules (ganti UID_KAU_DI_SINI).');
     }
 
     function showLoginScreen() {
@@ -1193,6 +1255,14 @@
       const tarikh = formatDMY(b.date);
       const masa = b.time ? '&nbsp;&nbsp;🕐 ' + b.time : '';
       return '<div class="card-datetime">📅 ' + (hari ? hari + ', ' : '') + tarikh + masa + '</div>';
+    }
+
+    // Susun booking ikut TARIKH servis (terkini di atas); seri → ikut id terbaru
+    function bookingSortCmp(a, b) {
+      const da = (a.date || '').slice(0, 10);
+      const db = (b.date || '').slice(0, 10);
+      if (da !== db) return db.localeCompare(da);
+      return (Number(b.id) || 0) - (Number(a.id) || 0);
     }
 
     // Normalize legacy records (old app versions) so they show & count correctly
@@ -1643,7 +1713,7 @@
         bookings = bookings.filter(b => b.name.toLowerCase().includes(search) || (b.phone || '').includes(search));
       }
       // Newest customer at top (id = Date.now() at creation; larger = newer)
-      bookings = bookings.slice().sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
+      bookings = bookings.slice().sort(bookingSortCmp);
 
       const html = bookings.length ? bookings.map(b => `
         <div class="booking-card">
@@ -2225,7 +2295,7 @@
       } else {
         bookings = state.bookings.filter(b => b.status === status && b.status !== 'Enquiry');
       }
-      bookings = bookings.slice().sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
+      bookings = bookings.slice().sort(bookingSortCmp);
       
       const html = bookings.length ? bookings.map(b => `
         <div class="booking-card">
@@ -2297,7 +2367,7 @@
 
     // ===== Cuti Umum & Cuti Sekolah Selangor 2026 =====
     const PUBLIC_HOLIDAYS = {
-      '2026-01-01': 'Tahun Baru', '2026-02-01': 'Thaipusam', '2026-02-02': 'Cuti Thaipusam',
+      '2026-01-01': 'Tahun Baru', '2026-02-01': 'Thaipusam & Hari Wilayah', '2026-02-02': 'Cuti Ganti (Thaipusam/Wilayah)',
       '2026-02-17': 'Tahun Baru Cina', '2026-02-18': 'Tahun Baru Cina (Hari 2)',
       '2026-03-07': 'Nuzul Al-Quran', '2026-03-21': 'Hari Raya Aidilfitri',
       '2026-03-22': 'Hari Raya Aidilfitri (2)', '2026-03-23': 'Cuti Hari Raya',
