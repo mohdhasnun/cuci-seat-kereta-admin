@@ -10,6 +10,7 @@
   <!-- Firebase (loaded before app so data is available immediately) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script>
     if (typeof firebase !== 'undefined') {
       firebase.initializeApp({
@@ -57,6 +58,13 @@
       margin-bottom: 20px;
       font-weight: bold;
     }
+    #login-email, #login-password {
+      padding: 13px 14px;
+      font-size: 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+    }
+    #login-email:focus, #login-password:focus { outline: none; border-color: #2563eb; }
     .pin-submit {
       width: 100%;
       padding: 14px;
@@ -565,10 +573,12 @@
   <div id="pin-modal">
     <div class="pin-box">
       <div style="font-size: 48px;">🔐</div>
-      <h2>Admin Access</h2>
-      <p>Enter PIN to access dashboard</p>
-      <input type="password" id="pin-input" placeholder="Enter PIN" maxlength="6" />
-      <button class="pin-submit" onclick="checkPIN()">Unlock</button>
+      <h2>Admin Login</h2>
+      <p>Masukkan email & password admin</p>
+      <input type="email" id="login-email" placeholder="Email" autocomplete="username" style="width:100%;box-sizing:border-box;margin-bottom:10px;" />
+      <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" style="width:100%;box-sizing:border-box;" />
+      <div id="login-error" style="color:#dc2626;font-size:13px;font-weight:600;margin-top:10px;min-height:18px;"></div>
+      <button class="pin-submit" onclick="doLogin()" id="login-btn">Log Masuk</button>
     </div>
   </div>
 
@@ -598,6 +608,9 @@
           <button onclick="backupData()" style="flex:1; padding:11px; border:none; border-radius:10px; background:#0f2044; color:#fff; font-weight:700; font-size:13px; cursor:pointer;">⬇️ Backup</button>
           <button onclick="document.getElementById('restore-file').click()" style="flex:1; padding:11px; border:1.5px solid #cbd5e1; border-radius:10px; background:#fff; color:#334155; font-weight:700; font-size:13px; cursor:pointer;">⬆️ Restore</button>
           <input type="file" id="restore-file" accept="application/json" style="display:none" onchange="restoreData(event)">
+        </div>
+        <div style="display:flex; justify-content:flex-end; margin-bottom:18px;">
+          <button onclick="logout()" style="padding:9px 16px; border:1.5px solid #fecaca; border-radius:9px; background:#fff; color:#dc2626; font-weight:700; font-size:13px; cursor:pointer;">🚪 Log Keluar</button>
         </div>
 
         <div class="kpi-grid">
@@ -746,6 +759,21 @@
                   <option value="6:00 PM">6:00 PM</option>
                 </select>
               </div>
+            </div>
+            <div class="form-row" style="margin-top:12px;">
+              <div>
+                <label>🚗 Berapa hari kereta di kedai?</label>
+                <select id="days-at-shop">
+                  <option value="1">1 hari (sehari sahaja)</option>
+                  <option value="2">2 hari</option>
+                  <option value="3">3 hari</option>
+                  <option value="4">4 hari</option>
+                  <option value="5">5 hari</option>
+                  <option value="6">6 hari</option>
+                  <option value="7">7 hari</option>
+                </select>
+              </div>
+              <div></div>
             </div>
           </div>
 
@@ -953,32 +981,55 @@
     ];
     let finChart = null, finPie = null;
 
-    // PIN
-    function checkPIN() {
-      const pin = document.getElementById('pin-input').value;
-      if (pin === '123456') {
-        // Save PIN session
-        localStorage.setItem('pinSession', 'true');
-        document.getElementById('pin-modal').style.display = 'none';
-        document.getElementById('app-main').style.display = 'block';
-        initApp();
-      } else {
-        alert('Wrong PIN!');
-        document.getElementById('pin-input').value = '';
-      }
+    // ===== Firebase Auth Login =====
+    let appStarted = false;
+    function doLogin() {
+      const email = document.getElementById('login-email').value.trim();
+      const pass = document.getElementById('login-password').value;
+      const errEl = document.getElementById('login-error');
+      const btn = document.getElementById('login-btn');
+      errEl.textContent = '';
+      if (!email || !pass) { errEl.textContent = 'Sila isi email & password.'; return; }
+      if (typeof firebase === 'undefined' || !firebase.auth) { errEl.textContent = 'Tiada sambungan. Cuba lagi.'; return; }
+      btn.textContent = 'Sedang log masuk...'; btn.disabled = true;
+      firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+        .then(() => firebase.auth().signInWithEmailAndPassword(email, pass))
+        .catch((err) => {
+          btn.textContent = 'Log Masuk'; btn.disabled = false;
+          const code = err && err.code ? err.code : '';
+          if (code === 'auth/invalid-email') errEl.textContent = 'Email tak sah.';
+          else if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') errEl.textContent = 'Email atau password salah.';
+          else if (code === 'auth/too-many-requests') errEl.textContent = 'Terlalu banyak cubaan. Cuba sekejap lagi.';
+          else errEl.textContent = 'Gagal log masuk: ' + (err && err.message ? err.message : code);
+        });
+      // onAuthStateChanged akan handle bila berjaya
     }
 
-    document.getElementById('pin-input').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') checkPIN();
-    });
+    function showLoginScreen() {
+      document.getElementById('pin-modal').style.display = 'flex';
+      document.getElementById('app-main').style.display = 'none';
+      const btn = document.getElementById('login-btn'); if (btn) { btn.textContent = 'Log Masuk'; btn.disabled = false; }
+    }
 
-    // Check if already logged in
-    if (localStorage.getItem('pinSession') === 'true') {
-      document.getElementById('pin-modal').style.display = 'none';
-      document.getElementById('app-main').style.display = 'block';
-      initApp();
+    // Login bila tekan Enter
+    document.getElementById('login-password').addEventListener('keypress', (e) => { if (e.key === 'Enter') doLogin(); });
+    document.getElementById('login-email').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('login-password').focus(); });
+
+    // Pantau status login — kekal log masuk merentas buka/tutup app
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+      firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+          document.getElementById('pin-modal').style.display = 'none';
+          document.getElementById('app-main').style.display = 'block';
+          document.getElementById('login-password').value = '';
+          if (!appStarted) { appStarted = true; initApp(); }
+        } else {
+          showLoginScreen();
+          document.getElementById('login-email').focus();
+        }
+      });
     } else {
-      document.getElementById('pin-input').focus();
+      showLoginScreen();
     }
 
     // Init
@@ -1069,8 +1120,12 @@
         } catch (err) { console.error('Firebase expenses load failed (keeping cache):', err); }
         try {
           const cSnap = await firebase.firestore().collection('config').doc('closedDates').get({ source: 'server' });
-          if (cSnap.exists) { state.closedDates = (cSnap.data() && cSnap.data().dates) || []; localStorage.setItem('cuci_closed', JSON.stringify({ dates: state.closedDates })); }
-        } catch (err) { console.warn('closedDates load', err); }
+          const fbDates = (cSnap.exists && cSnap.data() && cSnap.data().dates) || [];
+          // GABUNG localStorage + Firebase supaya hari tutup tak hilang walau satu sumber kosong
+          const merged = Array.from(new Set([...(state.closedDates || []), ...fbDates]));
+          state.closedDates = merged;
+          localStorage.setItem('cuci_closed', JSON.stringify({ dates: merged }));
+        } catch (err) { console.warn('closedDates load (keeping local):', err); }
         renderAll();
         syncPending(false); // push anything still local-only
       } else {
@@ -1391,6 +1446,16 @@
       const total = serviceItems.reduce((s, it) => s + it.price, 0);
       const serviceStr = serviceItems.map(it => it.name).join(' + ');
 
+      // Berapa hari kereta di kedai → kira endDate
+      const daysAtShop = Math.max(1, parseInt(document.getElementById('days-at-shop')?.value) || 1);
+      const startDateStr = document.getElementById('date').value;
+      let endDateVal = null;
+      if (daysAtShop > 1 && startDateStr) {
+        const s = new Date(startDateStr.slice(0, 10) + 'T00:00:00');
+        s.setDate(s.getDate() + daysAtShop - 1);
+        endDateVal = ymd(s);
+      }
+
       // EDIT MODE: kemaskini rekod sedia ada (id & status kekal), bukan buat baru
       if (editingBookingId !== null) {
         const existing = state.bookings.find(b => b.id == editingBookingId);
@@ -1403,6 +1468,7 @@
           existing.serviceItems = serviceItems;
           existing.date = document.getElementById('date').value;
           existing.time = document.getElementById('time').value;
+          existing.endDate = endDateVal;
           existing.price = total;
           existing.deposit = Number(document.getElementById('deposit').value) || 0;
           existing.material = Number(document.getElementById('material').value) || 0;
@@ -1432,6 +1498,7 @@
         serviceItems: serviceItems,
         date: document.getElementById('date').value,
         time: document.getElementById('time').value,
+        endDate: endDateVal,
         price: total,
         deposit: Number(document.getElementById('deposit').value) || 0,
         material: Number(document.getElementById('material').value) || 0,
@@ -1803,6 +1870,8 @@
       if (sb) sb.textContent = '💾 Save Booking';
       const hdr = document.getElementById('add-booking-title');
       if (hdr) hdr.textContent = 'Add Booking';
+      const daysSel = document.getElementById('days-at-shop');
+      if (daysSel) daysSel.value = '1';
     }
 
     // Buka borang KOSONG untuk booking baru (reset mod edit dulu)
@@ -1825,6 +1894,8 @@
         document.getElementById('date').value = booking.date;
         syncDateDisplay();
         document.getElementById('time').value = booking.time || '';
+        const daysSel = document.getElementById('days-at-shop');
+        if (daysSel) daysSel.value = String(booking.endDate ? bookingDates(booking).length : 1);
         document.getElementById('material').value = booking.material || 0;
         document.getElementById('notes').value = booking.notes || '';
         if (document.getElementById('deposit')) document.getElementById('deposit').value = booking.deposit || '';
@@ -2116,11 +2187,10 @@
     }
 
     function logout() {
-      localStorage.removeItem('pinSession');
-      document.getElementById('pin-modal').style.display = 'flex';
-      document.getElementById('app-main').style.display = 'none';
-      document.getElementById('pin-input').value = '';
-      document.getElementById('pin-input').focus();
+      if (typeof firebase !== 'undefined' && firebase.auth) {
+        firebase.auth().signOut().catch(() => {});
+      }
+      showLoginScreen();
     }
 
     function updateClock() {
@@ -2500,8 +2570,6 @@
         }
       }
     }
-
-    document.getElementById('pin-input').focus();
   </script>
 </body>
 </html>
