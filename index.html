@@ -614,6 +614,7 @@
           <input type="file" id="restore-file" accept="application/json" style="display:none" onchange="restoreData(event)">
         </div>
         <div style="display:flex; justify-content:flex-end; gap:8px; margin-bottom:18px;">
+          <button onclick="enableNotifications()" style="padding:9px 16px; border:1.5px solid #ddd6fe; border-radius:9px; background:#fff; color:#7c3aed; font-weight:700; font-size:13px; cursor:pointer;">🔔 Notifikasi</button>
           <button onclick="showMyUID()" style="padding:9px 16px; border:1.5px solid #bfdbfe; border-radius:9px; background:#fff; color:#2563eb; font-weight:700; font-size:13px; cursor:pointer;">🔑 UID Saya</button>
           <button onclick="logout()" style="padding:9px 16px; border:1.5px solid #fecaca; border-radius:9px; background:#fff; color:#dc2626; font-weight:700; font-size:13px; cursor:pointer;">🚪 Log Keluar</button>
         </div>
@@ -1104,6 +1105,86 @@
       // Auto-retry sync bila internet kembali / berkala
       window.addEventListener('online', () => { console.log('🌐 Online — cuba sync'); syncPending(false); });
       setInterval(() => { if (countPending() > 0) syncPending(false); }, 20000);
+      // Notifikasi enquiry baru (real-time)
+      setupEnquiryWatch();
+      if ('Notification' in window && Notification.permission === 'default') {
+        setTimeout(() => { try { Notification.requestPermission(); } catch (e) {} }, 1500);
+      }
+    }
+
+    // ===== Notifikasi Enquiry Baru =====
+    let knownEnquiryIds = null;
+    let audioCtx = null;
+    function beep() {
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        [0, 0.18].forEach(off => {
+          const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+          o.connect(g); g.connect(audioCtx.destination);
+          o.type = 'sine'; o.frequency.value = 880;
+          g.gain.setValueAtTime(0.0001, now + off);
+          g.gain.exponentialRampToValueAtTime(0.35, now + off + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, now + off + 0.15);
+          o.start(now + off); o.stop(now + off + 0.16);
+        });
+      } catch (e) {}
+    }
+    function showEnquiryToast(b) {
+      let t = document.getElementById('enquiry-toast');
+      if (!t) { t = document.createElement('div'); t.id = 'enquiry-toast'; document.body.appendChild(t); }
+      t.onclick = () => { goToPage('dashboard'); filterByStatus('Enquiry'); t.remove(); };
+      t.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#7c3aed;color:#fff;padding:14px 16px;font-weight:700;text-align:center;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.25);';
+      t.textContent = '🔔 Enquiry baru: ' + b.name + (b.car ? ' (' + b.car + ')' : '') + ' — tap untuk lihat';
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => { const el = document.getElementById('enquiry-toast'); if (el) el.remove(); }, 9000);
+    }
+    function notifyNewEnquiry(b) {
+      beep();
+      showEnquiryToast(b);
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          const n = new Notification('🔔 Enquiry Baru — Cuci Seat Kereta', {
+            body: b.name + (b.car ? ' • ' + b.car : '') + (b.phone ? '\n📞 ' + b.phone : ''),
+            tag: 'enq-' + b.id
+          });
+          n.onclick = () => { window.focus(); goToPage('dashboard'); filterByStatus('Enquiry'); n.close(); };
+        } catch (e) {}
+      }
+    }
+    function setupEnquiryWatch() {
+      if (!fbReady()) return;
+      try {
+        firebase.firestore().collection('bookings').onSnapshot((snap) => {
+          const enquiryIds = []; const newOnes = []; const fbBookings = [];
+          snap.forEach((doc) => {
+            const data = Object.assign({ id: doc.id }, doc.data(), { _synced: true });
+            normalizeBooking(data);
+            fbBookings.push(data);
+            if (data.status === 'Enquiry') {
+              enquiryIds.push(String(doc.id));
+              if (knownEnquiryIds && !knownEnquiryIds.has(String(doc.id))) newOnes.push(data);
+            }
+          });
+          // live-update senarai (kekalkan rekod local yang belum sync)
+          const fbIds = new Set(fbBookings.map(x => String(x.id)));
+          const localOnly = state.bookings.filter(x => !fbIds.has(String(x.id)) && x._synced === false);
+          state.bookings = fbBookings.concat(localOnly);
+          persistLocal();
+          renderAll();
+          if (knownEnquiryIds === null) { knownEnquiryIds = new Set(enquiryIds); }
+          else { newOnes.forEach(notifyNewEnquiry); enquiryIds.forEach(id => knownEnquiryIds.add(id)); }
+        }, (err) => console.warn('enquiry watch:', err && err.message));
+      } catch (e) { console.warn('enquiry watch setup', e); }
+    }
+    function enableNotifications() {
+      if (!('Notification' in window)) { alert('Browser ni tak sokong notifikasi.'); return; }
+      Notification.requestPermission().then((perm) => {
+        beep(); // unlock audio + test bunyi
+        if (perm === 'granted') alert('✅ Notifikasi dihidupkan! Kau akan dapat alert + bunyi bila ada enquiry baru (semasa app terbuka).');
+        else alert('⚠️ Notifikasi tak dibenarkan. Kau masih dapat banner + bunyi dalam app. Untuk hidupkan, benarkan notifikasi dalam tetapan browser.');
+      }).catch(() => {});
     }
 
     // chart.js dimuat secara defer — bila siap, lukis semula carta
@@ -1832,6 +1913,7 @@
         '📅 Tarikh    : ' + formatDMY(booking.date) + '\n' +
         '🕐 Masa      : ' + (booking.time || '-') + '\n' +
         '💳 Harga     : RM' + price + '\n' +
+        (booking.notes ? '📝 Nota      : ' + booking.notes + '\n' : '') +
         line + '\n' +
         '💰 MAKLUMAT DEPOSIT\n' +
         line + '\n' +
@@ -1872,6 +1954,7 @@
         '📅 Tarikh    : ' + formatDMY(booking.date) + '\n' +
         '🕐 Masa      : ' + (booking.time || '-') + '\n' +
         '💳 Harga     : RM' + price + '\n' +
+        (booking.notes ? '📝 Nota      : ' + booking.notes + '\n' : '') +
         line + '\n' +
         '✅ Deposit diterima : RM' + deposit + '\n' +
         '💵 Baki : RM' + baki + ' (dibayar selepas servis selesai)\n' +
