@@ -1863,6 +1863,19 @@
     // Bank details for deposit transfer
     const BANK_INFO = { bank: 'Maybank', name: 'Northern Hope Enterprise', account: '5521 8951 6033' };
 
+    // Footer lokasi & hubungi — label atas, URL pada baris sendiri (kemas)
+    const LINE = '─────────────────';
+    function contactFooter() {
+      return LINE + '\n' +
+        '📍 Lokasi & Arah:\n\n' +
+        '🗺️ Google Maps:\n' +
+        'https://maps.app.goo.gl/jRbBBuKDn7JsiBLy8\n\n' +
+        '🚗 Waze:\n' +
+        'https://waze.com/ul/hw282cr7ky\n\n' +
+        '📞 017-699 3876\n' +
+        LINE;
+    }
+
     // Minta deposit (untuk Enquiry): tanya harga & deposit, hantar mesej transfer bank, tukar ke Pending
     function requestDeposit(id) {
       const booking = state.bookings.find(b => b.id == id);
@@ -1944,7 +1957,7 @@
       const line = '─────────────────';
 
       const msg =
-        'Hai ' + booking.name + ',\n' +
+        'Hai ' + booking.name + ',\n\n' +
         'Berikut adalah butiran tempahan servis anda:\n' +
         line + '\n' +
         '🚗 Vehicle   : ' + booking.car + '\n' +
@@ -1959,15 +1972,8 @@
         '✅ Deposit diterima : RM' + deposit + '\n' +
         '💵 Baki : RM' + baki + ' (dibayar selepas servis selesai)\n' +
         'Sila pastikan anda hadir pada tarikh dan masa yang ditetapkan.\n' +
-        line + '\n' +
-        '📍 Lokasi kami\n' +
-        '🗺️ Google Maps : https://maps.app.goo.gl/jRbBBuKDn7JsiBLy8\n' +
-        '🔵 Waze        : https://waze.com/ul/hw282cr7ky\n' +
-        '🏢 Cuci Seat Kereta:\n' +
-        '📞 Tel  : 017-699 3876\n' +
-        '🌐 Web  : cuciseatkereta.com\n' +
-        line + '\n' +
-        'Terima kasih kerana memilih perkhidmatan kami! Jumpa nanti';
+        contactFooter() + '\n\n' +
+        'Terima kasih kerana memilih perkhidmatan kami! Jumpa nanti 😊';
 
       window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
     }
@@ -1993,13 +1999,7 @@
         line + '\n' +
         'Seat/kusyen kereta anda dah siap dibersihkan dan boleh diambil sekarang.\n' +
         bakiLine +
-        line + '\n' +
-        '📍 Lokasi kami\n' +
-        '🗺️ Google Maps : https://maps.app.goo.gl/jRbBBuKDn7JsiBLy8\n' +
-        '🔵 Waze        : https://waze.com/ul/hw282cr7ky\n\n' +
-        '🏢 Cuci Seat Kereta:\n' +
-        '📞 Tel : 017-699 3876\n' +
-        line + '\n' +
+        contactFooter() + '\n\n' +
         'Terima kasih kerana memilih perkhidmatan kami! 😊';
       window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
     }
