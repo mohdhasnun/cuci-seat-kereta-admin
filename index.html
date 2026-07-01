@@ -2643,8 +2643,22 @@
       document.getElementById('fin-netprofit').textContent = 'RM' + net.toLocaleString();
 
       const list = document.getElementById('expense-list');
-      const sorted = exp.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
-      list.innerHTML = sorted.length ? sorted.map(e => `
+      if (!exp.length) {
+        list.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:16px;">Tiada perbelanjaan direkod lagi</div>';
+      } else {
+        const BULAN = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+        const groups = {};
+        exp.forEach(e => { const mk = (e.date || '').slice(0, 7) || '0000-00'; (groups[mk] = groups[mk] || []).push(e); });
+        const monthKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+        list.innerHTML = monthKeys.map(mk => {
+          const items = groups[mk].slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+          const monthTotal = items.reduce((s, e) => s + (e.amount || 0), 0);
+          let label = mk;
+          if (/^\d{4}-\d{2}$/.test(mk)) { const parts = mk.split('-'); label = (BULAN[Number(parts[1]) - 1] || '?') + ' ' + parts[0]; }
+          const header = '<div style="display:flex;justify-content:space-between;align-items:center;background:#eef2f7;padding:9px 12px;border-radius:9px;margin:16px 0 8px;">' +
+            '<span style="font-weight:800;color:#0f2044;font-size:14px;">📅 ' + label + '</span>' +
+            '<span style="font-weight:800;color:#dc2626;font-size:14px;">RM' + monthTotal.toLocaleString() + '</span></div>';
+          const rows = items.map(e => `
         <div class="fin-row">
           <div>
             <span class="fin-cat-badge" style="background:${CAT_COLORS[e.category] || '#64748b'};color:#fff;">${e.category}</span>
@@ -2652,10 +2666,13 @@
             <div style="font-size:11px;color:#94a3b8;">${formatDMY(e.date)}</div>
           </div>
           <div style="text-align:right;display:flex;align-items:center;gap:10px;">
-            <div style="font-weight:700;color:#dc2626;">RM${(e.amount||0).toLocaleString()}</div>
+            <div style="font-weight:700;color:#dc2626;">RM${(e.amount || 0).toLocaleString()}</div>
             <button onclick="deleteExpense('${e.id}')" style="background:none;border:none;cursor:pointer;font-size:16px;">🗑️</button>
           </div>
-        </div>`).join('') : '<div style="text-align:center;color:#94a3b8;padding:16px;">No expenses recorded yet</div>';
+        </div>`).join('');
+          return header + rows;
+        }).join('');
+      }
 
       renderFinCharts();
 
