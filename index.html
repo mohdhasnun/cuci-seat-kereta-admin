@@ -851,6 +851,7 @@
           <div class="cal-grid" id="cal-dow-row"></div>
           <div class="cal-grid" id="cal-grid" style="margin-top: 5px;"></div>
         </div>
+        <div id="cal-summary"></div>
         <div id="cal-day-detail"></div>
       </section>
 
@@ -882,6 +883,8 @@
           </div>
         </div>
 
+        <button onclick="payWorker()" style="width:100%;padding:13px;border:none;border-radius:11px;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;font-weight:800;font-size:14px;cursor:pointer;margin-bottom:16px;box-shadow:0 2px 8px rgba(14,165,233,.25);">👷 Bayar Pekerja Hari Ni (RM60)</button>
+
         <div class="fin-card">
           <h3 style="font-size:15px;font-weight:700;color:#0f2044;margin-bottom:12px;">Revenue vs Expenses (6 months)</h3>
           <div class="chart-wrap"><canvas id="finChart"></canvas></div>
@@ -900,6 +903,7 @@
               <label>Category *</label>
               <select id="exp-category" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;">
                 <option value="Chemical/Stock">🧪 Chemical / Stock</option>
+                <option value="Upah Pekerja">👷 Upah Pekerja</option>
                 <option value="Marketing">📢 Marketing / Ads</option>
                 <option value="Overhead">🏢 Overhead (rent, utilities)</option>
                 <option value="Equipment">🔧 Equipment</option>
@@ -2554,6 +2558,85 @@
           <div class="cal-date">${d}</div>${tags}${dots}</div>`;
       }
       grid.innerHTML = cells;
+      renderMonthSummary(year, month);
+    }
+
+    function renderMonthSummary(year, month) {
+      const box = document.getElementById('cal-summary');
+      if (!box) return;
+      const BULAN = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+      const mm = String(month + 1).padStart(2, '0');
+      const prefix = year + '-' + mm;
+
+      // Bookings yang jatuh dalam bulan ni (guna hari mula), bukan Enquiry/Cancelled
+      const monthBookings = state.bookings.filter(b => {
+        const d = (b.date || '').slice(0, 7);
+        return d === prefix && b.status !== 'Enquiry' && b.status !== 'Cancelled';
+      });
+      const siap = monthBookings.filter(isComplete).length;
+
+      // Tally ikut jenis servis (pecah "A + B" atau guna serviceItems)
+      const svcCount = {};
+      let bukaSeat = 0, tanpaBuka = 0;
+      monthBookings.forEach(b => {
+        let names = [];
+        if (Array.isArray(b.serviceItems) && b.serviceItems.length) names = b.serviceItems.map(x => x.name);
+        else if (b.service) names = String(b.service).split(' + ');
+        names.forEach(n => {
+          n = (n || '').trim(); if (!n) return;
+          svcCount[n] = (svcCount[n] || 0) + 1;
+          const low = n.toLowerCase();
+          if (low.includes('tanpa buka')) tanpaBuka++;
+          else if (low.includes('buka seat')) bukaSeat++;
+        });
+      });
+      const svcRows = Object.keys(svcCount).sort((a, b) => svcCount[b] - svcCount[a])
+        .map(n => '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;"><span style="color:#334155;">' + n + '</span><span style="font-weight:700;color:#0f2044;">' + svcCount[n] + '</span></div>').join('');
+
+      // Kedai tutup dalam bulan ni
+      const closedCount = (state.closedDates || []).filter(d => (d || '').slice(0, 7) === prefix).length;
+
+      // Pendapatan (booking siap) bulan ni
+      const income = monthBookings.filter(isComplete).reduce((s, b) => s + (b.price || 0), 0);
+      const material = monthBookings.filter(isComplete).reduce((s, b) => s + (b.material || 0), 0);
+      // Perbelanjaan bulan ni (dari Finance) — pisahkan Upah Pekerja
+      const monthExp = (state.expenses || []).filter(e => (e.date || '').slice(0, 7) === prefix);
+      const upah = monthExp.filter(e => e.category === 'Upah Pekerja').reduce((s, e) => s + (e.amount || 0), 0);
+      const kosLain = monthExp.filter(e => e.category !== 'Upah Pekerja').reduce((s, e) => s + (e.amount || 0), 0) + material;
+      const untungBersih = income - upah - kosLain;
+
+      const chip = (label, val, color) => '<div style="flex:1;min-width:0;background:' + color + '11;border:1px solid ' + color + '33;border-radius:10px;padding:10px;text-align:center;">' +
+        '<div style="font-size:22px;font-weight:800;color:' + color + ';">' + val + '</div>' +
+        '<div style="font-size:11px;color:#64748b;font-weight:600;">' + label + '</div></div>';
+
+      box.innerHTML = '<div class="fin-card" style="margin-top:14px;">' +
+        '<h3 style="font-size:15px;font-weight:800;color:#0f2044;margin-bottom:12px;">📊 Ringkasan ' + BULAN[month] + ' ' + year + '</h3>' +
+        '<div style="display:flex;gap:8px;margin-bottom:12px;">' +
+          chip('Jumlah Booking', monthBookings.length, '#4f46e5') +
+          chip('Siap', siap, '#0d9488') +
+          chip('Kedai Tutup', closedCount + ' hr', '#1f2937') +
+        '</div>' +
+        '<div style="display:flex;gap:8px;margin-bottom:14px;">' +
+          chip('Buka Seat', bukaSeat, '#dc2626') +
+          chip('Tanpa Buka Seat', tanpaBuka, '#0ea5e9') +
+        '</div>' +
+        (svcRows ? '<div style="border-top:1px solid #eef1f5;padding-top:10px;"><div style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:6px;">PECAHAN SERVIS</div>' + svcRows + '</div>' : '<div style="text-align:center;color:#94a3b8;padding:8px;font-size:13px;">Tiada booking bulan ni</div>') +
+        '<div style="border-top:1px solid #eef1f5;margin-top:10px;padding-top:10px;">' +
+          '<div style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:6px;">KIRA-KIRA BULAN INI</div>' +
+          finRow('💰 Pendapatan (siap)', income, '#16a34a', false) +
+          finRow('👷 Upah Pekerja', upah, '#dc2626', true) +
+          finRow('🧪 Bahan & Kos Lain', kosLain, '#dc2626', true) +
+          '<div style="border-top:1.5px solid #e2e8f0;margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;">' +
+            '<span style="font-weight:800;color:#0f2044;font-size:14px;">📈 Untung Bersih</span>' +
+            '<span style="font-weight:800;color:' + (untungBersih >= 0 ? '#16a34a' : '#dc2626') + ';font-size:16px;">RM' + untungBersih.toLocaleString() + '</span></div>' +
+        '</div>' +
+      '</div>';
+    }
+
+    function finRow(label, val, color, isMinus) {
+      return '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:13px;">' +
+        '<span style="color:#334155;">' + label + '</span>' +
+        '<span style="font-weight:700;color:' + color + ';">' + (isMinus && val > 0 ? '−RM' : 'RM') + val.toLocaleString() + '</span></div>';
     }
 
     function showCalDay(dateStr) {
@@ -2595,7 +2678,7 @@
     /* ============ FINANCE ============ */
     const CAT_COLORS = {
       'Chemical/Stock': '#f59e0b', 'Marketing': '#3b82f6', 'Overhead': '#8b5cf6',
-      'Equipment': '#10b981', 'Transport': '#ef4444', 'Other': '#64748b'
+      'Equipment': '#10b981', 'Transport': '#ef4444', 'Upah Pekerja': '#0ea5e9', 'Other': '#64748b'
     };
 
     async function saveExpense(e) {
@@ -2619,6 +2702,32 @@
       alert('✅ Expense saved!');
     }
 
+    // Bayar pekerja untuk hari ini (RM50 upah + RM10 makan = RM60), boleh ubah jumlah
+    async function payWorker() {
+      const now = new Date();
+      const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+      const inp = prompt('Bayar pekerja untuk ' + formatDMY(dateStr) + '\n\nJumlah (RM50 upah + RM10 makan = RM60).\nUbah jika perlu:', '60');
+      if (inp === null) return;
+      const amount = Number(inp);
+      if (!amount || amount <= 0) { alert('⚠️ Jumlah tak sah.'); return; }
+      const expense = {
+        id: Date.now(),
+        category: 'Upah Pekerja',
+        desc: (amount === 60 ? 'Upah RM50 + Makan RM10' : 'Upah Pekerja') + ' (1 hari)',
+        amount: amount,
+        date: dateStr,
+        _synced: false,
+        createdAt: new Date().toISOString()
+      };
+      state.expenses.push(expense);
+      persistLocal();
+      renderAll();
+      expense._synced = await fbSet('expenses', expense.id, expense);
+      persistLocal();
+      updateSyncStatus();
+      alert(expense._synced ? '✅ Bayaran pekerja RM' + amount + ' direkod untuk ' + formatDMY(dateStr) + '!' : '⚠️ Direkod dalam phone, akan auto-sync bila online.');
+    }
+
     function deleteExpense(id) {
       if (confirm('Delete this expense?')) {
         state.expenses = state.expenses.filter(x => x.id != id);
@@ -2630,6 +2739,9 @@
 
     function renderFinance() {
       if (!document.getElementById('fin-revenue')) return;
+      // Auto-isi tarikh hari ni dalam borang (kau boleh ubah untuk back-dated)
+      const edEl = document.getElementById('exp-date');
+      if (edEl && !edEl.value) { const t = new Date(); edEl.value = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); }
       const exp = state.expenses || [];
       const revenue = state.bookings.filter(isComplete).reduce((s, b) => s + (b.price || 0), 0);
       const material = state.bookings.filter(isComplete).reduce((s, b) => s + (b.material || 0), 0);
