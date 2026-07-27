@@ -674,6 +674,7 @@
           <div id="kh-alert" style="margin-top:10px;"></div>
         </div>
 
+        <div id="reimburse-alert" style="display:none; margin-bottom:14px;"></div>
         <div id="backup-reminder" style="display:none; margin-bottom:14px;"></div>
         <div id="stock-alert-dashboard" style="display:none; margin-bottom:14px;"></div>
 
@@ -976,9 +977,17 @@
         <div class="fin-card">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
             <h3 style="font-size:15px;font-weight:800;color:#1f3d38;">📖 Ledger Aliran Duit</h3>
-            <span id="ledger-balance-now" style="font-size:16px;font-weight:800;color:#16a34a;">RM0</span>
           </div>
-          <p style="font-size:11px;color:#94a3b8;margin-bottom:10px;">Dikira automatik dari booking siap + expense — bukan angka tersimpan berasingan, so tak boleh silap match dengan rekod sebenar.</p>
+          <p style="font-size:11px;color:#94a3b8;margin-bottom:10px;">Dikira automatik dari booking siap + expense (bulan ni sahaja) — bukan angka tersimpan berasingan, so tak boleh silap match dengan rekod sebenar.</p>
+          <div style="display:flex; align-items:center; justify-content:space-between; background:#f7f8fa; border-radius:9px; padding:8px 10px; margin-bottom:10px;">
+            <button onclick="changeLedgerMonth(-1)" style="width:30px;height:30px;border:none;border-radius:7px;background:#1f3d38;color:#fff;font-weight:700;cursor:pointer;">‹</button>
+            <span id="ledger-month-label" style="font-weight:800;color:#1f3d38;font-size:13.5px;">—</span>
+            <button onclick="changeLedgerMonth(1)" style="width:30px;height:30px;border:none;border-radius:7px;background:#1f3d38;color:#fff;font-weight:700;cursor:pointer;">›</button>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;">
+            <span style="font-size:12px;color:#64748b;font-weight:600;">Baki akhir bulan ni</span>
+            <span id="ledger-balance-now" style="font-size:18px;font-weight:800;color:#16a34a;">RM0</span>
+          </div>
           <div id="ledger-list"></div>
         </div>
 
@@ -1008,6 +1017,7 @@
                 <option value="Chemical/Stock">🧪 Chemical / Stock</option>
                 <option value="Upah Pekerja">👷 Upah Pekerja</option>
                 <option value="Owner Draw">🏠 Owner Draw (guna peribadi)</option>
+                <option value="Belanja Customer (Reimburse)">🔄 Belanja Customer (dia bayar balik)</option>
                 <option value="Marketing">📢 Marketing / Ads</option>
                 <option value="Overhead">🏢 Overhead (rent, utilities)</option>
                 <option value="Equipment">🔧 Equipment</option>
@@ -1906,7 +1916,7 @@
       const thisMonth = state.bookings.filter(b => monthMatch(b.date, now));
       const revenue = thisMonth.filter(isComplete).reduce((s, b) => s + (b.price || 0), 0);
       const material = thisMonth.reduce((s, b) => s + (b.material || 0), 0);
-      const overhead = (state.expenses || []).filter(e => monthMatch(e.date, now)).reduce((s, e) => s + (e.amount || 0), 0);
+      const overhead = (state.expenses || []).filter(e => monthMatch(e.date, now) && isTrueCost(e)).reduce((s, e) => s + (e.amount || 0), 0);
       const profit = revenue - material - overhead;
       const completeCount = state.bookings.filter(isComplete).length;
 
@@ -1921,7 +1931,7 @@
       const lastMonth = state.bookings.filter(b => monthMatch(b.date, lastMonthRef));
       const lmRevenue = lastMonth.filter(isComplete).reduce((s, b) => s + (b.price || 0), 0);
       const lmMaterial = lastMonth.reduce((s, b) => s + (b.material || 0), 0);
-      const lmOverhead = (state.expenses || []).filter(e => monthMatch(e.date, lastMonthRef)).reduce((s, e) => s + (e.amount || 0), 0);
+      const lmOverhead = (state.expenses || []).filter(e => monthMatch(e.date, lastMonthRef) && isTrueCost(e)).reduce((s, e) => s + (e.amount || 0), 0);
       const lmProfit = lmRevenue - lmMaterial - lmOverhead;
       renderTrend('kpi-revenue-trend', revenue, lmRevenue);
       renderTrend('kpi-profit-trend', profit, lmProfit);
@@ -1944,6 +1954,36 @@
       renderFinancialHealth(overhead);
       renderTargetProgress();
       renderStockAlertDashboard();
+      renderReimburseAlert();
+    }
+
+    // Tunjuk senarai "Belum Refund" — belanja customer yang belum dibayar balik
+    function renderReimburseAlert() {
+      const box = document.getElementById('reimburse-alert');
+      if (!box) return;
+      const unpaid = (state.expenses || []).filter(e => e.category === 'Belanja Customer (Reimburse)' && e.reimbursed === false);
+      if (!unpaid.length) { box.style.display = 'none'; return; }
+      const total = unpaid.reduce((s, e) => s + (e.amount || 0), 0);
+      box.style.display = 'block';
+      box.innerHTML = '<div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:12px 14px;">' +
+        '<div style="color:#1e40af;font-weight:800;font-size:13px;margin-bottom:8px;">🔄 RM' + total.toLocaleString() + ' belum di-refund oleh customer (' + unpaid.length + ' item)</div>' +
+        unpaid.map(e => '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-top:1px solid #dbeafe;">' +
+          '<span style="font-size:12px;color:#1e3a5f;">' + e.desc + ' — RM' + e.amount + '</span>' +
+          '<button onclick="toggleReimbursed(\'' + e.id + '\')" style="padding:4px 10px;border:none;border-radius:6px;background:#1e40af;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">✅ Dah Refund</button>' +
+        '</div>').join('') +
+      '</div>';
+    }
+
+    async function toggleReimbursed(id) {
+      const e = state.expenses.find(x => x.id == id);
+      if (!e) return;
+      e.reimbursed = true;
+      e._synced = false;
+      persistLocal();
+      renderAll();
+      e._synced = await fbSet('expenses', e.id, e);
+      persistLocal();
+      updateSyncStatus();
     }
 
     // Tunjuk amaran ringkas di Dashboard kalau ada item stok yang dah nak habis
@@ -3049,7 +3089,7 @@
       // Perbelanjaan bulan ni (dari Finance) — pisahkan Upah Pekerja
       const monthExp = (state.expenses || []).filter(e => (e.date || '').slice(0, 7) === prefix);
       const upah = monthExp.filter(e => e.category === 'Upah Pekerja').reduce((s, e) => s + (e.amount || 0), 0);
-      const kosLain = monthExp.filter(e => e.category !== 'Upah Pekerja').reduce((s, e) => s + (e.amount || 0), 0) + material;
+      const kosLain = monthExp.filter(e => e.category !== 'Upah Pekerja' && isTrueCost(e)).reduce((s, e) => s + (e.amount || 0), 0) + material;
       const untungBersih = income - upah - kosLain;
 
       // Trend vs bulan lepas (pendapatan)
@@ -3141,18 +3181,23 @@
     const CAT_COLORS = {
       'Chemical/Stock': '#f59e0b', 'Marketing': '#c9863d', 'Overhead': '#8b5cf6',
       'Equipment': '#10b981', 'Transport': '#ef4444', 'Upah Pekerja': '#3d8f82',
-      'Owner Draw': '#f472b6', 'Other': '#64748b'
+      'Owner Draw': '#f472b6', 'Belanja Customer (Reimburse)': '#0ea5e9', 'Other': '#64748b'
     };
+    // Belanja Customer bukan kos SEBENAR bisnes — duit ni akan direfund oleh customer,
+    // jadi ia dikecualikan dari kiraan Total Expense / Net Profit / Overhead.
+    function isTrueCost(e) { return e.category !== 'Belanja Customer (Reimburse)'; }
 
     async function saveExpense(e) {
       e.preventDefault();
+      const category = document.getElementById('exp-category').value;
       const expense = {
         id: Date.now(),
-        category: document.getElementById('exp-category').value,
+        category: category,
         desc: document.getElementById('exp-desc').value,
         amount: Number(document.getElementById('exp-amount').value),
         date: document.getElementById('exp-date').value,
         receiptImage: pendingReceiptImage || null,
+        reimbursed: category === 'Belanja Customer (Reimburse)' ? false : null,
         _synced: false,
         createdAt: new Date().toISOString()
       };
@@ -3318,7 +3363,7 @@
       const exp = state.expenses || [];
       const revenue = state.bookings.filter(isComplete).reduce((s, b) => s + (b.price || 0), 0);
       const material = state.bookings.filter(isComplete).reduce((s, b) => s + (b.material || 0), 0);
-      const totalExp = exp.reduce((s, e) => s + (e.amount || 0), 0);
+      const totalExp = exp.filter(isTrueCost).reduce((s, e) => s + (e.amount || 0), 0);
       const chemical = exp.filter(e => e.category === 'Chemical/Stock').reduce((s, e) => s + (e.amount || 0), 0);
       const net = revenue - material - totalExp;
       const now = new Date();
@@ -3339,7 +3384,7 @@
       const bd = document.getElementById('expense-breakdown');
       if (bd) {
         const cats = {};
-        exp.forEach(e => { cats[e.category] = (cats[e.category] || 0) + (e.amount || 0); });
+        exp.filter(isTrueCost).forEach(e => { cats[e.category] = (cats[e.category] || 0) + (e.amount || 0); });
         const catKeys = Object.keys(cats).sort((a, b) => cats[b] - cats[a]);
         if (!catKeys.length || totalExp === 0) {
           bd.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:16px;">Tiada perbelanjaan direkod lagi</div>';
@@ -3368,66 +3413,74 @@
     };
     // ===== Ledger — dikira automatik dari booking siap + expense, BUKAN wallet berasingan =====
     // Ni elak "drift" (angka tersimpan tak match rekod sebenar) — baki sentiasa recalculate dari data asal.
+    let ledgerMonth = new Date();
+    function changeLedgerMonth(delta) {
+      ledgerMonth = new Date(ledgerMonth.getFullYear(), ledgerMonth.getMonth() + delta, 1);
+      renderLedger();
+    }
+
     function renderLedger() {
       const listBox = document.getElementById('ledger-list');
       const balNowEl = document.getElementById('ledger-balance-now');
+      const labelEl = document.getElementById('ledger-month-label');
       if (!listBox) return;
 
-      // Gabung booking siap (+) dan expense (−) jadi satu senarai kronologi
-      const entries = [];
+      const BULAN = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+      if (labelEl) labelEl.textContent = BULAN[ledgerMonth.getMonth()] + ' ' + ledgerMonth.getFullYear();
+      const targetPrefix = ledgerMonth.getFullYear() + '-' + String(ledgerMonth.getMonth() + 1).padStart(2, '0');
+
+      // Gabung booking siap (+) dan expense (−) jadi satu senarai kronologi — KESELURUHAN masa dulu,
+      // supaya baki running balance tetap betul (bawa baki dari bulan sebelumnya), baru filter untuk papar.
+      const allEntries = [];
       state.bookings.filter(isComplete).forEach(b => {
-        entries.push({ date: (b.date || '').slice(0, 10), desc: '✅ ' + b.name + ' (' + b.car + ')', amount: Number(b.price) || 0, sortKey: (b.date || '') + '_' + String(b.id), refType: 'booking', refId: b.id });
+        allEntries.push({ date: (b.date || '').slice(0, 10), desc: '✅ ' + b.name + ' (' + b.car + ')', amount: Number(b.price) || 0, sortKey: (b.date || '') + '_' + String(b.id), refType: 'booking', refId: b.id });
       });
-      (state.expenses || []).forEach(e => {
+      (state.expenses || []).filter(isTrueCost).forEach(e => {
         const icon = e.category === 'Upah Pekerja' ? '👷' : (e.category === 'Owner Draw' ? '🏠' : (e.category === 'Chemical/Stock' ? '🧪' : '💸'));
-        entries.push({ date: (e.date || '').slice(0, 10), desc: icon + ' ' + e.desc + ' (' + e.category + ')', amount: -(Number(e.amount) || 0), sortKey: (e.date || '') + '_' + String(e.id), refType: 'expense', refId: e.id, receiptImage: e.receiptImage || null });
+        allEntries.push({ date: (e.date || '').slice(0, 10), desc: icon + ' ' + e.desc + ' (' + e.category + ')', amount: -(Number(e.amount) || 0), sortKey: (e.date || '') + '_' + String(e.id), refType: 'expense', refId: e.id, receiptImage: e.receiptImage || null });
       });
 
-      if (!entries.length) {
+      if (!allEntries.length) {
         listBox.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:16px;font-size:13px;">Belum ada rekod. Ledger akan terisi automatik bila booking siap / expense direkod.</div>';
         if (balNowEl) balNowEl.textContent = 'RM0';
         return;
       }
 
-      // Susun kronologi (lama ke baru) untuk kira running balance yang betul
-      entries.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+      // Susun kronologi (lama ke baru) untuk kira running balance sepanjang masa
+      allEntries.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
       let running = 0;
-      entries.forEach(en => { running += en.amount; en.balance = running; });
-      const finalBalance = running;
-      if (balNowEl) balNowEl.textContent = 'RM' + finalBalance.toLocaleString();
+      allEntries.forEach(en => { running += en.amount; en.balance = running; });
 
-      // Kumpul ikut bulan, papar terbaru dulu (tapi baki dalam setiap baris kekal betul dari kiraan kronologi)
-      const BULAN = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
-      const groups = {};
-      entries.forEach(en => { const mk = en.date.slice(0, 7) || '0000-00'; (groups[mk] = groups[mk] || []).push(en); });
-      const monthKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+      // Filter untuk papar bulan yang dipilih sahaja
+      const monthEntries = allEntries.filter(en => en.date.slice(0, 7) === targetPrefix);
+      const balanceAtMonthEnd = monthEntries.length ? monthEntries[monthEntries.length - 1].balance : (allEntries.filter(en => en.date.slice(0, 7) < targetPrefix).slice(-1)[0]?.balance || 0);
+      if (balNowEl) balNowEl.textContent = 'RM' + balanceAtMonthEnd.toLocaleString();
 
-      listBox.innerHTML = monthKeys.map(mk => {
-        const items = groups[mk].slice().reverse(); // terbaru dulu dalam bulan tu
-        let label = mk;
-        if (/^\d{4}-\d{2}$/.test(mk)) { const parts = mk.split('-'); label = (BULAN[Number(parts[1]) - 1] || '?') + ' ' + parts[0]; }
-        const header = '<div style="font-size:12px;font-weight:800;color:#94a3b8;margin:14px 0 6px;">📅 ' + label + '</div>';
-        const rows = items.map(en => {
-          const up = en.amount >= 0;
-          const actions = en.refType === 'expense'
-            ? (en.receiptImage ? `<img src="${en.receiptImage}" onclick="viewReceipt('${en.refId}')" style="width:26px;height:26px;object-fit:cover;border-radius:5px;border:1.5px solid #cbd5e1;cursor:pointer;margin-top:3px;" title="Lihat resit">` : '') +
-              `<button onclick="deleteExpense('${en.refId}')" style="background:none;border:none;cursor:pointer;font-size:13px;margin-top:3px;">🗑️</button>`
-            : '';
-          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;">' +
-            '<div style="min-width:0;">' +
-              '<div style="font-size:12.5px;color:#334155;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">' + en.desc + '</div>' +
-              '<div style="font-size:10.5px;color:#94a3b8;">' + formatDMY(en.date) + '</div>' +
+      if (!monthEntries.length) {
+        listBox.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:16px;font-size:13px;">Tiada transaksi bulan ni.</div>';
+        return;
+      }
+
+      const items = monthEntries.slice().reverse(); // terbaru dulu
+      listBox.innerHTML = items.map(en => {
+        const up = en.amount >= 0;
+        const actions = en.refType === 'expense'
+          ? (en.receiptImage ? `<img src="${en.receiptImage}" onclick="viewReceipt('${en.refId}')" style="width:26px;height:26px;object-fit:cover;border-radius:5px;border:1.5px solid #cbd5e1;cursor:pointer;margin-top:3px;" title="Lihat resit">` : '') +
+            `<button onclick="deleteExpense('${en.refId}')" style="background:none;border:none;cursor:pointer;font-size:13px;margin-top:3px;">🗑️</button>`
+          : '';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;">' +
+          '<div style="min-width:0;">' +
+            '<div style="font-size:12.5px;color:#334155;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">' + en.desc + '</div>' +
+            '<div style="font-size:10.5px;color:#94a3b8;">' + formatDMY(en.date) + '</div>' +
+          '</div>' +
+          '<div style="text-align:right;flex-shrink:0;display:flex;align-items:center;gap:8px;">' +
+            '<div>' +
+              '<div style="font-weight:800;color:' + (up ? '#16a34a' : '#dc2626') + ';font-size:13px;">' + (up ? '+' : '−') + 'RM' + Math.abs(en.amount).toLocaleString() + '</div>' +
+              '<div style="font-size:10.5px;color:#64748b;">Baki: RM' + en.balance.toLocaleString() + '</div>' +
             '</div>' +
-            '<div style="text-align:right;flex-shrink:0;display:flex;align-items:center;gap:8px;">' +
-              '<div>' +
-                '<div style="font-weight:800;color:' + (up ? '#16a34a' : '#dc2626') + ';font-size:13px;">' + (up ? '+' : '−') + 'RM' + Math.abs(en.amount).toLocaleString() + '</div>' +
-                '<div style="font-size:10.5px;color:#64748b;">Baki: RM' + en.balance.toLocaleString() + '</div>' +
-              '</div>' +
-              (actions ? '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">' + actions + '</div>' : '') +
-            '</div>' +
-          '</div>';
-        }).join('');
-        return header + rows;
+            (actions ? '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">' + actions + '</div>' : '') +
+          '</div>' +
+        '</div>';
       }).join('');
     }
 
@@ -3472,7 +3525,7 @@
         const ref = new Date(now.getFullYear(), now.getMonth() - i, 1);
         labels.push(months[ref.getMonth()]);
         revData.push(state.bookings.filter(b => isComplete(b) && monthMatch(b.date, ref)).reduce((s, b) => s + (b.price || 0), 0));
-        expData.push((state.expenses || []).filter(e => monthMatch(e.date, ref)).reduce((s, e) => s + (e.amount || 0), 0));
+        expData.push((state.expenses || []).filter(e => monthMatch(e.date, ref) && isTrueCost(e)).reduce((s, e) => s + (e.amount || 0), 0));
       }
       const barCtx = document.getElementById('finChart');
       if (barCtx) {
@@ -3487,7 +3540,7 @@
         });
       }
       const cats = {};
-      (state.expenses || []).forEach(e => { cats[e.category] = (cats[e.category] || 0) + (e.amount || 0); });
+      (state.expenses || []).filter(isTrueCost).forEach(e => { cats[e.category] = (cats[e.category] || 0) + (e.amount || 0); });
       const catLabels = Object.keys(cats);
       const pieCtx = document.getElementById('finPie');
       if (pieCtx) {
