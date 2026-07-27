@@ -921,6 +921,10 @@
       <section id="calendar" class="page">
         <h2 class="section-title">Calendar</h2>
         <p class="section-subtitle">All orders by date</p>
+
+        <div id="today-agenda"></div>
+        <div id="weekday-pattern"></div>
+
         <div class="fin-card">
           <div class="cal-head">
             <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
@@ -1039,11 +1043,6 @@
           </div>
           <p style="font-size:11.5px;color:#94a3b8;margin-bottom:10px;">Track baki chemical/bahan — alert bila dah nak habis</p>
           <div id="stock-list"></div>
-        </div>
-
-        <div class="fin-card">
-          <h3 style="font-size:15px;font-weight:700;color:#1f3d38;margin-bottom:6px;">Expense History</h3>
-          <div id="expense-list"></div>
         </div>
       </section>
     </div>
@@ -2390,6 +2389,13 @@
       goToPage('add-booking');
     }
 
+    // Tap tarikh dalam Calendar -> terus buka Add Booking dengan tarikh dah auto-isi
+    function newBookingForDate(dateStr) {
+      newBooking();
+      const dateInput = document.getElementById('date');
+      if (dateInput) { dateInput.value = dateStr; syncDateDisplay(); }
+    }
+
     function editBooking(id) {
       const booking = state.bookings.find(b => b.id == id);
       if (booking) {
@@ -2878,7 +2884,87 @@
       document.getElementById('cal-day-detail').innerHTML = '';
     }
 
+    // ===== Hari Ini — agenda ringkas bila buka Calendar, tak payah cari dalam grid =====
+    function renderTodayAgenda() {
+      const box = document.getElementById('today-agenda');
+      if (!box) return;
+      const now = new Date();
+      const todayStr = ymd(now);
+      const todays = state.bookings.filter(b => bookingDates(b).indexOf(todayStr) !== -1 && b.status !== 'Cancelled')
+        .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+      const collectedToday = state.bookings.filter(b => isComplete(b) && (b.date || '').slice(0, 10) === todayStr).reduce((s, b) => s + (b.price || 0), 0);
+      const closedToday = isClosed(todayStr);
+
+      if (closedToday) {
+        box.innerHTML = '<div class="fin-card" style="border:2px solid #1f2937;margin-bottom:14px;"><div style="text-align:center;color:#1f2937;font-weight:700;">🔒 Kedai TUTUP hari ini</div></div>';
+        return;
+      }
+
+      const rows = todays.length ? todays.map(b =>
+        '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;cursor:pointer;" onclick="showReceipt(\'' + b.id + '\')">' +
+          '<div>' +
+            '<span style="font-weight:800;color:#1f3d38;font-size:13px;">' + (b.time || '—') + '</span> ' +
+            '<span style="color:#334155;font-size:13px;">' + b.name + ' · ' + b.car + '</span>' +
+          '</div>' +
+          '<span class="card-badge" style="' + statusBadgeStyle(b.status) + '">' + b.status + '</span>' +
+        '</div>'
+      ).join('') : '<div style="text-align:center;color:#94a3b8;padding:10px;font-size:13px;">Tiada booking hari ini</div>';
+
+      box.innerHTML = '<div class="fin-card" style="border:2px solid #c9863d;margin-bottom:14px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+          '<h3 style="font-size:15px;font-weight:800;color:#a86a28;">📌 Hari Ini (' + formatDMY(todayStr) + ')</h3>' +
+          '<span style="font-size:13px;font-weight:700;color:#16a34a;">RM' + collectedToday.toLocaleString() + ' collected</span>' +
+        '</div>' + rows + '</div>';
+    }
+
+    // ===== Pattern Hari Sunyi — purata revenue ikut hari dalam minggu (3 bulan terakhir) =====
+    // Bantu owner nampak hari mana SECARA KONSISTEN kosong, untuk target promo.
+    function renderWeekdayPattern() {
+      const box = document.getElementById('weekday-pattern');
+      if (!box) return;
+      const HARI_SINGKAT = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+      const now = new Date();
+      const cutoff = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+
+      const relevant = state.bookings.filter(b => isComplete(b) && b.date && new Date(b.date) >= cutoff);
+      if (relevant.length < 5) {
+        box.innerHTML = '';
+        return;
+      }
+      const sums = [0, 0, 0, 0, 0, 0, 0];
+      const counts = [0, 0, 0, 0, 0, 0, 0];
+      relevant.forEach(b => {
+        const dow = new Date(b.date.slice(0, 10) + 'T00:00:00').getDay();
+        sums[dow] += (b.price || 0);
+        counts[dow] += 1;
+      });
+      const avgs = sums.map((s, i) => counts[i] > 0 ? Math.round(s / counts[i]) : 0);
+      const maxAvg = Math.max(...avgs, 1);
+      const lowestIdx = avgs.reduce((minI, v, i) => (counts[i] > 0 && v < avgs[minI] || counts[minI] === 0) ? i : minI, 0);
+
+      const bars = avgs.map((a, i) => {
+        const pct = Math.round((a / maxAvg) * 100);
+        const isLow = i === lowestIdx && counts[i] > 0;
+        return '<div style="flex:1;text-align:center;">' +
+          '<div style="height:60px;display:flex;align-items:flex-end;justify-content:center;">' +
+            '<div style="width:70%;height:' + Math.max(6, pct) + '%;background:' + (isLow ? '#dc2626' : '#3d8f82') + ';border-radius:5px 5px 0 0;"></div>' +
+          '</div>' +
+          '<div style="font-size:10px;font-weight:700;color:#334155;margin-top:4px;">' + HARI_SINGKAT[i].slice(0, 3) + '</div>' +
+          '<div style="font-size:9.5px;color:#94a3b8;">RM' + a + '</div>' +
+        '</div>';
+      }).join('');
+
+      box.innerHTML = '<div class="fin-card" style="margin-bottom:14px;">' +
+        '<h3 style="font-size:14px;font-weight:800;color:#1f3d38;margin-bottom:2px;">📊 Purata Revenue Ikut Hari (3 bulan)</h3>' +
+        '<p style="font-size:11px;color:#94a3b8;margin-bottom:10px;">Untuk kenal pasti hari yang konsisten sunyi</p>' +
+        '<div style="display:flex;gap:4px;">' + bars + '</div>' +
+        (counts[lowestIdx] > 0 ? '<div style="margin-top:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 10px;font-size:12px;color:#b91c1c;font-weight:700;">💡 ' + HARI_SINGKAT[lowestIdx] + ' konsisten paling sunyi — pertimbang promo khas hari tu.</div>' : '') +
+      '</div>';
+    }
+
     function renderCalendar() {
+      renderTodayAgenda();
+      renderWeekdayPattern();
       const dowRow = document.getElementById('cal-dow-row');
       const grid = document.getElementById('cal-grid');
       const label = document.getElementById('cal-month-label');
@@ -3023,17 +3109,18 @@
       let head = '';
       if (ph) head += '<div style="background:#fee2e2;color:#b91c1c;font-weight:700;font-size:13px;padding:8px 12px;border-radius:8px;margin-bottom:8px;">🎉 ' + ph + ' (Cuti Umum)</div>';
       if (sch) head += '<div style="background:#ffedd5;color:#c2410c;font-weight:700;font-size:13px;padding:8px 12px;border-radius:8px;margin-bottom:8px;">🎒 ' + sch + '</div>';
-      const closeBtn = '<button onclick="toggleClosed(\'' + dateStr + '\')" style="width:100%;padding:11px;border:none;border-radius:9px;background:' + (closed ? '#dc2626' : '#1f2937') + ';color:#fff;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:10px;">' + (closed ? '🔓 Buka Semula Kedai (' + formatDMY(dateStr) + ')' : '🔒 Tanda Kedai TUTUP hari ini') + '</button>';
+      const closeBtn = '<button onclick="toggleClosed(\'' + dateStr + '\')" style="width:100%;padding:11px;border:none;border-radius:9px;background:' + (closed ? '#dc2626' : '#1f2937') + ';color:#fff;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:8px;">' + (closed ? '🔓 Buka Semula Kedai (' + formatDMY(dateStr) + ')' : '🔒 Tanda Kedai TUTUP hari ini') + '</button>';
+      const addBtn = '<button onclick="newBookingForDate(\'' + dateStr + '\')" style="width:100%;padding:11px;border:1.5px solid #c9863d;border-radius:9px;background:#fffbeb;color:#a86a28;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:10px;">➕ Tambah Booking untuk ' + formatDMY(dateStr) + '</button>';
       if (!dayBookings.length) {
         detail.innerHTML = '<div class="fin-card">' + head +
           '<h3 style="font-size:15px;font-weight:700;color:#1f3d38;margin-bottom:10px;">📅 ' + formatDMY(dateStr) + '</h3>' +
-          closeBtn +
+          addBtn + closeBtn +
           '<div style="color:#64748b;text-align:center;padding:6px;">Tiada booking hari ini</div></div>';
         return;
       }
       detail.innerHTML = '<div class="fin-card">' + head +
         '<h3 style="font-size:15px;font-weight:700;color:#1f3d38;margin-bottom:10px;">📅 ' + formatDMY(dateStr) + ' (' + dayBookings.length + ')</h3>' +
-        closeBtn +
+        addBtn + closeBtn +
         dayBookings.sort((a, b) => (a.time || '').localeCompare(b.time || '')).map(b => {
           const multi = b.endDate ? ' • 🚗 ' + bookingDates(b).length + ' hari (' + formatDMY(b.date) + '–' + formatDMY(b.endDate) + ')' : '';
           return '<div class="fin-row" style="align-items:flex-start;">' +
@@ -3244,39 +3331,6 @@
       const odEl = document.getElementById('fin-ownerdraw');
       if (odEl) odEl.textContent = 'RM' + ownerDraw.toLocaleString();
 
-      const list = document.getElementById('expense-list');
-      if (!exp.length) {
-        list.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:16px;">Tiada perbelanjaan direkod lagi</div>';
-      } else {
-        const BULAN = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
-        const groups = {};
-        exp.forEach(e => { const mk = (e.date || '').slice(0, 7) || '0000-00'; (groups[mk] = groups[mk] || []).push(e); });
-        const monthKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
-        list.innerHTML = monthKeys.map(mk => {
-          const items = groups[mk].slice().sort((a, b) => new Date(b.date) - new Date(a.date));
-          const monthTotal = items.reduce((s, e) => s + (e.amount || 0), 0);
-          let label = mk;
-          if (/^\d{4}-\d{2}$/.test(mk)) { const parts = mk.split('-'); label = (BULAN[Number(parts[1]) - 1] || '?') + ' ' + parts[0]; }
-          const header = '<div style="display:flex;justify-content:space-between;align-items:center;background:#eef2f7;padding:9px 12px;border-radius:9px;margin:16px 0 8px;">' +
-            '<span style="font-weight:800;color:#1f3d38;font-size:14px;">📅 ' + label + '</span>' +
-            '<span style="font-weight:800;color:#dc2626;font-size:14px;">RM' + monthTotal.toLocaleString() + '</span></div>';
-          const rows = items.map(e => `
-        <div class="fin-row">
-          <div>
-            <span class="fin-cat-badge" style="background:${CAT_COLORS[e.category] || '#64748b'};color:#fff;">${e.category}</span>
-            <div style="font-weight:600;color:#1f3d38;margin-top:4px;">${e.desc}</div>
-            <div style="font-size:11px;color:#94a3b8;">${formatDMY(e.date)}</div>
-          </div>
-          <div style="text-align:right;display:flex;align-items:center;gap:10px;">
-            <div style="font-weight:700;color:#dc2626;">RM${(e.amount || 0).toLocaleString()}</div>
-            ${e.receiptImage ? `<img src="${e.receiptImage}" onclick="viewReceipt('${e.id}')" style="width:32px;height:32px;object-fit:cover;border-radius:6px;border:1.5px solid #cbd5e1;cursor:pointer;" title="Tap untuk lihat resit">` : ''}
-            <button onclick="deleteExpense('${e.id}')" style="background:none;border:none;cursor:pointer;font-size:16px;">🗑️</button>
-          </div>
-        </div>`).join('');
-          return header + rows;
-        }).join('');
-      }
-
       renderFinCharts();
       renderSourceBreakdown();
       renderLedger();
@@ -3322,11 +3376,11 @@
       // Gabung booking siap (+) dan expense (−) jadi satu senarai kronologi
       const entries = [];
       state.bookings.filter(isComplete).forEach(b => {
-        entries.push({ date: (b.date || '').slice(0, 10), desc: '✅ ' + b.name + ' (' + b.car + ')', amount: Number(b.price) || 0, sortKey: (b.date || '') + '_' + String(b.id) });
+        entries.push({ date: (b.date || '').slice(0, 10), desc: '✅ ' + b.name + ' (' + b.car + ')', amount: Number(b.price) || 0, sortKey: (b.date || '') + '_' + String(b.id), refType: 'booking', refId: b.id });
       });
       (state.expenses || []).forEach(e => {
         const icon = e.category === 'Upah Pekerja' ? '👷' : (e.category === 'Owner Draw' ? '🏠' : (e.category === 'Chemical/Stock' ? '🧪' : '💸'));
-        entries.push({ date: (e.date || '').slice(0, 10), desc: icon + ' ' + e.desc + ' (' + e.category + ')', amount: -(Number(e.amount) || 0), sortKey: (e.date || '') + '_' + String(e.id) });
+        entries.push({ date: (e.date || '').slice(0, 10), desc: icon + ' ' + e.desc + ' (' + e.category + ')', amount: -(Number(e.amount) || 0), sortKey: (e.date || '') + '_' + String(e.id), refType: 'expense', refId: e.id, receiptImage: e.receiptImage || null });
       });
 
       if (!entries.length) {
@@ -3355,14 +3409,21 @@
         const header = '<div style="font-size:12px;font-weight:800;color:#94a3b8;margin:14px 0 6px;">📅 ' + label + '</div>';
         const rows = items.map(en => {
           const up = en.amount >= 0;
+          const actions = en.refType === 'expense'
+            ? (en.receiptImage ? `<img src="${en.receiptImage}" onclick="viewReceipt('${en.refId}')" style="width:26px;height:26px;object-fit:cover;border-radius:5px;border:1.5px solid #cbd5e1;cursor:pointer;margin-top:3px;" title="Lihat resit">` : '') +
+              `<button onclick="deleteExpense('${en.refId}')" style="background:none;border:none;cursor:pointer;font-size:13px;margin-top:3px;">🗑️</button>`
+            : '';
           return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;">' +
             '<div style="min-width:0;">' +
               '<div style="font-size:12.5px;color:#334155;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">' + en.desc + '</div>' +
               '<div style="font-size:10.5px;color:#94a3b8;">' + formatDMY(en.date) + '</div>' +
             '</div>' +
-            '<div style="text-align:right;flex-shrink:0;">' +
-              '<div style="font-weight:800;color:' + (up ? '#16a34a' : '#dc2626') + ';font-size:13px;">' + (up ? '+' : '−') + 'RM' + Math.abs(en.amount).toLocaleString() + '</div>' +
-              '<div style="font-size:10.5px;color:#64748b;">Baki: RM' + en.balance.toLocaleString() + '</div>' +
+            '<div style="text-align:right;flex-shrink:0;display:flex;align-items:center;gap:8px;">' +
+              '<div>' +
+                '<div style="font-weight:800;color:' + (up ? '#16a34a' : '#dc2626') + ';font-size:13px;">' + (up ? '+' : '−') + 'RM' + Math.abs(en.amount).toLocaleString() + '</div>' +
+                '<div style="font-size:10.5px;color:#64748b;">Baki: RM' + en.balance.toLocaleString() + '</div>' +
+              '</div>' +
+              (actions ? '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">' + actions + '</div>' : '') +
             '</div>' +
           '</div>';
         }).join('');
