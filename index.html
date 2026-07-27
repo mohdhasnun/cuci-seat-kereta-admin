@@ -674,6 +674,18 @@
           <div id="kh-alert" style="margin-top:10px;"></div>
         </div>
 
+        <div id="backup-reminder" style="display:none; margin-bottom:14px;"></div>
+        <div id="stock-alert-dashboard" style="display:none; margin-bottom:14px;"></div>
+
+        <!-- Target Bulanan -->
+        <div class="fin-card" style="border:2px solid #c9863d; margin-bottom:18px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h3 style="font-size:15px;font-weight:800;color:#a86a28;">🎯 Target Bulanan</h3>
+            <button onclick="editMonthlyTarget()" style="padding:7px 12px;border:1.5px solid #fde68a;border-radius:8px;background:#fffbeb;color:#a86a28;font-weight:700;font-size:12px;cursor:pointer;">✏️ Set Target</button>
+          </div>
+          <div id="target-progress-content"></div>
+        </div>
+
         <div id="cancel-alert" style="display:none; margin-bottom:14px;"></div>
 
         <div class="kpi-grid">
@@ -865,6 +877,18 @@
           <div class="form-section">
             <div class="form-section-title">📝 Lain-lain</div>
             <div>
+              <label>Sumber Customer</label>
+              <select id="source-select">
+                <option value="Walk-in">🚶 Walk-in</option>
+                <option value="Rujukan Kawan">🤝 Rujukan Kawan</option>
+                <option value="Repeat Customer">🔁 Repeat Customer</option>
+                <option value="FB/IG Ads">📱 FB/IG Ads</option>
+                <option value="Google/Maps">🔍 Google/Maps</option>
+                <option value="Walk-past">👀 Walk-past Kedai</option>
+                <option value="Lain-lain">📦 Lain-lain</option>
+              </select>
+            </div>
+            <div>
               <label>Material Cost (RM)</label>
               <input type="number" id="material" placeholder="0">
             </div>
@@ -936,13 +960,33 @@
             <div class="kpi-value" id="fin-netprofit" style="font-size:20px;">RM0</div>
             <div class="kpi-label">Net Profit</div>
           </div>
+          <div class="kpi-card" style="border-top-color:#f472b6;">
+            <div class="kpi-icon">🏠</div>
+            <div class="kpi-value" id="fin-ownerdraw" style="font-size:20px;">RM0</div>
+            <div class="kpi-label">Owner Draw Bulan Ini</div>
+          </div>
         </div>
 
         <button onclick="payWorker()" style="width:100%;padding:13px;border:none;border-radius:11px;background:linear-gradient(135deg,#3d8f82,#2f6e64);color:#fff;font-weight:800;font-size:14px;cursor:pointer;margin-bottom:16px;box-shadow:0 2px 8px rgba(14,165,233,.25);">👷 Bayar Pekerja Hari Ni (RM60)</button>
 
         <div class="fin-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <h3 style="font-size:15px;font-weight:800;color:#1f3d38;">📖 Ledger Aliran Duit</h3>
+            <span id="ledger-balance-now" style="font-size:16px;font-weight:800;color:#16a34a;">RM0</span>
+          </div>
+          <p style="font-size:11px;color:#94a3b8;margin-bottom:10px;">Dikira automatik dari booking siap + expense — bukan angka tersimpan berasingan, so tak boleh silap match dengan rekod sebenar.</p>
+          <div id="ledger-list"></div>
+        </div>
+
+        <div class="fin-card">
           <h3 style="font-size:15px;font-weight:700;color:#1f3d38;margin-bottom:12px;">Revenue vs Expenses (6 months)</h3>
           <div class="chart-wrap"><canvas id="finChart"></canvas></div>
+        </div>
+
+        <div class="fin-card">
+          <h3 style="font-size:15px;font-weight:700;color:#1f3d38;margin-bottom:4px;">📍 Sumber Customer Paling Untung</h3>
+          <p style="font-size:11.5px;color:#94a3b8;margin-bottom:12px;">Channel mana bawa paling banyak revenue (keseluruhan masa)</p>
+          <div id="source-breakdown"></div>
         </div>
 
         <div class="fin-card">
@@ -959,6 +1003,7 @@
               <select id="exp-category" required="" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;">
                 <option value="Chemical/Stock">🧪 Chemical / Stock</option>
                 <option value="Upah Pekerja">👷 Upah Pekerja</option>
+                <option value="Owner Draw">🏠 Owner Draw (guna peribadi)</option>
                 <option value="Marketing">📢 Marketing / Ads</option>
                 <option value="Overhead">🏢 Overhead (rent, utilities)</option>
                 <option value="Equipment">🔧 Equipment</option>
@@ -978,8 +1023,22 @@
               <label>Date *</label>
               <input type="date" id="exp-date" required="">
             </div>
+            <div>
+              <label>📷 Lampirkan Resit (optional)</label>
+              <input type="file" id="exp-receipt" accept="image/*" capture="environment" onchange="previewReceipt(event)">
+              <div id="exp-receipt-preview" style="margin-top:8px;"></div>
+            </div>
             <button type="submit" class="btn btn-whatsapp">Save Expense</button>
           </form>
+        </div>
+
+        <div class="fin-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <h3 style="font-size:15px;font-weight:700;color:#1f3d38;">📦 Stok Runcit</h3>
+            <button onclick="addStockItem()" style="padding:6px 12px;border:1.5px solid #fde68a;border-radius:8px;background:#fffbeb;color:#a86a28;font-weight:700;font-size:12px;cursor:pointer;">+ Item</button>
+          </div>
+          <p style="font-size:11.5px;color:#94a3b8;margin-bottom:10px;">Track baki chemical/bahan — alert bila dah nak habis</p>
+          <div id="stock-list"></div>
         </div>
 
         <div class="fin-card">
@@ -1017,7 +1076,8 @@
   <script>
     const STORE_KEY = 'cuciSeatAdmin.bookings.v1';
     const EXP_KEY = 'cuciSeatAdmin.expenses.v1';
-    let state = { bookings: [], expenses: [], closedDates: [], bufferBalance: 0 };
+    const STOCK_KEY = 'cuciSeatAdmin.stock.v1';
+    let state = { bookings: [], expenses: [], closedDates: [], bufferBalance: 0, monthlyTarget: 0, stockItems: [] };
     let currentReceiptId = null;
     let editingBookingId = null;
     let calMonth = new Date();
@@ -1284,6 +1344,10 @@
         if (se) { const p = JSON.parse(se); state.expenses = Array.isArray(p) ? p : (p.expenses || []); }
       } catch (e) { console.error('cache expenses parse', e); }
       try {
+        const ss = localStorage.getItem(STOCK_KEY);
+        if (ss) { const p = JSON.parse(ss); state.stockItems = Array.isArray(p) ? p : (p.stockItems || []); }
+      } catch (e) { console.error('cache stock parse', e); }
+      try {
         const sc = localStorage.getItem('cuci_closed');
         if (sc) { const p = JSON.parse(sc); state.closedDates = (p && p.dates) || []; }
       } catch (e) { state.closedDates = state.closedDates || []; }
@@ -1291,6 +1355,10 @@
         const sb = localStorage.getItem('cuci_buffer');
         if (sb) { const p = JSON.parse(sb); state.bufferBalance = (p && p.amount) || 0; }
       } catch (e) { state.bufferBalance = state.bufferBalance || 0; }
+      try {
+        const st = localStorage.getItem('cuci_target');
+        if (st) { const p = JSON.parse(st); state.monthlyTarget = (p && p.amount) || 0; }
+      } catch (e) { state.monthlyTarget = state.monthlyTarget || 0; }
       renderAll();
 
       // 2) Overlay live data from Firebase (MERGE, never blindly overwrite cache)
@@ -1325,6 +1393,15 @@
           console.log('✅ Loaded', fbExp.length, 'expenses from Firebase +', expOnly.length, 'pending');
         } catch (err) { console.error('Firebase expenses load failed (keeping cache):', err); }
         try {
+          const stkSnap = await firebase.firestore().collection('stock').get({ source: 'server' });
+          const fbStock = stkSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), _synced: true }));
+          const stkIds = new Set(fbStock.map(s => String(s.id)));
+          const stockOnly = (state.stockItems || []).filter(s => !stkIds.has(String(s.id)) && !s._deleted)
+            .map(s => ({ ...s, _synced: false }));
+          state.stockItems = [...fbStock, ...stockOnly];
+          localStorage.setItem(STOCK_KEY, JSON.stringify({ stockItems: state.stockItems }));
+        } catch (err) { console.error('Firebase stock load failed (keeping cache):', err); }
+        try {
           const cSnap = await firebase.firestore().collection('config').doc('closedDates').get({ source: 'server' });
           const fbDates = (cSnap.exists && cSnap.data() && cSnap.data().dates) || [];
           // GABUNG localStorage + Firebase supaya hari tutup tak hilang walau satu sumber kosong
@@ -1339,6 +1416,13 @@
             localStorage.setItem('cuci_buffer', JSON.stringify({ amount: state.bufferBalance }));
           }
         } catch (err) { console.warn('bufferBalance load (keeping local):', err); }
+        try {
+          const tgSnap = await firebase.firestore().collection('config').doc('monthlyTarget').get({ source: 'server' });
+          if (tgSnap.exists && tgSnap.data()) {
+            state.monthlyTarget = tgSnap.data().amount || 0;
+            localStorage.setItem('cuci_target', JSON.stringify({ amount: state.monthlyTarget }));
+          }
+        } catch (err) { console.warn('monthlyTarget load (keeping local):', err); }
         renderAll();
         syncPending(false); // push anything still local-only
       } else {
@@ -1350,8 +1434,10 @@
     function persistLocal() {
       localStorage.setItem(STORE_KEY, JSON.stringify({ bookings: state.bookings }));
       localStorage.setItem(EXP_KEY, JSON.stringify({ expenses: state.expenses }));
+      localStorage.setItem(STOCK_KEY, JSON.stringify({ stockItems: state.stockItems || [] }));
       localStorage.setItem('cuci_closed', JSON.stringify({ dates: state.closedDates || [] }));
       localStorage.setItem('cuci_buffer', JSON.stringify({ amount: state.bufferBalance || 0 }));
+      localStorage.setItem('cuci_target', JSON.stringify({ amount: state.monthlyTarget || 0 }));
     }
 
     // Force-pull the freshest data straight from Firebase server (bypass any cache)
@@ -1458,7 +1544,8 @@
     function countPending() {
       const b = state.bookings.filter(x => x._synced === false).length;
       const e = (state.expenses || []).filter(x => x._synced === false).length;
-      return b + e;
+      const s = (state.stockItems || []).filter(x => x._synced === false).length;
+      return b + e + s;
     }
 
     function updateSyncStatus() {
@@ -1500,6 +1587,12 @@
           if (ok) { e._synced = true; pushed++; }
         }
       }
+      for (const s of (state.stockItems || [])) {
+        if (s._synced === false) {
+          const ok = await fbSet('stock', s.id, s);
+          if (ok) { s._synced = true; pushed++; }
+        }
+      }
       persistLocal();
       updateSyncStatus();
       if (manual) alert(pushed ? ('✅ ' + pushed + ' rekod berjaya sync ke cloud!') : '✅ Semua dah sync, takde yang tertinggal.');
@@ -1507,7 +1600,7 @@
 
     /* ====== MANUAL BACKUP / RESTORE (safety net) ====== */
     function backupData() {
-      const data = { bookings: state.bookings, expenses: state.expenses, exportedAt: new Date().toISOString() };
+      const data = { bookings: state.bookings, expenses: state.expenses, stockItems: state.stockItems, exportedAt: new Date().toISOString() };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       const stamp = new Date().toISOString().slice(0,10);
@@ -1515,6 +1608,27 @@
       a.download = 'cuciseat_backup_' + stamp + '.json';
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      localStorage.setItem('cuci_lastbackup', new Date().toISOString());
+      const rem = document.getElementById('backup-reminder');
+      if (rem) rem.style.display = 'none';
+    }
+
+    // Reminder automatik kalau dah lebih 7 hari tak backup manual
+    // (data tetap sync ke Firebase secara automatik, ni cuma safety net tambahan)
+    function checkBackupReminder() {
+      const box = document.getElementById('backup-reminder');
+      if (!box) return;
+      const last = localStorage.getItem('cuci_lastbackup');
+      const daysSince = last ? Math.floor((Date.now() - new Date(last).getTime()) / 86400000) : 999;
+      if (daysSince >= 7) {
+        box.style.display = 'block';
+        box.innerHTML = '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;">' +
+          '<span style="color:#92400e;font-weight:700;font-size:12.5px;">💾 ' + (last ? 'Dah ' + daysSince + ' hari tak backup manual.' : 'Belum pernah backup manual.') + ' Nak jaga-jaga?</span>' +
+          '<button onclick="backupData()" style="padding:7px 12px;border:none;border-radius:8px;background:#a86a28;color:#fff;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;">⬇️ Backup</button>' +
+        '</div>';
+      } else {
+        box.style.display = 'none';
+      }
     }
 
     function restoreData(ev) {
@@ -1526,6 +1640,7 @@
           const data = JSON.parse(reader.result);
           const bks = Array.isArray(data) ? data : (data.bookings || []);
           const exps = (data && data.expenses) || [];
+          const stks = (data && data.stockItems) || [];
           // Merge by id (jangan timpa, gabung)
           const byId = {};
           state.bookings.forEach(b => byId[String(b.id)] = b);
@@ -1535,10 +1650,14 @@
           (state.expenses || []).forEach(e => eById[String(e.id)] = e);
           exps.forEach(e => { eById[String(e.id)] = { ...eById[String(e.id)], ...e, _synced: false }; });
           state.expenses = Object.values(eById);
+          const sById = {};
+          (state.stockItems || []).forEach(s => sById[String(s.id)] = s);
+          stks.forEach(s => { sById[String(s.id)] = { ...sById[String(s.id)], ...s, _synced: false }; });
+          state.stockItems = Object.values(sById);
           persistLocal();
           renderAll();
           syncPending(false);
-          alert('✅ Restore berjaya! ' + bks.length + ' booking + ' + exps.length + ' expense digabung.');
+          alert('✅ Restore berjaya! ' + bks.length + ' booking + ' + exps.length + ' expense + ' + stks.length + ' item stok digabung.');
         } catch (err) {
           alert('❌ Fail backup tak sah / rosak.');
         }
@@ -1695,6 +1814,7 @@
           existing.deposit = Number(document.getElementById('deposit').value) || 0;
           existing.material = Number(document.getElementById('material').value) || 0;
           existing.notes = document.getElementById('notes').value;
+          existing.customerSource = document.getElementById('source-select')?.value || existing.customerSource || 'Walk-in';
           existing._synced = false;
           persistLocal();
           renderAll();
@@ -1725,6 +1845,7 @@
         deposit: Number(document.getElementById('deposit').value) || 0,
         material: Number(document.getElementById('material').value) || 0,
         notes: document.getElementById('notes').value,
+        customerSource: document.getElementById('source-select')?.value || 'Walk-in',
         status: 'Pending',
         source: 'Manual',
         _synced: false,
@@ -1756,6 +1877,8 @@
       renderBookings();
       renderCalendar();
       renderFinance();
+      renderStockList();
+      checkBackupReminder();
       updateSyncStatus();
     }
 
@@ -1765,6 +1888,15 @@
       return d.getMonth() === ref.getMonth() && d.getFullYear() === ref.getFullYear();
     }
     function isComplete(b) { return b.status === 'Completed' || b.status === 'Complete'; }
+
+    // Sejarah customer: berapa kali lawatan (siap) & total belanja, guna nombor phone
+    function customerHistory(phone) {
+      if (!phone) return { visits: 0, total: 0 };
+      const norm = String(phone).replace(/[^0-9]/g, '');
+      if (!norm) return { visits: 0, total: 0 };
+      const matches = state.bookings.filter(b => isComplete(b) && String(b.phone || '').replace(/[^0-9]/g, '') === norm);
+      return { visits: matches.length, total: matches.reduce((s, b) => s + (b.price || 0), 0) };
+    }
 
     function updateDashboard() {
       const now = new Date();
@@ -1811,6 +1943,21 @@
 
       renderCancelAlert(total, cancelledCount);
       renderFinancialHealth(overhead);
+      renderTargetProgress();
+      renderStockAlertDashboard();
+    }
+
+    // Tunjuk amaran ringkas di Dashboard kalau ada item stok yang dah nak habis
+    function renderStockAlertDashboard() {
+      const box = document.getElementById('stock-alert-dashboard');
+      if (!box) return;
+      const low = (state.stockItems || []).filter(s => Number(s.qty) <= Number(s.threshold || 0));
+      if (low.length) {
+        box.style.display = 'block';
+        box.innerHTML = '<div style="background:#fee2e2;border:1.5px solid #fca5a5;border-radius:10px;padding:12px 14px;color:#b91c1c;font-weight:700;font-size:13px;">📦 ' + low.length + ' item stok dah nak habis: ' + low.map(s => s.name).join(', ') + '. Tengok Finance → Stok Runcit.</div>';
+      } else {
+        box.style.display = 'none';
+      }
     }
 
     // Bandingkan angka bulan ni vs bulan lepas, papar sebagai trend arrow
@@ -1882,6 +2029,51 @@
       }
     }
 
+    // ===== Target Bulanan (Revenue Goal) =====
+    function editMonthlyTarget() {
+      const inp = prompt('Berapa target Revenue bulan ni (RM)?', String(state.monthlyTarget || 0));
+      if (inp === null) return;
+      const val = Number(inp);
+      if (isNaN(val) || val < 0) { alert('⚠️ Jumlah tak sah.'); return; }
+      state.monthlyTarget = val;
+      persistLocal();
+      renderTargetProgress();
+      if (fbReady()) {
+        firebase.firestore().collection('config').doc('monthlyTarget').set({ amount: val, updatedAt: new Date().toISOString() })
+          .catch(e => console.warn('monthlyTarget sync', e));
+      }
+    }
+
+    function renderTargetProgress() {
+      const box = document.getElementById('target-progress-content');
+      if (!box) return;
+      const target = Number(state.monthlyTarget) || 0;
+      const now = new Date();
+      const revenue = state.bookings.filter(b => isComplete(b) && monthMatch(b.date, now)).reduce((s, b) => s + (b.price || 0), 0);
+      if (target <= 0) {
+        box.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:13px;padding:8px;">Belum set target bulan ni. Tap "✏️ Set Target" untuk mula.</div>';
+        return;
+      }
+      const pct = Math.min(100, Math.round((revenue / target) * 100));
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const dayOfMonth = now.getDate();
+      const expectedPct = Math.round((dayOfMonth / daysInMonth) * 100);
+      const onTrack = pct >= expectedPct;
+      const barColor = pct >= 100 ? '#16a34a' : (onTrack ? '#c9863d' : '#dc2626');
+      box.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">' +
+          '<span style="font-size:20px;font-weight:800;color:#1f3d38;">RM' + revenue.toLocaleString() + '</span>' +
+          '<span style="font-size:13px;color:#64748b;">dari RM' + target.toLocaleString() + '</span>' +
+        '</div>' +
+        '<div style="background:#f1f5f9;border-radius:8px;height:14px;overflow:hidden;">' +
+          '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:8px;transition:width 0.3s;"></div>' +
+        '</div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">' +
+          '<span style="font-size:13px;font-weight:700;color:' + barColor + ';">' + pct + '% dicapai</span>' +
+          '<span style="font-size:11.5px;color:' + (onTrack ? '#16a34a' : '#dc2626') + ';font-weight:600;">' + (onTrack ? '✓ On track (hari ke-' + dayOfMonth + ' dari ' + daysInMonth + ')' : '⚠️ Ketinggalan — patut dah ' + expectedPct + '%') + '</span>' +
+        '</div>';
+    }
+
     function calculateRevenue() {
       const thisMonth = state.bookings.filter(b => {
         const d = new Date(b.date);
@@ -1950,12 +2142,18 @@
       // Newest customer at top (id = Date.now() at creation; larger = newer)
       bookings = bookings.slice().sort(bookingSortCmp);
 
-      const html = bookings.length ? bookings.map(b => `
+      const html = bookings.length ? bookings.map(b => {
+        const hist = customerHistory(b.phone);
+        const histBadge = hist.visits > 1
+          ? '<div style="font-size:11.5px;color:#3d8f82;font-weight:700;margin-top:4px;">🔁 Lawatan ke-' + hist.visits + ' • Jumlah belanja RM' + hist.total.toLocaleString() + '</div>'
+          : '';
+        return `
         <div class="booking-card">
           <div class="card-header">
             <div>
               <span class="card-badge" style="${statusBadgeStyle(b.status)}">${b.status}</span>
               <div class="card-name">${b.name}</div>
+              ${histBadge}
             </div>
           </div>
           ${dateTimeBar(b)}
@@ -1976,6 +2174,7 @@
               <div class="detail-label">💵 Price:</div>
               <div class="detail-value" style="color: #10b981; font-weight: 700;">RM${b.price}</div>
             </div>
+            ${b.customerSource ? '<div class="detail-row"><div class="detail-label">📍 Sumber:</div><div class="detail-value">' + b.customerSource + '</div></div>' : ''}
             ${b.material ? '<div class="detail-row"><div class="detail-label">📦 Material:</div><div class="detail-value">RM' + b.material + '</div></div>' : ''}
             ${b.notes ? '<div class="detail-row"><div class="detail-label">📝 Notes:</div><div class="detail-value">' + b.notes + '</div></div>' : ''}
             <div class="detail-row">
@@ -2001,7 +2200,7 @@
             <button class="btn btn-secondary" onclick="deleteBooking('${b.id}')">🗑️ Delete</button>
           </div>
         </div>
-      `).join('') : '<div class="empty">No bookings found</div>';
+      `;}).join('') : '<div class="empty">No bookings found</div>';
       document.getElementById('bookings-list').innerHTML = html;
     }
 
@@ -2205,6 +2404,7 @@
         if (daysSel) daysSel.value = String(booking.endDate ? bookingDates(booking).length : 1);
         document.getElementById('material').value = booking.material || 0;
         document.getElementById('notes').value = booking.notes || '';
+        if (document.getElementById('source-select')) document.getElementById('source-select').value = booking.customerSource || 'Walk-in';
         if (document.getElementById('deposit')) document.getElementById('deposit').value = booking.deposit || '';
 
         // Populate service checklist with this booking's services
@@ -2534,12 +2734,18 @@
       }
       bookings = bookings.slice().sort(bookingSortCmp);
       
-      const html = bookings.length ? bookings.map(b => `
+      const html = bookings.length ? bookings.map(b => {
+        const hist = customerHistory(b.phone);
+        const histBadge = hist.visits > 1
+          ? '<div style="font-size:11.5px;color:#3d8f82;font-weight:700;margin-top:4px;">🔁 Lawatan ke-' + hist.visits + ' • Jumlah belanja RM' + hist.total.toLocaleString() + '</div>'
+          : '';
+        return `
         <div class="booking-card">
           <div class="card-header">
             <div>
               <span class="card-badge" style="${statusBadgeStyle(b.status)}">${b.status}</span>
               <div class="card-name">${b.name}</div>
+              ${histBadge}
             </div>
           </div>
           ${dateTimeBar(b)}
@@ -2560,6 +2766,7 @@
               <div class="detail-label">💵 Price:</div>
               <div class="detail-value" style="color: #10b981; font-weight: 700;">RM${b.price}</div>
             </div>
+            ${b.customerSource ? '<div class="detail-row"><div class="detail-label">📍 Sumber:</div><div class="detail-value">' + b.customerSource + '</div></div>' : ''}
             ${b.material ? '<div class="detail-row"><div class="detail-label">📦 Material:</div><div class="detail-value">RM' + b.material + '</div></div>' : ''}
             ${b.notes ? '<div class="detail-row"><div class="detail-label">📝 Notes:</div><div class="detail-value">' + b.notes + '</div></div>' : ''}
             <div class="detail-row">
@@ -2585,7 +2792,7 @@
             <button class="btn btn-secondary" onclick="deleteBooking('${b.id}')">🗑️ Delete</button>
           </div>
         </div>
-      `).join('') : '<div class="empty">No bookings with ' + status + ' status</div>';
+      `;}).join('') : '<div class="empty">No bookings with ' + status + ' status</div>';
       document.getElementById('bookings-list').innerHTML = html;
     }
 
@@ -2700,7 +2907,7 @@
         if (ph) tags += `<div class="cal-tag cal-ph" title="${ph}">${ph}</div>`;
         else if (sch) tags += '<div class="cal-tag cal-sch" title="' + sch + '">Cuti Sekolah</div>';
         let dots = dayBookings.slice(0, 2).map(b =>
-          `<div class="cal-dot" style="background:${STATUS_COLORS[b.status] || '#64748b'}" onclick="event.stopPropagation();showCalDay('${dateStr}')">${b.endDate ? '🚗 ' : ''}${b.name}</div>`
+          `<div class="cal-dot" style="background:${STATUS_COLORS[b.status] || '#64748b'}" onclick="event.stopPropagation();showCalDay('${dateStr}')">${b.endDate ? '🚗 ' : ''}${b.name}${b.price ? ' · RM' + b.price : ''}</div>`
         ).join('');
         if (dayBookings.length > 2) dots += `<div class="cal-more">+${dayBookings.length - 2} more</div>`;
         const cls = 'cal-cell' + (isToday ? ' today' : '') + (closed ? ' is-closed' : (ph ? ' is-ph' : ''));
@@ -2724,24 +2931,27 @@
         return d === prefix && b.status !== 'Enquiry' && b.status !== 'Cancelled';
       });
       const siap = monthBookings.filter(isComplete).length;
+      const cancelledThisMonth = state.bookings.filter(b => (b.date || '').slice(0, 7) === prefix && b.status === 'Cancelled').length;
 
-      // Tally ikut jenis servis (pecah "A + B" atau guna serviceItems)
+      // Tally ikut jenis servis (pecah "A + B" atau guna serviceItems) — kira RM juga, bukan count je
       const svcCount = {};
+      const svcRevenue = {};
       let bukaSeat = 0, tanpaBuka = 0;
-      monthBookings.forEach(b => {
-        let names = [];
-        if (Array.isArray(b.serviceItems) && b.serviceItems.length) names = b.serviceItems.map(x => x.name);
-        else if (b.service) names = String(b.service).split(' + ');
-        names.forEach(n => {
-          n = (n || '').trim(); if (!n) return;
+      monthBookings.filter(isComplete).forEach(b => {
+        let items = [];
+        if (Array.isArray(b.serviceItems) && b.serviceItems.length) items = b.serviceItems;
+        else if (b.service) items = String(b.service).split(' + ').map(n => ({ name: n.trim(), price: 0 }));
+        items.forEach(it => {
+          const n = (it.name || '').trim(); if (!n) return;
           svcCount[n] = (svcCount[n] || 0) + 1;
+          svcRevenue[n] = (svcRevenue[n] || 0) + (Number(it.price) || 0);
           const low = n.toLowerCase();
           if (low.includes('tanpa buka')) tanpaBuka++;
           else if (low.includes('buka seat')) bukaSeat++;
         });
       });
-      const svcRows = Object.keys(svcCount).sort((a, b) => svcCount[b] - svcCount[a])
-        .map(n => '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;"><span style="color:#334155;">' + n + '</span><span style="font-weight:700;color:#1f3d38;">' + svcCount[n] + '</span></div>').join('');
+      const svcRows = Object.keys(svcCount).sort((a, b) => svcRevenue[b] - svcRevenue[a])
+        .map(n => '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;"><span style="color:#334155;">' + n + '<span style="color:#94a3b8;"> ×' + svcCount[n] + '</span></span><span style="font-weight:700;color:#1f3d38;">RM' + svcRevenue[n].toLocaleString() + '</span></div>').join('');
 
       // Kedai tutup dalam bulan ni
       const closedCount = (state.closedDates || []).filter(d => (d || '').slice(0, 7) === prefix).length;
@@ -2749,28 +2959,43 @@
       // Pendapatan (booking siap) bulan ni
       const income = monthBookings.filter(isComplete).reduce((s, b) => s + (b.price || 0), 0);
       const material = monthBookings.filter(isComplete).reduce((s, b) => s + (b.material || 0), 0);
+      const avgPerBooking = siap > 0 ? Math.round(income / siap) : 0;
       // Perbelanjaan bulan ni (dari Finance) — pisahkan Upah Pekerja
       const monthExp = (state.expenses || []).filter(e => (e.date || '').slice(0, 7) === prefix);
       const upah = monthExp.filter(e => e.category === 'Upah Pekerja').reduce((s, e) => s + (e.amount || 0), 0);
       const kosLain = monthExp.filter(e => e.category !== 'Upah Pekerja').reduce((s, e) => s + (e.amount || 0), 0) + material;
       const untungBersih = income - upah - kosLain;
 
+      // Trend vs bulan lepas (pendapatan)
+      const lmDate = new Date(year, month - 1, 1);
+      const lmPrefix = lmDate.getFullYear() + '-' + String(lmDate.getMonth() + 1).padStart(2, '0');
+      const lmIncome = state.bookings.filter(b => (b.date || '').slice(0, 7) === lmPrefix && isComplete(b)).reduce((s, b) => s + (b.price || 0), 0);
+      let trendHtml = '';
+      if (lmIncome > 0) {
+        const pct = Math.round(((income - lmIncome) / lmIncome) * 100);
+        const up = pct >= 0;
+        trendHtml = '<div style="font-size:12px;font-weight:700;color:' + (up ? '#16a34a' : '#dc2626') + ';margin-top:4px;">' + (up ? '↑ ' : '↓ ') + Math.abs(pct) + '% berbanding ' + BULAN[lmDate.getMonth()] + ' (RM' + lmIncome.toLocaleString() + ')</div>';
+      }
+
       const chip = (label, val, color) => '<div style="flex:1;min-width:0;background:' + color + '11;border:1px solid ' + color + '33;border-radius:10px;padding:10px;text-align:center;">' +
         '<div style="font-size:22px;font-weight:800;color:' + color + ';">' + val + '</div>' +
         '<div style="font-size:11px;color:#64748b;font-weight:600;">' + label + '</div></div>';
 
       box.innerHTML = '<div class="fin-card" style="margin-top:14px;">' +
-        '<h3 style="font-size:15px;font-weight:800;color:#1f3d38;margin-bottom:12px;">📊 Ringkasan ' + BULAN[month] + ' ' + year + '</h3>' +
-        '<div style="display:flex;gap:8px;margin-bottom:12px;">' +
+        '<h3 style="font-size:15px;font-weight:800;color:#1f3d38;margin-bottom:2px;">📊 Ringkasan ' + BULAN[month] + ' ' + year + '</h3>' +
+        trendHtml +
+        '<div style="display:flex;gap:8px;margin:12px 0;">' +
           chip('Jumlah Booking', monthBookings.length, '#4f46e5') +
           chip('Siap', siap, '#0d9488') +
+          chip('Batal', cancelledThisMonth, '#dc2626') +
           chip('Kedai Tutup', closedCount + ' hr', '#1f2937') +
         '</div>' +
         '<div style="display:flex;gap:8px;margin-bottom:14px;">' +
           chip('Buka Seat', bukaSeat, '#dc2626') +
           chip('Tanpa Buka Seat', tanpaBuka, '#3d8f82') +
+          chip('Purata/Booking', 'RM' + avgPerBooking, '#c9863d') +
         '</div>' +
-        (svcRows ? '<div style="border-top:1px solid #eef1f5;padding-top:10px;"><div style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:6px;">PECAHAN SERVIS</div>' + svcRows + '</div>' : '<div style="text-align:center;color:#94a3b8;padding:8px;font-size:13px;">Tiada booking bulan ni</div>') +
+        (svcRows ? '<div style="border-top:1px solid #eef1f5;padding-top:10px;"><div style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:6px;">PECAHAN SERVIS (RM, servis siap sahaja)</div>' + svcRows + '</div>' : '<div style="text-align:center;color:#94a3b8;padding:8px;font-size:13px;">Tiada booking bulan ni</div>') +
         '<div style="border-top:1px solid #eef1f5;margin-top:10px;padding-top:10px;">' +
           '<div style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:6px;">KIRA-KIRA BULAN INI</div>' +
           finRow('💰 Pendapatan (siap)', income, '#16a34a', false) +
@@ -2828,7 +3053,8 @@
     /* ============ FINANCE ============ */
     const CAT_COLORS = {
       'Chemical/Stock': '#f59e0b', 'Marketing': '#c9863d', 'Overhead': '#8b5cf6',
-      'Equipment': '#10b981', 'Transport': '#ef4444', 'Upah Pekerja': '#3d8f82', 'Other': '#64748b'
+      'Equipment': '#10b981', 'Transport': '#ef4444', 'Upah Pekerja': '#3d8f82',
+      'Owner Draw': '#f472b6', 'Other': '#64748b'
     };
 
     async function saveExpense(e) {
@@ -2839,6 +3065,7 @@
         desc: document.getElementById('exp-desc').value,
         amount: Number(document.getElementById('exp-amount').value),
         date: document.getElementById('exp-date').value,
+        receiptImage: pendingReceiptImage || null,
         _synced: false,
         createdAt: new Date().toISOString()
       };
@@ -2846,10 +3073,52 @@
       persistLocal();
       renderAll();
       document.querySelector('#finance form').reset();
+      pendingReceiptImage = null;
+      const prevEl = document.getElementById('exp-receipt-preview');
+      if (prevEl) prevEl.innerHTML = '';
       expense._synced = await fbSet('expenses', expense.id, expense);
       persistLocal();
       updateSyncStatus();
       alert('✅ Expense saved!');
+    }
+
+    // Resize + compress gambar resit di browser (elak dokumen Firestore jadi besar)
+    // supaya senang attach bukti tanpa perlu backend/API luar.
+    let pendingReceiptImage = null;
+    function previewReceipt(event) {
+      const file = event.target.files && event.target.files[0];
+      const box = document.getElementById('exp-receipt-preview');
+      if (!file) { pendingReceiptImage = null; if (box) box.innerHTML = ''; return; }
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const img = new Image();
+        img.onload = function () {
+          const MAX_W = 800;
+          const scale = Math.min(1, MAX_W / img.width);
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          pendingReceiptImage = canvas.toDataURL('image/jpeg', 0.6);
+          if (box) box.innerHTML = '<img src="' + pendingReceiptImage + '" style="max-width:140px;border-radius:8px;border:1.5px solid #e2e8f0;">' +
+            '<div style="font-size:11px;color:#64748b;margin-top:4px;">✓ Resit dilampirkan (' + Math.round(pendingReceiptImage.length / 1024) + 'KB)</div>';
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Papar gambar resit penuh dalam lightbox ringkas
+    function viewReceipt(id) {
+      const exp = state.expenses.find(e => e.id == id);
+      if (!exp || !exp.receiptImage) return;
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+      overlay.onclick = () => overlay.remove();
+      overlay.innerHTML = '<img src="' + exp.receiptImage + '" style="max-width:100%;max-height:90vh;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,0.5);">' +
+        '<div style="position:fixed;top:20px;right:20px;color:#fff;font-size:28px;font-weight:700;cursor:pointer;">✕</div>';
+      document.body.appendChild(overlay);
     }
 
     // Bayar pekerja untuk hari ini (RM50 upah + RM10 makan = RM60), boleh ubah jumlah
@@ -2887,6 +3156,73 @@
       }
     }
 
+    // ===== Stok Runcit — track baki chemical/bahan, alert bila nak habis =====
+    async function addStockItem() {
+      const name = prompt('Nama item (cth: Shampoo Interior, Air Freshener):');
+      if (!name) return;
+      const qty = Number(prompt('Berapa baki sekarang? (cth: 5)', '5'));
+      if (isNaN(qty) || qty < 0) { alert('⚠️ Jumlah tak sah.'); return; }
+      const unit = prompt('Unit? (cth: liter, botol, pack)', 'liter') || 'unit';
+      const threshold = Number(prompt('Alert bila baki bawah berapa?', '2'));
+      const item = {
+        id: Date.now(),
+        name, qty, unit,
+        threshold: isNaN(threshold) ? 2 : threshold,
+        _synced: false,
+        createdAt: new Date().toISOString()
+      };
+      state.stockItems.push(item);
+      persistLocal();
+      renderStockList();
+      item._synced = await fbSet('stock', item.id, item);
+      persistLocal();
+      updateSyncStatus();
+    }
+
+    async function adjustStock(id, delta) {
+      const item = state.stockItems.find(s => s.id == id);
+      if (!item) return;
+      item.qty = Math.max(0, (Number(item.qty) || 0) + delta);
+      item._synced = false;
+      persistLocal();
+      renderStockList();
+      item._synced = await fbSet('stock', item.id, item);
+      persistLocal();
+      updateSyncStatus();
+    }
+
+    function deleteStockItem(id) {
+      if (!confirm('Buang item stok ni?')) return;
+      state.stockItems = state.stockItems.filter(s => s.id != id);
+      persistLocal();
+      fbDelete('stock', id);
+      renderStockList();
+    }
+
+    function renderStockList() {
+      const box = document.getElementById('stock-list');
+      if (!box) return;
+      const items = state.stockItems || [];
+      if (!items.length) {
+        box.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:12px;font-size:13px;">Belum ada item stok. Tap "+ Item" untuk mula track.</div>';
+        return;
+      }
+      box.innerHTML = items.map(s => {
+        const low = Number(s.qty) <= Number(s.threshold || 0);
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f1f5f9;">' +
+          '<div>' +
+            '<div style="font-weight:700;color:#1f3d38;font-size:13.5px;">' + s.name + (low ? ' <span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;margin-left:4px;">⚠️ NAK HABIS</span>' : '') + '</div>' +
+            '<div style="font-size:12px;color:#64748b;">Baki: ' + s.qty + ' ' + s.unit + ' (alert bawah ' + s.threshold + ')</div>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:6px;">' +
+            '<button onclick="adjustStock(\'' + s.id + '\', -1)" style="width:28px;height:28px;border:1.5px solid #e2e8f0;border-radius:6px;background:#fff;font-weight:700;cursor:pointer;">−</button>' +
+            '<button onclick="adjustStock(\'' + s.id + '\', 1)" style="width:28px;height:28px;border:1.5px solid #e2e8f0;border-radius:6px;background:#fff;font-weight:700;cursor:pointer;">+</button>' +
+            '<button onclick="deleteStockItem(\'' + s.id + '\')" style="background:none;border:none;cursor:pointer;font-size:14px;">🗑️</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
     function renderFinance() {
       if (!document.getElementById('fin-revenue')) return;
       // Auto-isi tarikh hari ni dalam borang (kau boleh ubah untuk back-dated)
@@ -2898,11 +3234,15 @@
       const totalExp = exp.reduce((s, e) => s + (e.amount || 0), 0);
       const chemical = exp.filter(e => e.category === 'Chemical/Stock').reduce((s, e) => s + (e.amount || 0), 0);
       const net = revenue - material - totalExp;
+      const now = new Date();
+      const ownerDraw = exp.filter(e => e.category === 'Owner Draw' && monthMatch(e.date, now)).reduce((s, e) => s + (e.amount || 0), 0);
 
       document.getElementById('fin-revenue').textContent = 'RM' + revenue.toLocaleString();
       document.getElementById('fin-expenses').textContent = 'RM' + totalExp.toLocaleString();
       document.getElementById('fin-chemical').textContent = 'RM' + chemical.toLocaleString();
       document.getElementById('fin-netprofit').textContent = 'RM' + net.toLocaleString();
+      const odEl = document.getElementById('fin-ownerdraw');
+      if (odEl) odEl.textContent = 'RM' + ownerDraw.toLocaleString();
 
       const list = document.getElementById('expense-list');
       if (!exp.length) {
@@ -2929,6 +3269,7 @@
           </div>
           <div style="text-align:right;display:flex;align-items:center;gap:10px;">
             <div style="font-weight:700;color:#dc2626;">RM${(e.amount || 0).toLocaleString()}</div>
+            ${e.receiptImage ? `<img src="${e.receiptImage}" onclick="viewReceipt('${e.id}')" style="width:32px;height:32px;object-fit:cover;border-radius:6px;border:1.5px solid #cbd5e1;cursor:pointer;" title="Tap untuk lihat resit">` : ''}
             <button onclick="deleteExpense('${e.id}')" style="background:none;border:none;cursor:pointer;font-size:16px;">🗑️</button>
           </div>
         </div>`).join('');
@@ -2937,6 +3278,8 @@
       }
 
       renderFinCharts();
+      renderSourceBreakdown();
+      renderLedger();
 
       // Text breakdown by category (never blank — works even without Chart.js)
       const bd = document.getElementById('expense-breakdown');
@@ -2962,6 +3305,101 @@
           }).join('');
         }
       }
+    }
+
+    // Analisa: channel/sumber mana bawa customer paling untung (keseluruhan masa)
+    const SOURCE_COLORS = {
+      'Walk-in': '#64748b', 'Rujukan Kawan': '#16a34a', 'Repeat Customer': '#3d8f82',
+      'FB/IG Ads': '#4f46e5', 'Google/Maps': '#c9863d', 'Walk-past': '#f59e0b', 'Lain-lain': '#94a3b8'
+    };
+    // ===== Ledger — dikira automatik dari booking siap + expense, BUKAN wallet berasingan =====
+    // Ni elak "drift" (angka tersimpan tak match rekod sebenar) — baki sentiasa recalculate dari data asal.
+    function renderLedger() {
+      const listBox = document.getElementById('ledger-list');
+      const balNowEl = document.getElementById('ledger-balance-now');
+      if (!listBox) return;
+
+      // Gabung booking siap (+) dan expense (−) jadi satu senarai kronologi
+      const entries = [];
+      state.bookings.filter(isComplete).forEach(b => {
+        entries.push({ date: (b.date || '').slice(0, 10), desc: '✅ ' + b.name + ' (' + b.car + ')', amount: Number(b.price) || 0, sortKey: (b.date || '') + '_' + String(b.id) });
+      });
+      (state.expenses || []).forEach(e => {
+        const icon = e.category === 'Upah Pekerja' ? '👷' : (e.category === 'Owner Draw' ? '🏠' : (e.category === 'Chemical/Stock' ? '🧪' : '💸'));
+        entries.push({ date: (e.date || '').slice(0, 10), desc: icon + ' ' + e.desc + ' (' + e.category + ')', amount: -(Number(e.amount) || 0), sortKey: (e.date || '') + '_' + String(e.id) });
+      });
+
+      if (!entries.length) {
+        listBox.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:16px;font-size:13px;">Belum ada rekod. Ledger akan terisi automatik bila booking siap / expense direkod.</div>';
+        if (balNowEl) balNowEl.textContent = 'RM0';
+        return;
+      }
+
+      // Susun kronologi (lama ke baru) untuk kira running balance yang betul
+      entries.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+      let running = 0;
+      entries.forEach(en => { running += en.amount; en.balance = running; });
+      const finalBalance = running;
+      if (balNowEl) balNowEl.textContent = 'RM' + finalBalance.toLocaleString();
+
+      // Kumpul ikut bulan, papar terbaru dulu (tapi baki dalam setiap baris kekal betul dari kiraan kronologi)
+      const BULAN = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+      const groups = {};
+      entries.forEach(en => { const mk = en.date.slice(0, 7) || '0000-00'; (groups[mk] = groups[mk] || []).push(en); });
+      const monthKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+      listBox.innerHTML = monthKeys.map(mk => {
+        const items = groups[mk].slice().reverse(); // terbaru dulu dalam bulan tu
+        let label = mk;
+        if (/^\d{4}-\d{2}$/.test(mk)) { const parts = mk.split('-'); label = (BULAN[Number(parts[1]) - 1] || '?') + ' ' + parts[0]; }
+        const header = '<div style="font-size:12px;font-weight:800;color:#94a3b8;margin:14px 0 6px;">📅 ' + label + '</div>';
+        const rows = items.map(en => {
+          const up = en.amount >= 0;
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;">' +
+            '<div style="min-width:0;">' +
+              '<div style="font-size:12.5px;color:#334155;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">' + en.desc + '</div>' +
+              '<div style="font-size:10.5px;color:#94a3b8;">' + formatDMY(en.date) + '</div>' +
+            '</div>' +
+            '<div style="text-align:right;flex-shrink:0;">' +
+              '<div style="font-weight:800;color:' + (up ? '#16a34a' : '#dc2626') + ';font-size:13px;">' + (up ? '+' : '−') + 'RM' + Math.abs(en.amount).toLocaleString() + '</div>' +
+              '<div style="font-size:10.5px;color:#64748b;">Baki: RM' + en.balance.toLocaleString() + '</div>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+        return header + rows;
+      }).join('');
+    }
+
+    function renderSourceBreakdown() {
+      const box = document.getElementById('source-breakdown');
+      if (!box) return;
+      const completed = state.bookings.filter(isComplete);
+      if (!completed.length) {
+        box.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:16px;">Tiada booking siap direkod lagi</div>';
+        return;
+      }
+      const bySource = {};
+      completed.forEach(b => {
+        const src = b.customerSource || 'Tak Direkod';
+        if (!bySource[src]) bySource[src] = { revenue: 0, count: 0 };
+        bySource[src].revenue += (b.price || 0);
+        bySource[src].count += 1;
+      });
+      const totalRevenue = completed.reduce((s, b) => s + (b.price || 0), 0);
+      const sorted = Object.keys(bySource).sort((a, b) => bySource[b].revenue - bySource[a].revenue);
+      box.innerHTML = sorted.map(src => {
+        const d = bySource[src];
+        const pct = totalRevenue > 0 ? Math.round((d.revenue / totalRevenue) * 100) : 0;
+        const color = SOURCE_COLORS[src] || '#64748b';
+        const avgPerBooking = d.count > 0 ? Math.round(d.revenue / d.count) : 0;
+        return '<div style="margin-bottom:12px;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
+          '<span style="font-weight:700;color:#1f3d38;font-size:13px;"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:' + color + ';margin-right:6px;"></span>' + src + '<span style="color:#94a3b8;font-weight:600;"> · ' + d.count + ' booking · RM' + avgPerBooking + '/booking</span></span>' +
+          '<span style="font-weight:700;color:#16a34a;font-size:13px;">RM' + d.revenue.toLocaleString() + ' <span style="color:#94a3b8;font-weight:600;">(' + pct + '%)</span></span>' +
+          '</div>' +
+          '<div style="background:#f1f5f9;border-radius:6px;height:8px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:' + color + ';"></div></div>' +
+        '</div>';
+      }).join('');
     }
 
     function renderFinCharts() {
