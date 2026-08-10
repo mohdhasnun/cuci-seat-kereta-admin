@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cuci Seat Kereta - Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
   <style>/* cyrillic-ext */
 /* cyrillic */
 /* greek */
@@ -2529,14 +2529,14 @@
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=6&data=${encodeURIComponent('https://wa.me/' + waNumber + '?text=' + waMsg)}`;
 
         const receiptHTML = `
-          <div id="receipt-printable" style="width: 480px; margin: 0 auto; background: #ffffff; font-family: 'Manrope', Arial, sans-serif; color: #3a414c; overflow: hidden; border: 1px solid #eceef2; position: relative;">
+          <div id="receipt-printable" style="width: 100%; max-width: 480px; margin: 0 auto; background: #ffffff; font-family: 'Manrope', Arial, sans-serif; color: #3a414c; overflow: hidden; border: 1px solid #eceef2; position: relative; box-sizing: border-box;">
             <!-- Header Band -->
             <div style="background: linear-gradient(135deg, #1f3d38 0%, #2f5650 100%); color: #f3f4f6; padding: 26px 30px;">
               <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
                 <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
                   ${logoSrc ? `<img src="${logoSrc}" style="width: 46px; height: 46px; border-radius: 10px; object-fit: cover; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(255,255,255,0.15);">` : ''}
                   <div style="min-width: 0;">
-                    <div style="font-size: 20px; font-weight: 800; letter-spacing: -0.3px;">Cuci Seat Kereta</div>
+                    <div style="font-family: 'Fraunces', serif; font-size: 21px; font-weight: 600; letter-spacing: -0.2px;">Cuci Seat Kereta</div>
                     <div style="font-size: 10px; color: #bcdcd2; margin-top: 3px; letter-spacing: 1px; text-transform: uppercase;">Pakar Hygiene Dalaman Kereta</div>
                   </div>
                 </div>
@@ -2556,7 +2556,7 @@
             <!-- Body (watermark sits behind content) -->
             <div style="position: relative; padding: 26px 30px;">
               <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; pointer-events: none; z-index: 0;">
-                <span style="font-size: 54px; font-weight: 800; color: #1f3d38; opacity: 0.04; transform: rotate(-24deg); white-space: nowrap;">CUCI SEAT KERETA</span>
+                <span style="font-family: 'Fraunces', serif; font-size: 50px; font-weight: 600; color: #1f3d38; opacity: 0.045; transform: rotate(-24deg); white-space: nowrap;">CUCI SEAT KERETA</span>
               </div>
 
               <div style="position: relative; z-index: 1;">
@@ -2564,7 +2564,7 @@
                 <!-- Receipt title + meta -->
                 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 22px;">
                   <div>
-                    <div style="font-size: 24px; font-weight: 800; color: #2b3340; letter-spacing: -0.5px;">RESIT RASMI</div>
+                    <div style="font-family: 'Fraunces', serif; font-size: 27px; font-weight: 600; color: #2b3340; letter-spacing: -0.3px;">Resit Rasmi</div>
                     <div style="font-size: 12px; color: #b08d57; font-weight: 700; margin-top: 2px; letter-spacing: 0.3px;">No. ${receiptNo}</div>
                   </div>
                   <div style="text-align: right;">
@@ -2615,7 +2615,7 @@
                   </div>
                   <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e1e6ed; padding-top: 12px;">
                     <span style="color: #4a525e; font-size: 15px; font-weight: 600;">JUMLAH</span>
-                    <span style="color: #2b3340; font-size: 26px; font-weight: 800;">RM${booking.price}</span>
+                    <span style="font-family: 'Fraunces', serif; color: #2b3340; font-size: 28px; font-weight: 600;">RM${booking.price}</span>
                   </div>
                 </div>
 
@@ -2635,7 +2635,7 @@
 
                 <!-- Footer -->
                 <div style="text-align: center; padding-top: 4px;">
-                  <div style="font-weight: 600; color: #4a525e; font-size: 13px; margin-bottom: 6px;">Terima kasih kerana memilih kami!</div>
+                  <div style="font-family: 'Fraunces', serif; font-weight: 600; color: #4a525e; font-size: 15px; margin-bottom: 6px;">Terima kasih kerana memilih kami!</div>
                   <div style="font-size: 10px; color: #9aa3b0; line-height: 1.6;">Resit ini dijana secara digital. Tiada tandatangan diperlukan.<br>Simpan resit ini sebagai bukti pembayaran anda.</div>
                 </div>
               </div>
@@ -2728,6 +2728,8 @@
       const clone = source.cloneNode(true);
       clone.style.margin = '0';
       clone.style.border = 'none';
+      clone.style.width = '480px';
+      clone.style.maxWidth = '480px';
       holder.appendChild(clone);
       document.body.appendChild(holder);
 
