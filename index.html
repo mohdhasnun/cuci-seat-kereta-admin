@@ -1092,6 +1092,8 @@
     const STOCK_KEY = 'cuciSeatAdmin.stock.v1';
     let state = { bookings: [], expenses: [], closedDates: [], bufferBalance: 0, monthlyTarget: 0, stockItems: [] };
     let currentReceiptId = null;
+    // Official Cuci Seat Kereta logo, embedded so it always renders in PDF/print regardless of network
+    const RECEIPT_LOGO = 'data:image/jpeg;base64,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';
     let editingBookingId = null;
     let calMonth = new Date();
 
@@ -2512,25 +2514,37 @@
       currentReceiptId = id;
       const booking = state.bookings.find(b => b.id == id);
       if (booking) {
-        const receiptNo = 'RCP' + String(booking.id).slice(-6);
+        const receiptNo = 'RCP-' + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
         const today = new Date();
         const date = formatDMY(today);
         const time = today.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' });
+        const paid = isComplete(booking);
+
+        // Official business logo, embedded (renders reliably in PDF/print)
+        const logoSrc = RECEIPT_LOGO;
+
+        // Functional QR — scans straight to a WhatsApp chat with the business, referencing this receipt
+        let waNumber = '60176993876';
+        const waMsg = encodeURIComponent(`Hi, saya nak tanya berkenaan resit ${receiptNo}`);
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=6&data=${encodeURIComponent('https://wa.me/' + waNumber + '?text=' + waMsg)}`;
 
         const receiptHTML = `
-          <div id="receipt-printable" style="width: 480px; margin: 0 auto; background: #ffffff; font-family: 'Manrope', Arial, sans-serif; color: #3a414c; overflow: hidden; border: 1px solid #eceef2;">
+          <div id="receipt-printable" style="width: 480px; margin: 0 auto; background: #ffffff; font-family: 'Manrope', Arial, sans-serif; color: #3a414c; overflow: hidden; border: 1px solid #eceef2; position: relative;">
             <!-- Header Band -->
-            <div style="background: linear-gradient(135deg, #1f3d38 0%, #2f5650 100%); color: #f3f4f6; padding: 28px 30px;">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                  <div style="font-size: 22px; font-weight: 700; letter-spacing: -0.3px;">Cuci Seat Kereta</div>
-                  <div style="font-size: 11px; color: #9db4d4; margin-top: 4px; letter-spacing: 1px; text-transform: uppercase;">Pakar Hygiene Dalaman Kereta</div>
+            <div style="background: linear-gradient(135deg, #1f3d38 0%, #2f5650 100%); color: #f3f4f6; padding: 26px 30px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+                  ${logoSrc ? `<img src="${logoSrc}" style="width: 46px; height: 46px; border-radius: 10px; object-fit: cover; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(255,255,255,0.15);">` : ''}
+                  <div style="min-width: 0;">
+                    <div style="font-size: 20px; font-weight: 800; letter-spacing: -0.3px;">Cuci Seat Kereta</div>
+                    <div style="font-size: 10px; color: #bcdcd2; margin-top: 3px; letter-spacing: 1px; text-transform: uppercase;">Pakar Hygiene Dalaman Kereta</div>
+                  </div>
                 </div>
-                <div style="text-align: right; font-size: 10px; color: #9db4d4; line-height: 1.6;">
+                <div style="text-align: right; font-size: 10px; color: #bcdcd2; line-height: 1.6; flex-shrink: 0;">
                   Northern Hope Enterprise<br>(00374641-A)
                 </div>
               </div>
-              <div style="font-size: 10px; color: #9db4d4; margin-top: 14px; line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 12px;">
+              <div style="font-size: 10px; color: #bcdcd2; margin-top: 14px; line-height: 1.6; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 12px;">
                 📍 Blok D-00-01, Pangsapuri Mawar, Jln KP 4/4, Taman Kota Perdana, 43300 Seri Kembangan, Selangor<br>
                 📱 017-699 3876 &nbsp;|&nbsp; 🌐 cuciseatkereta.com
               </div>
@@ -2539,71 +2553,91 @@
             <!-- Accent strip -->
             <div style="height: 3px; background: #c2a878;"></div>
 
-            <!-- Body -->
-            <div style="padding: 26px 30px;">
-
-              <!-- Receipt title + meta -->
-              <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
-                <div>
-                  <div style="font-size: 25px; font-weight: 700; color: #2b3340; letter-spacing: -0.5px;">RESIT</div>
-                  <div style="font-size: 13px; color: #b08d57; font-weight: 600; margin-top: 2px;">${receiptNo}</div>
-                </div>
-                <div style="text-align: right;">
-                  <div style="font-size: 10px; color: #9aa3b0; font-weight: 600; letter-spacing: 0.5px;">TARIKH</div>
-                  <div style="font-size: 14px; font-weight: 600; color: #2b3340;">${date}</div>
-                  <div style="font-size: 10px; color: #9aa3b0; margin-top: 2px;">${time}</div>
-                </div>
+            <!-- Body (watermark sits behind content) -->
+            <div style="position: relative; padding: 26px 30px;">
+              <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; pointer-events: none; z-index: 0;">
+                <span style="font-size: 54px; font-weight: 800; color: #1f3d38; opacity: 0.04; transform: rotate(-24deg); white-space: nowrap;">CUCI SEAT KERETA</span>
               </div>
 
-              <!-- Customer & Vehicle -->
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px;">
-                <div style="background: #f7f8fa; border-left: 3px solid #8a93a0; padding: 14px; border-radius: 0 6px 6px 0;">
-                  <div style="color: #9aa3b0; font-weight: 700; font-size: 9px; letter-spacing: 0.5px; margin-bottom: 6px;">PELANGGAN</div>
-                  <div style="font-weight: 800; color: #1f3d38; font-size: 15px;">${booking.name}</div>
-                  <div style="color: #6b7480; font-size: 12px; margin-top: 4px;">${booking.phone}</div>
-                </div>
-                <div style="background: #f7f8fa; border-left: 3px solid #c2a878; padding: 14px; border-radius: 0 6px 6px 0;">
-                  <div style="color: #9aa3b0; font-weight: 700; font-size: 9px; letter-spacing: 0.5px; margin-bottom: 6px;">KENDERAAN</div>
-                  <div style="font-weight: 800; color: #1f3d38; font-size: 15px;">${booking.car}</div>
-                  <div style="color: #6b7480; font-size: 12px; margin-top: 4px;">${booking.plate || '-'}</div>
-                </div>
-              </div>
+              <div style="position: relative; z-index: 1;">
 
-              <!-- Service Details -->
-              <div style="margin-bottom: 22px;">
-                <div style="font-weight: 700; color: #6b7480; margin-bottom: 10px; font-size: 11px; letter-spacing: 0.5px;">📋 BUTIRAN SERVIS</div>
-                <div style="border: 1px solid #eceef2; border-radius: 8px; overflow: hidden;">
-                  ${
-                    (booking.serviceItems && booking.serviceItems.length
-                      ? booking.serviceItems
-                      : booking.service.split('+').map((s, i) => ({ name: s.trim(), price: i === 0 ? booking.price : 0 }))
-                    ).map((it, idx) => 
-                      `<div style="display: flex; gap: 12px; padding: 11px 14px; align-items: center; background: ${idx % 2 === 0 ? '#ffffff' : '#fafbfc'}; ${idx > 0 ? 'border-top: 1px solid #f1f3f6;' : ''}">
-                        <div style="width: 22px; height: 22px; background: #eef0f4; color: #6b7480; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;">${idx + 1}</div>
-                        <div style="font-size: 12px; color: #4a525e; flex: 1;">${it.name}</div>
-                        <div style="font-size: 12px; font-weight: 700; white-space: nowrap;">${(Number(it.price) || 0) > 0 ? '<span style="color:#2b3340;">RM' + it.price + '</span>' : '<span style="color:#7a9b76;font-weight:700;letter-spacing:0.3px;">FOC</span>'}</div>
-                      </div>`
-                    ).join('')
-                  }
+                <!-- Receipt title + meta -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 22px;">
+                  <div>
+                    <div style="font-size: 24px; font-weight: 800; color: #2b3340; letter-spacing: -0.5px;">RESIT RASMI</div>
+                    <div style="font-size: 12px; color: #b08d57; font-weight: 700; margin-top: 2px; letter-spacing: 0.3px;">No. ${receiptNo}</div>
+                  </div>
+                  <div style="text-align: right;">
+                    <div style="font-size: 10px; color: #9aa3b0; font-weight: 600; letter-spacing: 0.5px;">TARIKH</div>
+                    <div style="font-size: 14px; font-weight: 600; color: #2b3340;">${date}</div>
+                    <div style="font-size: 10px; color: #9aa3b0; margin-top: 2px;">${time}</div>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Total + Payment -->
-              <div style="background: #f4f6f9; border: 1px solid #e7ebf1; border-radius: 10px; padding: 18px 20px; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                  <span style="color: #8a93a0; font-size: 11px; font-weight: 600;">STATUS BAYARAN</span>
-                  <span style="background: ${isComplete(booking) ? '#6f9b7e' : '#bd9a5f'}; color: #fff; font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px;">${isComplete(booking) ? '✓ PAID' : 'PENDING'}</span>
+                <!-- Customer & Vehicle -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                  <div style="background: #f7f8fa; border-left: 3px solid #8a93a0; padding: 14px; border-radius: 0 6px 6px 0;">
+                    <div style="color: #9aa3b0; font-weight: 700; font-size: 9px; letter-spacing: 0.5px; margin-bottom: 6px;">PELANGGAN</div>
+                    <div style="font-weight: 800; color: #1f3d38; font-size: 15px;">${booking.name}</div>
+                    <div style="color: #6b7480; font-size: 12px; margin-top: 4px;">${booking.phone}</div>
+                  </div>
+                  <div style="background: #f7f8fa; border-left: 3px solid #c2a878; padding: 14px; border-radius: 0 6px 6px 0;">
+                    <div style="color: #9aa3b0; font-weight: 700; font-size: 9px; letter-spacing: 0.5px; margin-bottom: 6px;">KENDERAAN</div>
+                    <div style="font-weight: 800; color: #1f3d38; font-size: 15px;">${booking.car}</div>
+                    <div style="color: #6b7480; font-size: 12px; margin-top: 4px;">${booking.plate || '-'}</div>
+                  </div>
                 </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e1e6ed; padding-top: 12px;">
-                  <span style="color: #4a525e; font-size: 15px; font-weight: 600;">JUMLAH</span>
-                  <span style="color: #2b3340; font-size: 26px; font-weight: 800;">RM${booking.price}</span>
-                </div>
-              </div>
 
-              <!-- Footer -->
-              <div style="text-align: center; padding-top: 8px;">
-                <div style="font-weight: 600; color: #4a525e; font-size: 13px; margin-bottom: 6px;">Terima kasih kerana memilih kami!</div>
-                <div style="font-size: 10px; color: #9aa3b0; line-height: 1.6;">Resit ini dijana secara digital. Tiada tandatangan diperlukan.<br>Simpan resit ini sebagai bukti pembayaran anda.</div>
+                <!-- Service Details -->
+                <div style="margin-bottom: 20px;">
+                  <div style="font-weight: 700; color: #6b7480; margin-bottom: 10px; font-size: 11px; letter-spacing: 0.5px;">📋 BUTIRAN SERVIS</div>
+                  <div style="border: 1px solid #eceef2; border-radius: 8px; overflow: hidden;">
+                    ${
+                      (booking.serviceItems && booking.serviceItems.length
+                        ? booking.serviceItems
+                        : booking.service.split('+').map((s, i) => ({ name: s.trim(), price: i === 0 ? booking.price : 0 }))
+                      ).map((it, idx) => 
+                        `<div style="display: flex; gap: 12px; padding: 11px 14px; align-items: center; background: ${idx % 2 === 0 ? '#ffffff' : '#fafbfc'}; ${idx > 0 ? 'border-top: 1px solid #f1f3f6;' : ''}">
+                          <div style="width: 22px; height: 22px; background: #eef0f4; color: #6b7480; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;">${idx + 1}</div>
+                          <div style="font-size: 12px; color: #4a525e; flex: 1;">${it.name}</div>
+                          <div style="font-size: 12px; font-weight: 700; white-space: nowrap;">${(Number(it.price) || 0) > 0 ? '<span style="color:#2b3340;">RM' + it.price + '</span>' : '<span style="color:#7a9b76;font-weight:700;letter-spacing:0.3px;">FOC</span>'}</div>
+                        </div>`
+                      ).join('')
+                    }
+                  </div>
+                </div>
+
+                <!-- Total + Payment -->
+                <div style="background: #f4f6f9; border: 1px solid #e7ebf1; border-radius: 10px; padding: 18px 20px; margin-bottom: 18px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span style="color: #8a93a0; font-size: 11px; font-weight: 600;">STATUS BAYARAN</span>
+                    <span style="background: ${paid ? '#6f9b7e' : '#bd9a5f'}; color: #fff; font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px;">${paid ? '✓ PAID' : 'PENDING'}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e1e6ed; padding-top: 12px;">
+                    <span style="color: #4a525e; font-size: 15px; font-weight: 600;">JUMLAH</span>
+                    <span style="color: #2b3340; font-size: 26px; font-weight: 800;">RM${booking.price}</span>
+                  </div>
+                </div>
+
+                <!-- Terms -->
+                <div style="background: #f7f8fa; border-radius: 8px; padding: 10px 14px; margin-bottom: 18px; font-size: 10px; color: #7a8390; line-height: 1.6;">
+                  <b style="color:#4a525e;">Terma:</b> Resit ini sah sebagai bukti bayaran rasmi. Sebarang pertikaian sila hubungi kami dalam masa 24 jam selepas servis.
+                </div>
+
+                <!-- QR verify / contact box -->
+                <div style="display: flex; align-items: center; gap: 12px; border: 1px dashed #dfe3e8; border-radius: 10px; padding: 12px; margin-bottom: 18px;">
+                  <img src="${qrUrl}" crossorigin="anonymous" style="width: 56px; height: 56px; border-radius: 6px; flex-shrink: 0;">
+                  <div style="font-size: 10.5px; color: #7a8390; line-height: 1.5;">
+                    <b style="color:#2b3340; display:block; font-size: 12px; margin-bottom: 2px;">Imbas untuk hubungi kami</b>
+                    Ada soalan pasal resit ni atau nak tempah semula? Scan untuk terus chat WhatsApp kami.
+                  </div>
+                </div>
+
+                <!-- Footer -->
+                <div style="text-align: center; padding-top: 4px;">
+                  <div style="font-weight: 600; color: #4a525e; font-size: 13px; margin-bottom: 6px;">Terima kasih kerana memilih kami!</div>
+                  <div style="font-size: 10px; color: #9aa3b0; line-height: 1.6;">Resit ini dijana secara digital. Tiada tandatangan diperlukan.<br>Simpan resit ini sebagai bukti pembayaran anda.</div>
+                </div>
               </div>
             </div>
 
@@ -2629,7 +2663,7 @@
         return;
       }
 
-      const receiptNo = 'RCP' + String(booking.id).slice(-6);
+      const receiptNo = 'RCP-' + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
       const filename = `${receiptNo}_${booking.name}.pdf`;
 
       // Save PDF first (downloads to device), then open WhatsApp
@@ -2738,7 +2772,7 @@
         alert('Please open a receipt first');
         return;
       }
-      const receiptNo = 'RCP' + String(booking.id).slice(-6);
+      const receiptNo = 'RCP-' + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
       const filename = `${receiptNo}_${booking.name}.pdf`;
       generateReceiptPDF(booking, filename, true);
     }
