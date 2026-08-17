@@ -1906,7 +1906,7 @@
     }
     function isComplete(b) { return b.status === 'Completed' || b.status === 'Complete'; }
     // Document type for the Receipt page, following the business pipeline:
-    // Enquiry -> Sebut Harga (Quotation) | Pending/Booking/Postponed -> Invois | Completed -> Resit Rasmi
+    // Enquiry -> Quotation | Pending/Booking/Postponed -> Invois | Completed -> Resit Rasmi
     function getDocType(b) {
       if (isComplete(b)) return 'receipt';
       if (b.status === 'Enquiry') return 'quotation';
@@ -2526,7 +2526,7 @@
         const paid = isComplete(booking);
         const docType = getDocType(booking); // 'quotation' | 'invoice' | 'receipt'
         const docPrefix = docType === 'receipt' ? 'RCP-' : docType === 'quotation' ? 'QUO-' : 'INV-';
-        const docTitle = docType === 'receipt' ? 'Resit Rasmi' : docType === 'quotation' ? 'Sebut Harga' : 'Invois';
+        const docTitle = docType === 'receipt' ? 'Resit Rasmi' : docType === 'quotation' ? 'Quotation' : 'Invois';
         const receiptNo = docPrefix + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
         const today = new Date();
         const date = formatDMY(today);
@@ -2632,7 +2632,7 @@
                 ${docType === 'quotation' ? `
                 <!-- Validity note (quotation only) -->
                 <div style="background: #f7f8fa; border-radius: 8px; padding: 10px 14px; margin-bottom: 18px; font-size: 10px; color: #7a8390; line-height: 1.6; text-align: center;">
-                  Sebut harga ini sah selama <b style="color:#4a525e;">7 hari</b> dari tarikh dikeluarkan. Harga tertakluk kepada pemeriksaan sebenar kenderaan.
+                  Quotation ini sah selama <b style="color:#4a525e;">7 hari</b> dari tarikh dikeluarkan. Harga tertakluk kepada pemeriksaan sebenar kenderaan.
                 </div>` : ''}
 
                 ${docType === 'invoice' ? `
