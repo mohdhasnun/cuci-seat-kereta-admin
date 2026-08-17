@@ -2244,11 +2244,13 @@
             </div>
           </div>
           <div class="card-buttons">
-            ${b.status === 'Pending'
-              ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button>`
-              : (b.status === 'Completed' || b.status === 'Complete')
-                ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
-                : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
+            ${b.status === 'Enquiry'
+              ? `<button class="btn btn-whatsapp" onclick="sendQuotation('${b.id}')">📋 Quotation</button>`
+              : b.status === 'Pending'
+                ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button>`
+                : (b.status === 'Completed' || b.status === 'Complete')
+                  ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
+                  : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
             <button class="btn btn-edit" onclick="editBooking('${b.id}')">✏️ Edit</button>
             <button class="btn btn-convert" onclick="showReceipt('${b.id}')">📄 Receipt</button>
             <button class="btn btn-secondary" onclick="deleteBooking('${b.id}')">🗑️ Delete</button>
@@ -2270,6 +2272,18 @@
     // Bank details for deposit transfer
     const BANK_INFO = { bank: 'Maybank', name: 'Northern Hope Enterprise', account: '5521 8951 6033' };
 
+    // Format service list as a clean numbered list (with per-item price when available)
+    // instead of one long "A + B + C" run-on line — used across all WhatsApp messages.
+    function serviceListText(booking, withPrice) {
+      const items = (booking.serviceItems && booking.serviceItems.length)
+        ? booking.serviceItems
+        : (booking.service || '-').split('+').map((s, i) => ({ name: s.trim(), price: i === 0 ? booking.price : 0 }));
+      return items.map((it, i) => {
+        const priceTag = withPrice ? '  (' + ((Number(it.price) || 0) > 0 ? 'RM' + it.price : 'FOC') + ')' : '';
+        return (i + 1) + '. ' + it.name + priceTag;
+      }).join('\n');
+    }
+
     // Footer lokasi & hubungi — label atas, URL pada baris sendiri (kemas)
     const LINE = '─────────────────';
     function contactFooter() {
@@ -2281,6 +2295,35 @@
         'https://waze.com/ul/hw282cr7ky\n\n' +
         '📞 017-699 3876\n' +
         LINE;
+    }
+
+    // Hantar Quotation (untuk status Enquiry): senarai servis + anggaran harga, TANPA minta deposit/tarikh
+    function sendQuotation(id) {
+      const booking = state.bookings.find(b => b.id == id);
+      if (!booking) return;
+      const phone = waPhone(booking.phone);
+      if (phone.length < 10) {
+        alert('⚠️ Nombor telefon customer tak sah atau kosong. Sila Edit & isi nombor dulu.');
+        return;
+      }
+
+      const price = Number(booking.price) || 0;
+      const line = '─────────────────';
+
+      const msg =
+        'Hai ' + booking.name + ',\n\n' +
+        'Terima kasih kerana menghubungi kami! Berikut adalah quotation untuk servis yang diminta:\n' +
+        line + '\n' +
+        '🚗 Vehicle   : ' + booking.car + '\n' +
+        '💺 Servis    :\n' + serviceListText(booking, true) + '\n' +
+        line + '\n' +
+        '💳 Jumlah Anggaran : ' + (price > 0 ? 'RM' + price : 'Untuk disahkan') + '\n' +
+        'Quotation ini sah selama 7 hari. Harga tertakluk kepada pemeriksaan sebenar kenderaan.\n\n' +
+        'Berminat untuk teruskan? Balas mesej ini dan kami akan uruskan tarikh & deposit.\n' +
+        contactFooter() + '\n\n' +
+        'Terima kasih! 😊';
+
+      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
     }
 
     // Minta deposit (untuk Enquiry): tanya harga & deposit, hantar mesej transfer bank, tukar ke Pending
@@ -2329,7 +2372,7 @@
         line + '\n' +
         '🚗 Vehicle   : ' + booking.car + '\n' +
         '🔢 No. Plat  : ' + (booking.plate || '-') + '\n' +
-        '💺 Servis    : ' + (booking.service || '-') + '\n' +
+        '💺 Servis    :\n' + serviceListText(booking, true) + '\n' +
         '📅 Tarikh    : ' + formatDMY(booking.date) + '\n' +
         '🕐 Masa      : ' + (booking.time || '-') + '\n' +
         '💳 Harga     : RM' + price + '\n' +
@@ -2370,7 +2413,7 @@
         '🚗 Vehicle   : ' + booking.car + '\n' +
         '🔢 No. Plat  : ' + (booking.plate || '-') + '\n' +
         '📱 Phone     : ' + (booking.phone || '-') + '\n' +
-        '💺 Servis    : ' + (booking.service || '-') + '\n' +
+        '💺 Servis    :\n' + serviceListText(booking, true) + '\n' +
         '📅 Tarikh    : ' + formatDMY(booking.date) + '\n' +
         '🕐 Masa      : ' + (booking.time || '-') + '\n' +
         '💳 Harga     : RM' + price + '\n' +
@@ -2402,7 +2445,7 @@
         line + '\n' +
         '🚗 Vehicle   : ' + booking.car + '\n' +
         '🔢 No. Plat  : ' + (booking.plate || '-') + '\n' +
-        '💺 Servis    : ' + (booking.service || '-') + '\n' +
+        '💺 Servis    :\n' + serviceListText(booking, false) + '\n' +
         line + '\n' +
         'Seat/kusyen kereta anda dah siap dibersihkan dan boleh diambil sekarang.\n' +
         bakiLine +
@@ -2885,11 +2928,13 @@
             </div>
           </div>
           <div class="card-buttons">
-            ${b.status === 'Pending'
-              ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button>`
-              : (b.status === 'Completed' || b.status === 'Complete')
-                ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
-                : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
+            ${b.status === 'Enquiry'
+              ? `<button class="btn btn-whatsapp" onclick="sendQuotation('${b.id}')">📋 Quotation</button>`
+              : b.status === 'Pending'
+                ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button>`
+                : (b.status === 'Completed' || b.status === 'Complete')
+                  ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
+                  : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
             <button class="btn btn-edit" onclick="editBooking('${b.id}')">✏️ Edit</button>
             <button class="btn btn-convert" onclick="showReceipt('${b.id}')">📄 Receipt</button>
             <button class="btn btn-secondary" onclick="deleteBooking('${b.id}')">🗑️ Delete</button>
