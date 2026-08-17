@@ -2523,11 +2523,6 @@
         // Official business logo, embedded (renders reliably in PDF/print)
         const logoSrc = RECEIPT_LOGO;
 
-        // Functional QR — scans straight to a WhatsApp chat with the business, referencing this receipt
-        let waNumber = '60176993876';
-        const waMsg = encodeURIComponent(`Hi, saya nak tanya berkenaan resit ${receiptNo}`);
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=6&data=${encodeURIComponent('https://wa.me/' + waNumber + '?text=' + waMsg)}`;
-
         const receiptHTML = `
           <div id="receipt-printable" style="width: 100%; max-width: 480px; margin: 0 auto; background: #ffffff; font-family: 'Manrope', Arial, sans-serif; color: #3a414c; overflow: hidden; border: 1px solid #d8dce2; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); position: relative; box-sizing: border-box;">
             <!-- Header Band -->
@@ -2542,8 +2537,8 @@
               <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 14px;">
                 <div style="font-size: 10px; color: #bcdcd2; line-height: 1.7;">
                   <b style="color: #f3f4f6; font-weight: 700;">Northern Hope Enterprise</b> (00374641-A)<br>
-                  📍 Blok D-00-01, Pangsapuri Mawar, Jln KP 4/4, Taman Kota Perdana, 43300 Seri Kembangan, Selangor<br>
-                  📱 017-699 3876 &nbsp;|&nbsp; 🌐 cuciseatkereta.com
+                  Blok D-00-01, Pangsapuri Mawar, Jln KP 4/4, Taman Kota Perdana, 43300 Seri Kembangan, Selangor<br>
+                  017-699 3876 &nbsp;|&nbsp; cuciseatkereta.com
                 </div>
               </div>
             </div>
@@ -2614,20 +2609,6 @@
                   <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e1e6ed; padding-top: 12px;">
                     <span style="color: #4a525e; font-size: 15px; font-weight: 600;">JUMLAH</span>
                     <span style="font-family: 'Fraunces', serif; color: #2b3340; font-size: 28px; font-weight: 600;">RM${booking.price}</span>
-                  </div>
-                </div>
-
-                <!-- Terms -->
-                <div style="background: #f7f8fa; border-radius: 8px; padding: 10px 14px; margin-bottom: 18px; font-size: 10px; color: #7a8390; line-height: 1.6;">
-                  <b style="color:#4a525e;">Jaminan Kami:</b> Resit ini sah sebagai bukti bayaran rasmi anda. Kepuasan anda keutamaan kami — jika ada apa-apa persoalan atau maklum balas tentang servis ini, jangan segan hubungi kami, kami sentiasa sedia bantu.
-                </div>
-
-                <!-- QR verify / contact box -->
-                <div style="display: flex; align-items: center; gap: 12px; border: 1px dashed #dfe3e8; border-radius: 10px; padding: 12px; margin-bottom: 18px;">
-                  <img src="${qrUrl}" crossorigin="anonymous" style="width: 56px; height: 56px; border-radius: 6px; flex-shrink: 0;">
-                  <div style="font-size: 10.5px; color: #7a8390; line-height: 1.5;">
-                    <b style="color:#2b3340; display:block; font-size: 12px; margin-bottom: 2px;">Imbas untuk hubungi kami</b>
-                    Ada soalan pasal resit ni atau nak tempah semula? Scan untuk terus chat WhatsApp kami.
                   </div>
                 </div>
 
