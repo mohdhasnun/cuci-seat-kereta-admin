@@ -2514,11 +2514,11 @@
       currentReceiptId = id;
       const booking = state.bookings.find(b => b.id == id);
       if (booking) {
-        const receiptNo = 'RCP-' + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
+        const paid = isComplete(booking);
+        const receiptNo = (paid ? 'RCP-' : 'INV-') + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
         const today = new Date();
         const date = formatDMY(today);
         const time = today.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' });
-        const paid = isComplete(booking);
 
         // Official business logo, embedded (renders reliably in PDF/print)
         const logoSrc = RECEIPT_LOGO;
@@ -2554,10 +2554,10 @@
 
               <div style="position: relative; z-index: 1;">
 
-                <!-- Receipt title + meta -->
+                <!-- Receipt/Invoice title + meta -->
                 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 22px;">
                   <div>
-                    <div style="font-family: 'Fraunces', serif; font-size: 27px; font-weight: 600; color: #2b3340; letter-spacing: -0.3px;">Resit Rasmi</div>
+                    <div style="font-family: 'Fraunces', serif; font-size: 27px; font-weight: 600; color: #2b3340; letter-spacing: -0.3px;">${paid ? 'Resit Rasmi' : 'Invois'}</div>
                     <div style="font-size: 12px; color: #b08d57; font-weight: 700; margin-top: 2px; letter-spacing: 0.3px;">No. ${receiptNo}</div>
                   </div>
                   <div style="text-align: right;">
@@ -2607,15 +2607,26 @@
                     <span style="background: ${paid ? '#6f9b7e' : '#bd9a5f'}; color: #fff; font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px;">${paid ? '✓ PAID' : 'PENDING'}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e1e6ed; padding-top: 12px;">
-                    <span style="color: #4a525e; font-size: 15px; font-weight: 600;">JUMLAH</span>
+                    <span style="color: #4a525e; font-size: 15px; font-weight: 600;">${paid ? 'JUMLAH' : 'JUMLAH PERLU DIBAYAR'}</span>
                     <span style="font-family: 'Fraunces', serif; color: #2b3340; font-size: 28px; font-weight: 600;">RM${booking.price}</span>
                   </div>
                 </div>
 
+                ${!paid ? `
+                <!-- Bank payment details (only shown while unpaid) -->
+                <div style="background: #fdf8ef; border: 1px solid #ecdfc2; border-radius: 10px; padding: 14px 18px; margin-bottom: 18px;">
+                  <div style="color: #b08d57; font-weight: 700; font-size: 10px; letter-spacing: 0.5px; margin-bottom: 8px;">MAKLUMAT PEMBAYARAN</div>
+                  <div style="font-size: 12px; color: #4a525e; line-height: 1.9;">
+                    Bank &nbsp;: <b style="color:#2b3340;">${BANK_INFO.bank}</b><br>
+                    Nama &nbsp;: <b style="color:#2b3340;">${BANK_INFO.name}</b><br>
+                    Akaun : <b style="color:#2b3340;">${BANK_INFO.account}</b>
+                  </div>
+                </div>` : ''}
+
                 <!-- Footer -->
                 <div style="text-align: center; padding-top: 4px;">
-                  <div style="font-family: 'Fraunces', serif; font-weight: 600; color: #4a525e; font-size: 15px; margin-bottom: 6px;">Terima kasih kerana memilih kami!</div>
-                  <div style="font-size: 10px; color: #9aa3b0; line-height: 1.6;">Resit ini dijana secara digital. Tiada tandatangan diperlukan.<br>Simpan resit ini sebagai bukti pembayaran anda.</div>
+                  <div style="font-family: 'Fraunces', serif; font-weight: 600; color: #4a525e; font-size: 15px; margin-bottom: 6px;">${paid ? 'Terima kasih kerana memilih kami!' : 'Terima kasih atas tempahan anda!'}</div>
+                  <div style="font-size: 10px; color: #9aa3b0; line-height: 1.6;">${paid ? 'Resit ini dijana secara digital. Tiada tandatangan diperlukan.<br>Simpan resit ini sebagai bukti pembayaran anda.' : 'Sila lengkapkan bayaran mengikut maklumat di atas.<br>Ada sebarang pertanyaan, jangan segan hubungi kami.'}</div>
                 </div>
               </div>
             </div>
@@ -2642,7 +2653,7 @@
         return;
       }
 
-      const receiptNo = 'RCP-' + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
+      const receiptNo = (isComplete(booking) ? 'RCP-' : 'INV-') + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
       const filename = `${receiptNo}_${booking.name}.pdf`;
 
       // Save PDF first (downloads to device), then open WhatsApp
@@ -2753,7 +2764,7 @@
         alert('Please open a receipt first');
         return;
       }
-      const receiptNo = 'RCP-' + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
+      const receiptNo = (isComplete(booking) ? 'RCP-' : 'INV-') + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
       const filename = `${receiptNo}_${booking.name}.pdf`;
       generateReceiptPDF(booking, filename, true);
     }
