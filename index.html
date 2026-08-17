@@ -1905,6 +1905,13 @@
       return d.getMonth() === ref.getMonth() && d.getFullYear() === ref.getFullYear();
     }
     function isComplete(b) { return b.status === 'Completed' || b.status === 'Complete'; }
+    // Document type for the Receipt page, following the business pipeline:
+    // Enquiry -> Sebut Harga (Quotation) | Pending/Booking/Postponed -> Invois | Completed -> Resit Rasmi
+    function getDocType(b) {
+      if (isComplete(b)) return 'receipt';
+      if (b.status === 'Enquiry') return 'quotation';
+      return 'invoice';
+    }
 
     // Sejarah customer: berapa kali lawatan (siap) & total belanja, guna nombor phone
     function customerHistory(phone) {
@@ -2517,7 +2524,10 @@
       const booking = state.bookings.find(b => b.id == id);
       if (booking) {
         const paid = isComplete(booking);
-        const receiptNo = (paid ? 'RCP-' : 'INV-') + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
+        const docType = getDocType(booking); // 'quotation' | 'invoice' | 'receipt'
+        const docPrefix = docType === 'receipt' ? 'RCP-' : docType === 'quotation' ? 'QUO-' : 'INV-';
+        const docTitle = docType === 'receipt' ? 'Resit Rasmi' : docType === 'quotation' ? 'Sebut Harga' : 'Invois';
+        const receiptNo = docPrefix + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
         const today = new Date();
         const date = formatDMY(today);
         const time = today.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' });
@@ -2559,7 +2569,7 @@
                 <!-- Receipt/Invoice title + meta -->
                 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 22px;">
                   <div>
-                    <div style="font-family: 'Fraunces', serif; font-size: 27px; font-weight: 600; color: #2b3340; letter-spacing: -0.3px;">${paid ? 'Resit Rasmi' : 'Invois'}</div>
+                    <div style="font-family: 'Fraunces', serif; font-size: 27px; font-weight: 600; color: #2b3340; letter-spacing: -0.3px;">${docTitle}</div>
                     <div style="font-size: 12px; color: #b08d57; font-weight: 700; margin-top: 2px; letter-spacing: 0.3px;">No. ${receiptNo}</div>
                   </div>
                   <div style="text-align: right;">
@@ -2604,6 +2614,7 @@
 
                 <!-- Total + Payment -->
                 <div style="background: #f4f6f9; border: 1px solid #e7ebf1; border-radius: 10px; padding: 18px 20px; margin-bottom: 18px;">
+                  ${docType !== 'quotation' ? `
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                     <span style="color: #8a93a0; font-size: 11px; font-weight: 600;">STATUS BAYARAN</span>
                     <span style="background: ${paid ? '#6f9b7e' : '#bd9a5f'}; color: #fff; font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px;">${paid ? '✓ PAID' : 'PENDING'}</span>
@@ -2611,11 +2622,21 @@
                   <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e1e6ed; padding-top: 12px;">
                     <span style="color: #4a525e; font-size: 15px; font-weight: 600;">${paid ? 'JUMLAH' : 'JUMLAH PERLU DIBAYAR'}</span>
                     <span style="font-family: 'Fraunces', serif; color: #2b3340; font-size: 28px; font-weight: 600;">RM${booking.price}</span>
-                  </div>
+                  </div>` : `
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #4a525e; font-size: 15px; font-weight: 600;">ANGGARAN KOS</span>
+                    <span style="font-family: 'Fraunces', serif; color: #2b3340; font-size: 28px; font-weight: 600;">RM${booking.price}</span>
+                  </div>`}
                 </div>
 
-                ${!paid ? `
-                <!-- Bank payment details (only shown while unpaid) -->
+                ${docType === 'quotation' ? `
+                <!-- Validity note (quotation only) -->
+                <div style="background: #f7f8fa; border-radius: 8px; padding: 10px 14px; margin-bottom: 18px; font-size: 10px; color: #7a8390; line-height: 1.6; text-align: center;">
+                  Sebut harga ini sah selama <b style="color:#4a525e;">7 hari</b> dari tarikh dikeluarkan. Harga tertakluk kepada pemeriksaan sebenar kenderaan.
+                </div>` : ''}
+
+                ${docType === 'invoice' ? `
+                <!-- Bank payment details (invoice only) -->
                 <div style="background: #fdf8ef; border: 1px solid #ecdfc2; border-radius: 10px; padding: 16px 18px; margin-bottom: 18px;">
                   <div style="color: #b08d57; font-weight: 700; font-size: 10px; letter-spacing: 0.5px; margin-bottom: 12px;">MAKLUMAT PEMBAYARAN</div>
                   <div style="display: flex; align-items: center; gap: 16px;">
@@ -2631,8 +2652,8 @@
 
                 <!-- Footer -->
                 <div style="text-align: center; padding-top: 4px;">
-                  <div style="font-family: 'Fraunces', serif; font-weight: 600; color: #4a525e; font-size: 15px; margin-bottom: 6px;">${paid ? 'Terima kasih kerana memilih kami!' : 'Terima kasih atas tempahan anda!'}</div>
-                  <div style="font-size: 10px; color: #9aa3b0; line-height: 1.6;">${paid ? 'Resit ini dijana secara digital. Tiada tandatangan diperlukan.<br>Simpan resit ini sebagai bukti pembayaran anda.' : 'Sila lengkapkan bayaran mengikut maklumat di atas.<br>Ada sebarang pertanyaan, jangan segan hubungi kami.'}</div>
+                  <div style="font-family: 'Fraunces', serif; font-weight: 600; color: #4a525e; font-size: 15px; margin-bottom: 6px;">${docType === 'receipt' ? 'Terima kasih kerana memilih kami!' : docType === 'quotation' ? 'Terima kasih atas pertanyaan anda!' : 'Terima kasih atas tempahan anda!'}</div>
+                  <div style="font-size: 10px; color: #9aa3b0; line-height: 1.6;">${docType === 'receipt' ? 'Resit ini dijana secara digital. Tiada tandatangan diperlukan.<br>Simpan resit ini sebagai bukti pembayaran anda.' : docType === 'quotation' ? 'Untuk teruskan tempahan, sila hubungi kami untuk sahkan tarikh & deposit.' : 'Sila lengkapkan bayaran mengikut maklumat di atas.<br>Ada sebarang pertanyaan, jangan segan hubungi kami.'}</div>
                 </div>
               </div>
             </div>
@@ -2659,7 +2680,7 @@
         return;
       }
 
-      const receiptNo = (isComplete(booking) ? 'RCP-' : 'INV-') + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
+      const receiptNo = (getDocType(booking) === 'receipt' ? 'RCP-' : getDocType(booking) === 'quotation' ? 'QUO-' : 'INV-') + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
       const filename = `${receiptNo}_${booking.name}.pdf`;
 
       // Save PDF first (downloads to device), then open WhatsApp
@@ -2770,7 +2791,7 @@
         alert('Please open a receipt first');
         return;
       }
-      const receiptNo = (isComplete(booking) ? 'RCP-' : 'INV-') + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
+      const receiptNo = (getDocType(booking) === 'receipt' ? 'RCP-' : getDocType(booking) === 'quotation' ? 'QUO-' : 'INV-') + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
       const filename = `${receiptNo}_${booking.name}.pdf`;
       generateReceiptPDF(booking, filename, true);
     }
