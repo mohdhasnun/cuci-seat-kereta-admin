@@ -2249,8 +2249,10 @@
               : b.status === 'Pending'
                 ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button><button class="btn btn-edit" onclick="generatePaymentLink('${b.id}')" style="background:#0b6e4f;color:#fff;">💳 Pautan Bayaran</button>`
                 : (b.status === 'Completed' || b.status === 'Complete')
-                  ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button><button class="btn btn-edit" onclick="generatePaymentLink('${b.id}', 'baki')" style="background:#0b6e4f;color:#fff;">💳 Pautan Bayaran (Baki)</button>`
-                  : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
+                  ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
+                  : b.status === 'Booking'
+                    ? `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>` + (b.paymentStatus === 'Sudah Bayar' ? '' : `<button class="btn btn-edit" onclick="generatePaymentLink('${b.id}', 'baki')" style="background:#0b6e4f;color:#fff;">💳 Pautan Bayaran (Baki)</button>`)
+                    : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
             <button class="btn btn-edit" onclick="editBooking('${b.id}')">✏️ Edit</button>
             <button class="btn btn-convert" onclick="showReceipt('${b.id}')">📄 Receipt</button>
             <button class="btn btn-secondary" onclick="deleteBooking('${b.id}')">🗑️ Delete</button>
@@ -3003,8 +3005,10 @@
               : b.status === 'Pending'
                 ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button><button class="btn btn-edit" onclick="generatePaymentLink('${b.id}')" style="background:#0b6e4f;color:#fff;">💳 Pautan Bayaran</button>`
                 : (b.status === 'Completed' || b.status === 'Complete')
-                  ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button><button class="btn btn-edit" onclick="generatePaymentLink('${b.id}', 'baki')" style="background:#0b6e4f;color:#fff;">💳 Pautan Bayaran (Baki)</button>`
-                  : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
+                  ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
+                  : b.status === 'Booking'
+                    ? `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>` + (b.paymentStatus === 'Sudah Bayar' ? '' : `<button class="btn btn-edit" onclick="generatePaymentLink('${b.id}', 'baki')" style="background:#0b6e4f;color:#fff;">💳 Pautan Bayaran (Baki)</button>`)
+                    : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
             <button class="btn btn-edit" onclick="editBooking('${b.id}')">✏️ Edit</button>
             <button class="btn btn-convert" onclick="showReceipt('${b.id}')">📄 Receipt</button>
             <button class="btn btn-secondary" onclick="deleteBooking('${b.id}')">🗑️ Delete</button>
