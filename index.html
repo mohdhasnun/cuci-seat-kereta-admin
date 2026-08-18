@@ -786,7 +786,7 @@
             <div class="form-section-title">👤 Maklumat Customer</div>
             <div>
               <label>Customer Name *</label>
-              <input type="text" id="name" placeholder="Nama penuh" required="">
+              <input type="text" id="name" placeholder="Nama penuh" required="" onblur="this.value = toTitleCase(this.value)">
             </div>
             <div>
               <label>Phone Number *</label>
@@ -799,7 +799,7 @@
               </div>
               <div>
                 <label>Plate Number</label>
-                <input type="text" id="plate" placeholder="ABC 1234">
+                <input type="text" id="plate" placeholder="ABC 1234" style="text-transform:uppercase;" oninput="this.value = this.value.toUpperCase()">
               </div>
             </div>
           </div>
@@ -1487,6 +1487,12 @@
       }
     }
 
+    // "ahmad bin ali" -> "Ahmad Bin Ali" — huruf pertama tiap perkataan besar, selebihnya kecil
+    function toTitleCase(str) {
+      if (!str) return str;
+      return str.toLowerCase().replace(/(^|\s|['-])([a-z])/g, (m, sep, ch) => sep + ch.toUpperCase());
+    }
+
     // Format any date to dd/mm/yy for display (storage stays yyyy-mm-dd for sorting)
     function formatDMY(d) {
       if (!d) return '';
@@ -1712,7 +1718,10 @@
       const preset = {};
       selectedItems.forEach(it => { preset[it.name] = it.price; });
 
-      container.innerHTML = DEFAULT_SERVICES.map((svc, idx) => {
+      // Servis custom ("Other") — item yang bukan sebahagian DEFAULT_SERVICES
+      const otherItem = selectedItems.find(it => !DEFAULT_SERVICES.includes(it.name));
+
+      const rowsHtml = DEFAULT_SERVICES.map((svc, idx) => {
         const isChecked = preset.hasOwnProperty(svc);
         const priceVal = isChecked ? preset[svc] : '';
         const isFoc = isChecked && (Number(preset[svc]) || 0) === 0;
@@ -1727,6 +1736,46 @@
           </div>
         `;
       }).join('');
+
+      // Row "Other" — servis custom mengikut request customer (nama ditaip sendiri)
+      const otherChecked = !!otherItem;
+      const otherName = otherItem ? otherItem.name : '';
+      const otherPrice = otherItem ? otherItem.price : '';
+      const otherRowHtml = `
+        <div class="svc-item svc-other-item ${otherChecked ? 'selected' : ''}" style="display: flex; align-items: center; gap: 12px; padding: 12px; border-top: 1px solid #f1f5f9;">
+          <input type="checkbox" class="svc-check svc-other-check" id="svc-other-check" ${otherChecked ? 'checked' : ''} onchange="toggleOtherService(this)">
+          <input type="text" id="svc-other-name" placeholder="Other: terangkan servis..." value="${(otherName || '').replace(/"/g, '&quot;')}" ${otherChecked ? '' : 'disabled'} oninput="recalcTotal()" style="flex: 1; padding: 9px; border: 1px solid #ddd; border-radius: 6px; font-size: 13.5px; ${otherChecked ? '' : 'background: #f8fafc;'}">
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="font-size: 12px; color: #94a3b8;">RM</span>
+            <input type="number" id="svc-other-price" class="svc-price" placeholder="0" value="${otherPrice}" ${otherChecked ? '' : 'disabled'} oninput="recalcTotal()" style="width: 72px; padding: 9px; border: 1px solid #ddd; border-radius: 6px; text-align: right; font-size: 15px; ${otherChecked ? '' : 'background: #f8fafc;'}">
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = rowsHtml + otherRowHtml;
+      recalcTotal();
+    }
+
+    function toggleOtherService(checkbox) {
+      const nameInput = document.getElementById('svc-other-name');
+      const priceInput = document.getElementById('svc-other-price');
+      const row = checkbox.closest('.svc-item');
+      if (checkbox.checked) {
+        nameInput.disabled = false;
+        priceInput.disabled = false;
+        nameInput.style.background = '';
+        priceInput.style.background = '';
+        row.classList.add('selected');
+        nameInput.focus();
+      } else {
+        nameInput.disabled = true;
+        priceInput.disabled = true;
+        nameInput.value = '';
+        priceInput.value = '';
+        nameInput.style.background = '#f8fafc';
+        priceInput.style.background = '#f8fafc';
+        row.classList.remove('selected');
+      }
       recalcTotal();
     }
 
@@ -1785,9 +1834,14 @@
       document.querySelectorAll('#service-checklist .svc-item').forEach(row => {
         const check = row.querySelector('.svc-check');
         if (check && check.checked) {
-          const name = check.getAttribute('data-name');
           const price = Number(row.querySelector('.svc-price').value) || 0;
-          items.push({ name, price });
+          if (row.classList.contains('svc-other-item')) {
+            const otherName = (document.getElementById('svc-other-name')?.value || '').trim();
+            if (otherName) items.push({ name: otherName, price });
+          } else {
+            const name = check.getAttribute('data-name');
+            items.push({ name, price });
+          }
         }
       });
       return items;
@@ -1803,6 +1857,11 @@
     // Save booking
     async function saveBooking(e) {
       e.preventDefault();
+      const otherCheck = document.getElementById('svc-other-check');
+      if (otherCheck && otherCheck.checked && !document.getElementById('svc-other-name').value.trim()) {
+        alert('⚠️ Sila terangkan servis "Other" tu, atau nyahtick kalau tak jadi guna.');
+        return;
+      }
       const serviceItems = collectServices();
       if (serviceItems.length === 0) {
         alert('Sila tambah sekurang-kurangnya satu servis');
@@ -1825,10 +1884,10 @@
       if (editingBookingId !== null) {
         const existing = state.bookings.find(b => b.id == editingBookingId);
         if (existing) {
-          existing.name = document.getElementById('name').value;
+          existing.name = toTitleCase(document.getElementById('name').value.trim());
           existing.phone = document.getElementById('phone').value;
           existing.car = document.getElementById('car').value;
-          existing.plate = document.getElementById('plate').value;
+          existing.plate = document.getElementById('plate').value.toUpperCase();
           existing.service = serviceStr;
           existing.serviceItems = serviceItems;
           existing.date = document.getElementById('date').value;
@@ -1856,10 +1915,10 @@
 
       const booking = {
         id: Date.now(),
-        name: document.getElementById('name').value,
+        name: toTitleCase(document.getElementById('name').value.trim()),
         phone: document.getElementById('phone').value,
         car: document.getElementById('car').value,
-        plate: document.getElementById('plate').value,
+        plate: document.getElementById('plate').value.toUpperCase(),
         service: serviceStr,
         serviceItems: serviceItems,
         date: document.getElementById('date').value,
@@ -2259,6 +2318,9 @@
                 : (b.status === 'Completed' || b.status === 'Complete')
                   ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
                   : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
+            ${(b.status !== 'Enquiry' && b.paymentStatus !== 'Sudah Bayar' && Number(b.price) > 0)
+              ? `<button class="btn" onclick="markPaidManually('${b.id}')" style="background:#0891b2;color:#fff;">✅ Tandakan Sudah Bayar</button>`
+              : ''}
             <button class="btn btn-edit" onclick="editBooking('${b.id}')">✏️ Edit</button>
             <button class="btn btn-convert" onclick="showReceipt('${b.id}')">📄 Receipt</button>
             <button class="btn btn-secondary" onclick="deleteBooking('${b.id}')">🗑️ Delete</button>
@@ -2456,6 +2518,31 @@
       }
     }
 
+    // Tandakan Sudah Bayar secara MANUAL — untuk bayaran tunai / QR statik di kedai
+    // (webhook FIUU tak boleh detect bayaran ni sebab tiada rujukan bookingId dalam transaksi QR statik)
+    function markPaidManually(id) {
+      const booking = state.bookings.find(b => b.id == id);
+      if (!booking) return;
+      const price = Number(booking.price) || 0;
+      if (price <= 0) { alert('⚠️ Harga booking belum diisi. Sila Edit dahulu.'); return; }
+      if (booking.paymentStatus === 'Sudah Bayar') { alert('ℹ️ Booking ni dah pun ditandakan Sudah Bayar.'); return; }
+
+      const confirmMsg = 'Tandakan booking ' + booking.name + ' (RM' + price + ') sebagai SUDAH BAYAR?\n\n' +
+        'Guna ni HANYA untuk bayaran tunai / QR statik di kedai.\n' +
+        'Kalau customer bayar guna pautan FIUU, sistem akan auto-update — tak perlu klik ni.';
+      if (!confirm(confirmMsg)) return;
+
+      booking.paymentStatus = 'Sudah Bayar';
+      booking.totalPaid = price;
+      booking.depositPaid = true;
+      booking.manualPayment = true;
+      booking.manualPaidAt = new Date().toISOString();
+      booking._synced = false;
+      persistLocal();
+      renderAll();
+      fbSet('bookings', booking.id, booking).then(ok => { booking._synced = ok; persistLocal(); updateSyncStatus(); });
+    }
+
     function showPaymentLinkModal(booking, url, amount) {
       const existing = document.getElementById('fiuu-link-modal');
       if (existing) existing.remove();
@@ -2495,11 +2582,11 @@
       const baki = price - deposit;
       const line = '─────────────────';
 
-      // Rujukan bukti bayaran — cuma keluar kalau deposit betul-betul dibayar melalui FIUU (bukan bank transfer manual)
+      // Rujukan bukti bayaran — FIUU (online) atau manual (tunai/QR kedai)
       const buktiBayaran = booking.fiuuTranId
         ? '🧾 No. Transaksi : ' + booking.fiuuTranId + '\n' +
           '🕐 Masa Bayaran  : ' + (booking.fiuuPaidAt || '-') + '\n'
-        : '';
+        : (booking.manualPayment ? '🧾 Bayaran diterima (tunai/QR di kedai)\n' : '');
 
       const msg =
         'Hai ' + booking.name + ',\n\n' +
@@ -2525,7 +2612,7 @@
     }
 
     // Mesej kereta dah siap untuk pickup (untuk status Completed)
-    function sendPickup(id) {
+    async function sendPickup(id) {
       const booking = state.bookings.find(b => b.id == id);
       if (!booking) return;
       const phone = waPhone(booking.phone);
@@ -2535,13 +2622,36 @@
       const deposit = Number(booking.deposit) || 0;
       const baki = price - deposit;
       const bakiSettled = booking.paymentStatus === 'Sudah Bayar';
-      const buktiBayaranBaki = (bakiSettled && booking.fiuuTranId)
-        ? '🧾 No. Transaksi : ' + booking.fiuuTranId + '\n' +
-          '🕐 Masa Bayaran  : ' + (booking.fiuuPaidAt || '-') + '\n'
+      const buktiBayaranBaki = bakiSettled
+        ? (booking.fiuuTranId
+            ? '🧾 No. Transaksi : ' + booking.fiuuTranId + '\n' +
+              '🕐 Masa Bayaran  : ' + (booking.fiuuPaidAt || '-') + '\n'
+            : (booking.manualPayment ? '🧾 Bayaran diterima (tunai/QR di kedai)\n' : ''))
         : '';
+
+      // Jana pautan bayaran FIUU untuk baki (kalau masih ada baki & belum settle) — pilihan, bukan wajib
+      let paymentLinkUrl = null;
+      if (!bakiSettled && baki > 0) {
+        const btn = event && event.target;
+        const oldText = btn ? btn.textContent : null;
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Menjana pautan...'; }
+        try {
+          paymentLinkUrl = await fetchFiuuLink(booking.id, baki);
+        } catch (err) {
+          console.warn('Gagal jana pautan baki:', err.message);
+        } finally {
+          if (btn) { btn.disabled = false; btn.textContent = oldText; }
+        }
+      }
+
       const bakiLine = bakiSettled
         ? '\n✅ Baki RM' + baki + ' telah dijelaskan.\n' + buktiBayaranBaki
-        : (baki > 0 ? '\n💵 Baki untuk dijelaskan : RM' + baki + '\n' : '\n');
+        : (baki > 0
+            ? '\n💵 Baki untuk dijelaskan : RM' + baki + '\n' +
+              (paymentLinkUrl
+                ? '\n💳 Boleh settle online dulu guna pautan ni:\n' + paymentLinkUrl + '\n\nAtau bayar terus di kedai bila sampai.\n'
+                : '\nBoleh bayar terus di kedai bila sampai.\n')
+            : '\n');
       const msg =
         'Hai ' + booking.name + ',\n\n' +
         'Kereta anda sudah SIAP! 🚗✨\n' +
@@ -3039,6 +3149,9 @@
                 : (b.status === 'Completed' || b.status === 'Complete')
                   ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
                   : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
+            ${(b.status !== 'Enquiry' && b.paymentStatus !== 'Sudah Bayar' && Number(b.price) > 0)
+              ? `<button class="btn" onclick="markPaidManually('${b.id}')" style="background:#0891b2;color:#fff;">✅ Tandakan Sudah Bayar</button>`
+              : ''}
             <button class="btn btn-edit" onclick="editBooking('${b.id}')">✏️ Edit</button>
             <button class="btn btn-convert" onclick="showReceipt('${b.id}')">📄 Receipt</button>
             <button class="btn btn-secondary" onclick="deleteBooking('${b.id}')">🗑️ Delete</button>
