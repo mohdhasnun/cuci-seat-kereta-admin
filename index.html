@@ -2339,7 +2339,8 @@
     }
 
     // Minta deposit (untuk Enquiry): tanya harga & deposit, hantar mesej transfer bank, tukar ke Pending
-    function requestDeposit(id) {
+    // Minta deposit (untuk Enquiry): tanya harga & deposit, jana pautan bayaran FIUU sekali, tukar ke Pending
+    async function requestDeposit(id) {
       const booking = state.bookings.find(b => b.id == id);
       if (!booking) return;
       const phone = waPhone(booking.phone);
@@ -2376,7 +2377,20 @@
       renderAll();
       fbSet('bookings', booking.id, booking).then(ok => { booking._synced = ok; persistLocal(); updateSyncStatus(); });
 
-      // 4) Bina mesej minta deposit
+      // 4) Jana pautan bayaran FIUU untuk jumlah deposit (supaya cuma 1 mesej WhatsApp perlu dihantar)
+      const btn = event && event.target;
+      const oldText = btn ? btn.textContent : null;
+      let paymentLinkUrl = null;
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Menjana pautan...'; }
+      try {
+        paymentLinkUrl = await fetchFiuuLink(booking.id, deposit);
+      } catch (err) {
+        alert('⚠️ Gagal jana pautan bayaran: ' + err.message + '\n\nMesej akan dihantar dengan maklumat bank transfer sahaja.');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = oldText; }
+      }
+
+      // 5) Bina mesej minta deposit — pautan bayaran online + bank transfer sebagai alternatif
       const line = '─────────────────';
       const msg =
         'Hai ' + booking.name + ',\n\n' +
@@ -2393,7 +2407,10 @@
         '💰 MAKLUMAT DEPOSIT\n' +
         line + '\n' +
         '⚠️ Deposit Diperlukan : RM' + deposit + '\n' +
-        'Sila transfer deposit ke:\n' +
+        (paymentLinkUrl
+          ? '\n💳 Sila klik pautan di bawah untuk bayar deposit RM' + deposit + ':\n' + paymentLinkUrl + '\n'
+          : '') +
+        '\nAtau transfer deposit ke:\n' +
         '🏦 Bank     : ' + BANK_INFO.bank + '\n' +
         '👤 Nama     : ' + BANK_INFO.name + '\n' +
         '🔢 Akaun    : ' + BANK_INFO.account + '\n\n' +
@@ -2478,6 +2495,12 @@
       const baki = price - deposit;
       const line = '─────────────────';
 
+      // Rujukan bukti bayaran — cuma keluar kalau deposit betul-betul dibayar melalui FIUU (bukan bank transfer manual)
+      const buktiBayaran = booking.fiuuTranId
+        ? '🧾 No. Transaksi : ' + booking.fiuuTranId + '\n' +
+          '🕐 Masa Bayaran  : ' + (booking.fiuuPaidAt || '-') + '\n'
+        : '';
+
       const msg =
         'Hai ' + booking.name + ',\n\n' +
         'Berikut adalah butiran tempahan servis anda:\n' +
@@ -2492,6 +2515,7 @@
         (booking.notes ? '📝 Nota      : ' + booking.notes + '\n' : '') +
         line + '\n' +
         '✅ Deposit diterima : RM' + deposit + '\n' +
+        buktiBayaran +
         '💵 Baki : RM' + baki + ' (dibayar selepas servis selesai)\n' +
         'Sila pastikan anda hadir pada tarikh dan masa yang ditetapkan.\n' +
         contactFooter() + '\n\n' +
@@ -2510,7 +2534,14 @@
       const price = Number(booking.price) || 0;
       const deposit = Number(booking.deposit) || 0;
       const baki = price - deposit;
-      const bakiLine = baki > 0 ? '\n💵 Baki untuk dijelaskan : RM' + baki + '\n' : '\n';
+      const bakiSettled = booking.paymentStatus === 'Sudah Bayar';
+      const buktiBayaranBaki = (bakiSettled && booking.fiuuTranId)
+        ? '🧾 No. Transaksi : ' + booking.fiuuTranId + '\n' +
+          '🕐 Masa Bayaran  : ' + (booking.fiuuPaidAt || '-') + '\n'
+        : '';
+      const bakiLine = bakiSettled
+        ? '\n✅ Baki RM' + baki + ' telah dijelaskan.\n' + buktiBayaranBaki
+        : (baki > 0 ? '\n💵 Baki untuk dijelaskan : RM' + baki + '\n' : '\n');
       const msg =
         'Hai ' + booking.name + ',\n\n' +
         'Kereta anda sudah SIAP! 🚗✨\n' +
