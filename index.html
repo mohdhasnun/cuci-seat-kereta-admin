@@ -2247,7 +2247,7 @@
             ${b.status === 'Enquiry'
               ? `<button class="btn btn-whatsapp" onclick="sendQuotation('${b.id}')">📋 Quotation</button>`
               : b.status === 'Pending'
-                ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button>`
+                ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button><button class="btn btn-edit" onclick="generatePaymentLink('${b.id}')" style="background:#0b6e4f;color:#fff;">💳 Pautan Bayaran</button>`
                 : (b.status === 'Completed' || b.status === 'Complete')
                   ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
                   : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
@@ -2271,6 +2271,10 @@
 
     // Bank details for deposit transfer
     const BANK_INFO = { bank: 'Maybank', name: 'Northern Hope Enterprise', account: '5521 8951 6033' };
+
+    // ⚙️ TUKAR dua URL ni lepas korang deploy Cloud Function (lihat README-DEPLOY.md)
+    // Contoh selepas deploy: https://asia-southeast1-cuci-seat-kereta.cloudfunctions.net/generatePaymentLink
+    const FIUU_GENERATE_LINK_URL = 'PASTE_GENERATE_PAYMENT_LINK_URL_DI_SINI';
 
     // Format service list as a clean numbered list (with per-item price when available)
     // instead of one long "A + B + C" run-on line — used across all WhatsApp messages.
@@ -2390,6 +2394,66 @@
         'Terima kasih kerana memilih perkhidmatan kami! 😊';
 
       window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+    }
+
+    // ===== FIUU Payment Link =====
+    async function generatePaymentLink(id) {
+      const booking = state.bookings.find(b => b.id == id);
+      if (!booking) return;
+
+      const price = Number(booking.price) || 0;
+      const deposit = Number(booking.depositAmount || booking.deposit) || 0;
+      if (price <= 0) { alert('⚠️ Sila set harga booking dahulu.'); return; }
+
+      const amountToCharge = (deposit > 0 && booking.paymentStatus !== 'Sudah Bayar') ? deposit : price;
+      const btn = event && event.target;
+      const oldText = btn ? btn.textContent : null;
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Menjana...'; }
+
+      try {
+        const user = firebase.auth().currentUser;
+        if (!user) { alert('⚠️ Sesi log masuk tamat. Sila refresh & log masuk semula.'); return; }
+        const idToken = await user.getIdToken();
+
+        const res = await fetch(FIUU_GENERATE_LINK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
+          body: JSON.stringify({ bookingId: String(booking.id), amountOverride: amountToCharge })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.url) throw new Error(data.error || 'Gagal jana pautan.');
+
+        showPaymentLinkModal(booking, data.url, amountToCharge);
+      } catch (err) {
+        alert('⚠️ Ralat: ' + err.message);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = oldText; }
+      }
+    }
+
+    function showPaymentLinkModal(booking, url, amount) {
+      const existing = document.getElementById('fiuu-link-modal');
+      if (existing) existing.remove();
+
+      const phone = waPhone(booking.phone);
+      const waMsg = 'Hai ' + booking.name + ',\n\nSila klik pautan di bawah untuk bayar RM' + amount + ' bagi servis cuci seat kereta anda:\n\n' + url + '\n\nTerima kasih! 😊';
+      const waUrl = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(waMsg);
+
+      const div = document.createElement('div');
+      div.id = 'fiuu-link-modal';
+      div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
+      div.innerHTML =
+        '<div style="background:#fff;border-radius:16px;padding:24px;max-width:400px;width:100%;">' +
+          '<h3 style="margin-bottom:6px;color:#1f3d38;">💳 Pautan Bayaran</h3>' +
+          '<p style="font-size:13px;color:#666;margin-bottom:14px;">Untuk ' + booking.name + ' — RM' + amount + '</p>' +
+          '<textarea readonly style="width:100%;height:70px;padding:10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:12px;margin-bottom:12px;" onclick="this.select()">' + url + '</textarea>' +
+          '<div style="display:flex;gap:8px;">' +
+            '<button onclick="navigator.clipboard.writeText(\'' + url + '\');this.textContent=\'✅ Disalin!\';" style="flex:1;padding:12px;border-radius:8px;border:none;background:#1f3d38;color:#fff;font-weight:600;cursor:pointer;">📋 Salin Link</button>' +
+            '<button onclick="window.open(\'' + waUrl + '\',\'_blank\')" style="flex:1;padding:12px;border-radius:8px;border:none;background:#25D366;color:#fff;font-weight:600;cursor:pointer;">💬 WhatsApp</button>' +
+          '</div>' +
+          '<button onclick="document.getElementById(\'fiuu-link-modal\').remove()" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;border:1.5px solid #e0e0e0;background:#fff;color:#666;cursor:pointer;">Tutup</button>' +
+        '</div>';
+      document.body.appendChild(div);
     }
 
     function sendWhatsApp(id) {
@@ -2931,7 +2995,7 @@
             ${b.status === 'Enquiry'
               ? `<button class="btn btn-whatsapp" onclick="sendQuotation('${b.id}')">📋 Quotation</button>`
               : b.status === 'Pending'
-                ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button>`
+                ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button><button class="btn btn-edit" onclick="generatePaymentLink('${b.id}')" style="background:#0b6e4f;color:#fff;">💳 Pautan Bayaran</button>`
                 : (b.status === 'Completed' || b.status === 'Complete')
                   ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
                   : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
