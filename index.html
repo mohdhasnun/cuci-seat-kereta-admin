@@ -2333,7 +2333,7 @@
     }
 
     // Minta deposit (untuk Enquiry): tanya harga & deposit, hantar mesej transfer bank, tukar ke Pending
-    function requestDeposit(id) {
+    async function requestDeposit(id) {
       const booking = state.bookings.find(b => b.id == id);
       if (!booking) return;
       const phone = waPhone(booking.phone);
@@ -2370,7 +2370,20 @@
       renderAll();
       fbSet('bookings', booking.id, booking).then(ok => { booking._synced = ok; persistLocal(); updateSyncStatus(); });
 
-      // 4) Bina mesej minta deposit
+      // 4) Jana pautan bayaran FIUU untuk jumlah deposit (supaya cuma 1 mesej WhatsApp perlu dihantar)
+      const btn = event && event.target;
+      const oldText = btn ? btn.textContent : null;
+      let paymentLinkUrl = null;
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Menjana pautan...'; }
+      try {
+        paymentLinkUrl = await fetchFiuuLink(booking.id, deposit);
+      } catch (err) {
+        alert('⚠️ Gagal jana pautan bayaran: ' + err.message + '\n\nMesej akan dihantar dengan maklumat bank transfer sahaja.');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = oldText; }
+      }
+
+      // 5) Bina mesej minta deposit — pautan bayaran online + bank transfer sebagai alternatif
       const line = '─────────────────';
       const msg =
         'Hai ' + booking.name + ',\n\n' +
@@ -2387,7 +2400,10 @@
         '💰 MAKLUMAT DEPOSIT\n' +
         line + '\n' +
         '⚠️ Deposit Diperlukan : RM' + deposit + '\n' +
-        'Sila transfer deposit ke:\n' +
+        (paymentLinkUrl
+          ? '\n💳 Sila klik pautan di bawah untuk bayar deposit RM' + deposit + ':\n' + paymentLinkUrl + '\n'
+          : '') +
+        '\nAtau transfer deposit ke:\n' +
         '🏦 Bank     : ' + BANK_INFO.bank + '\n' +
         '👤 Nama     : ' + BANK_INFO.name + '\n' +
         '🔢 Akaun    : ' + BANK_INFO.account + '\n\n' +
