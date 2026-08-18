@@ -243,6 +243,13 @@
       font-weight: 800; font-size: 15px; letter-spacing: 0.2px;
       padding: 10px 14px; border-radius: 10px; margin: 0 0 12px 0;
     }
+    .card-paymentbar {
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 800; font-size: 15px; letter-spacing: 0.2px;
+      padding: 10px 14px; border-radius: 10px; margin: 0 0 12px 0;
+    }
+    .card-paymentbar.paid-full { background: #dcfce7; border: 1.5px solid #4ade80; color: #14532d; }
+    .card-paymentbar.paid-deposit { background: #ffedd5; border: 1.5px solid #fb923c; color: #7c2d12; }
     .btn-pickup { background: #3d8f82; color: white; }
     .btn-pickup:hover { background: #2f6e64; }
     .card-badge {
@@ -2205,12 +2212,13 @@
         <div class="booking-card">
           <div class="card-header">
             <div>
-              <span class="card-badge" style="${statusBadgeStyle(b.status)}">${b.status}</span>${paymentBadgeHtml(b)}
+              <span class="card-badge" style="${statusBadgeStyle(b.status)}">${b.status}</span>
               <div class="card-name">${b.name}</div>
               ${histBadge}
             </div>
           </div>
           ${dateTimeBar(b)}
+          ${paymentBarHtml(b)}
           <div class="card-detail-box">
             <div class="detail-row">
               <div class="detail-label">📱 Phone:</div>
@@ -2953,12 +2961,13 @@
         <div class="booking-card">
           <div class="card-header">
             <div>
-              <span class="card-badge" style="${statusBadgeStyle(b.status)}">${b.status}</span>${paymentBadgeHtml(b)}
+              <span class="card-badge" style="${statusBadgeStyle(b.status)}">${b.status}</span>
               <div class="card-name">${b.name}</div>
               ${histBadge}
             </div>
           </div>
           ${dateTimeBar(b)}
+          ${paymentBarHtml(b)}
           <div class="card-detail-box">
             <div class="detail-row">
               <div class="detail-label">📱 Phone:</div>
@@ -3015,14 +3024,14 @@
       'Complete': '#0d9488', 'Cancelled': '#dc2626', 'No-Show': '#1f2937'
     };
 
-    // Badge bayaran — tunjuk peringkat mana yang dah settle (deposit sahaja, atau sudah bayar penuh/baki)
+    // Bar bayaran (full-width, macam date/time bar) — tunjuk peringkat mana yang dah settle.
     // Nilai b.depositPaid & b.paymentStatus di-set automatik oleh webhook fiuuNotify bila FIUU confirm bayaran.
-    function paymentBadgeHtml(b) {
+    function paymentBarHtml(b) {
       if (b.paymentStatus === 'Sudah Bayar') {
-        return '<span class="card-badge" style="background:#dcfce7;color:#16a34a;margin-left:6px;">✅ Sudah Bayar</span>';
+        return '<div class="card-paymentbar paid-full">✅ SUDAH BAYAR</div>';
       }
       if (b.depositPaid) {
-        return '<span class="card-badge" style="background:#fef3c7;color:#b45309;margin-left:6px;">💰 Deposit Diterima</span>';
+        return '<div class="card-paymentbar paid-deposit">💰 TERIMA DEPOSIT</div>';
       }
       return '';
     }
