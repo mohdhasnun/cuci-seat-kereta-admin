@@ -2205,7 +2205,7 @@
         <div class="booking-card">
           <div class="card-header">
             <div>
-              <span class="card-badge" style="${statusBadgeStyle(b.status)}">${b.status}</span>
+              <span class="card-badge" style="${statusBadgeStyle(b.status)}">${b.status}</span>${paymentBadgeHtml(b)}
               <div class="card-name">${b.name}</div>
               ${histBadge}
             </div>
@@ -2250,9 +2250,7 @@
                 ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button><button class="btn btn-edit" onclick="generatePaymentLink('${b.id}')" style="background:#0b6e4f;color:#fff;">💳 Pautan Bayaran</button>`
                 : (b.status === 'Completed' || b.status === 'Complete')
                   ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
-                  : b.status === 'Booking'
-                    ? `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>` + (b.paymentStatus === 'Sudah Bayar' ? '' : `<button class="btn btn-edit" onclick="generatePaymentLink('${b.id}', 'baki')" style="background:#0b6e4f;color:#fff;">💳 Pautan Bayaran (Baki)</button>`)
-                    : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
+                  : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
             <button class="btn btn-edit" onclick="editBooking('${b.id}')">✏️ Edit</button>
             <button class="btn btn-convert" onclick="showReceipt('${b.id}')">📄 Receipt</button>
             <button class="btn btn-secondary" onclick="deleteBooking('${b.id}')">🗑️ Delete</button>
@@ -2276,7 +2274,7 @@
 
     // ⚙️ TUKAR dua URL ni lepas korang deploy Cloud Function (lihat README-DEPLOY.md)
     // Contoh selepas deploy: https://asia-southeast1-cuci-seat-kereta.cloudfunctions.net/generatePaymentLink
-    const FIUU_GENERATE_LINK_URL = 'https://asia-southeast1-cuci-seat-kereta.cloudfunctions.net/generatePaymentLink';
+    const FIUU_GENERATE_LINK_URL = 'PASTE_GENERATE_PAYMENT_LINK_URL_DI_SINI';
 
     // Format service list as a clean numbered list (with per-item price when available)
     // instead of one long "A + B + C" run-on line — used across all WhatsApp messages.
@@ -2333,7 +2331,7 @@
     }
 
     // Minta deposit (untuk Enquiry): tanya harga & deposit, hantar mesej transfer bank, tukar ke Pending
-    async function requestDeposit(id) {
+    function requestDeposit(id) {
       const booking = state.bookings.find(b => b.id == id);
       if (!booking) return;
       const phone = waPhone(booking.phone);
@@ -2370,20 +2368,7 @@
       renderAll();
       fbSet('bookings', booking.id, booking).then(ok => { booking._synced = ok; persistLocal(); updateSyncStatus(); });
 
-      // 4) Jana pautan bayaran FIUU untuk jumlah deposit (supaya cuma 1 mesej WhatsApp perlu dihantar)
-      const btn = event && event.target;
-      const oldText = btn ? btn.textContent : null;
-      let paymentLinkUrl = null;
-      if (btn) { btn.disabled = true; btn.textContent = '⏳ Menjana pautan...'; }
-      try {
-        paymentLinkUrl = await fetchFiuuLink(booking.id, deposit);
-      } catch (err) {
-        alert('⚠️ Gagal jana pautan bayaran: ' + err.message + '\n\nMesej akan dihantar dengan maklumat bank transfer sahaja.');
-      } finally {
-        if (btn) { btn.disabled = false; btn.textContent = oldText; }
-      }
-
-      // 5) Bina mesej minta deposit — pautan bayaran online + bank transfer sebagai alternatif
+      // 4) Bina mesej minta deposit
       const line = '─────────────────';
       const msg =
         'Hai ' + booking.name + ',\n\n' +
@@ -2400,10 +2385,7 @@
         '💰 MAKLUMAT DEPOSIT\n' +
         line + '\n' +
         '⚠️ Deposit Diperlukan : RM' + deposit + '\n' +
-        (paymentLinkUrl
-          ? '\n💳 Sila klik pautan di bawah untuk bayar deposit RM' + deposit + ':\n' + paymentLinkUrl + '\n'
-          : '') +
-        '\nAtau transfer deposit ke:\n' +
+        'Sila transfer deposit ke:\n' +
         '🏦 Bank     : ' + BANK_INFO.bank + '\n' +
         '👤 Nama     : ' + BANK_INFO.name + '\n' +
         '🔢 Akaun    : ' + BANK_INFO.account + '\n\n' +
@@ -2415,22 +2397,7 @@
     }
 
     // ===== FIUU Payment Link =====
-    async function fetchFiuuLink(bookingId, amount) {
-      const user = firebase.auth().currentUser;
-      if (!user) throw new Error('Sesi log masuk tamat. Sila refresh & log masuk semula.');
-      const idToken = await user.getIdToken();
-
-      const res = await fetch(FIUU_GENERATE_LINK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
-        body: JSON.stringify({ bookingId: String(bookingId), amountOverride: amount })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.url) throw new Error(data.error || 'Gagal jana pautan.');
-      return data.url;
-    }
-
-    async function generatePaymentLink(id, mode) {
+    async function generatePaymentLink(id) {
       const booking = state.bookings.find(b => b.id == id);
       if (!booking) return;
 
@@ -2438,27 +2405,31 @@
       const deposit = Number(booking.depositAmount || booking.deposit) || 0;
       if (price <= 0) { alert('⚠️ Sila set harga booking dahulu.'); return; }
 
-      let amountToCharge;
-      if (mode === 'baki') {
-        amountToCharge = price - deposit;
-        if (amountToCharge <= 0) { alert('⚠️ Tiada baki perlu dibayar.'); return; }
-      } else {
-        amountToCharge = (deposit > 0 && booking.paymentStatus !== 'Sudah Bayar') ? deposit : price;
-      }
+      const amountToCharge = (deposit > 0 && booking.paymentStatus !== 'Sudah Bayar') ? deposit : price;
       const btn = event && event.target;
       const oldText = btn ? btn.textContent : null;
       if (btn) { btn.disabled = true; btn.textContent = '⏳ Menjana...'; }
 
       try {
-        const url = await fetchFiuuLink(booking.id, amountToCharge);
-        showPaymentLinkModal(booking, url, amountToCharge);
+        const user = firebase.auth().currentUser;
+        if (!user) { alert('⚠️ Sesi log masuk tamat. Sila refresh & log masuk semula.'); return; }
+        const idToken = await user.getIdToken();
+
+        const res = await fetch(FIUU_GENERATE_LINK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
+          body: JSON.stringify({ bookingId: String(booking.id), amountOverride: amountToCharge })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.url) throw new Error(data.error || 'Gagal jana pautan.');
+
+        showPaymentLinkModal(booking, data.url, amountToCharge);
       } catch (err) {
         alert('⚠️ Ralat: ' + err.message);
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = oldText; }
       }
     }
-
 
     function showPaymentLinkModal(booking, url, amount) {
       const existing = document.getElementById('fiuu-link-modal');
@@ -2485,7 +2456,7 @@
       document.body.appendChild(div);
     }
 
-    async function sendWhatsApp(id) {
+    function sendWhatsApp(id) {
       const booking = state.bookings.find(b => b.id == id);
       if (!booking) return;
       const phone = waPhone(booking.phone);
@@ -2495,24 +2466,9 @@
       }
 
       const price = Number(booking.price) || 0;
-      const deposit = Number(booking.deposit || booking.depositAmount) || 0;
+      const deposit = Number(booking.deposit) || 0;
       const baki = price - deposit;
       const line = '─────────────────';
-      const needsPayment = baki > 0 && booking.paymentStatus !== 'Sudah Bayar';
-
-      const btn = event && event.target;
-      const oldText = btn ? btn.textContent : null;
-      let paymentLinkUrl = null;
-      if (needsPayment) {
-        if (btn) { btn.disabled = true; btn.textContent = '⏳ Menjana pautan...'; }
-        try {
-          paymentLinkUrl = await fetchFiuuLink(booking.id, baki);
-        } catch (err) {
-          alert('⚠️ Gagal jana pautan bayaran: ' + err.message + '\n\nMesej akan dihantar tanpa pautan bayaran.');
-        } finally {
-          if (btn) { btn.disabled = false; btn.textContent = oldText; }
-        }
-      }
 
       const msg =
         'Hai ' + booking.name + ',\n\n' +
@@ -2529,14 +2485,12 @@
         line + '\n' +
         '✅ Deposit diterima : RM' + deposit + '\n' +
         '💵 Baki : RM' + baki + ' (dibayar selepas servis selesai)\n' +
-        (paymentLinkUrl ? '\n💳 Sila klik pautan di bawah untuk bayar baki RM' + baki + ':\n' + paymentLinkUrl + '\n' : '') +
         'Sila pastikan anda hadir pada tarikh dan masa yang ditetapkan.\n' +
         contactFooter() + '\n\n' +
         'Terima kasih kerana memilih perkhidmatan kami! Jumpa nanti 😊';
 
       window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
     }
-
 
     // Mesej kereta dah siap untuk pickup (untuk status Completed)
     function sendPickup(id) {
@@ -2999,7 +2953,7 @@
         <div class="booking-card">
           <div class="card-header">
             <div>
-              <span class="card-badge" style="${statusBadgeStyle(b.status)}">${b.status}</span>
+              <span class="card-badge" style="${statusBadgeStyle(b.status)}">${b.status}</span>${paymentBadgeHtml(b)}
               <div class="card-name">${b.name}</div>
               ${histBadge}
             </div>
@@ -3044,9 +2998,7 @@
                 ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button><button class="btn btn-edit" onclick="generatePaymentLink('${b.id}')" style="background:#0b6e4f;color:#fff;">💳 Pautan Bayaran</button>`
                 : (b.status === 'Completed' || b.status === 'Complete')
                   ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
-                  : b.status === 'Booking'
-                    ? `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>` + (b.paymentStatus === 'Sudah Bayar' ? '' : `<button class="btn btn-edit" onclick="generatePaymentLink('${b.id}', 'baki')" style="background:#0b6e4f;color:#fff;">💳 Pautan Bayaran (Baki)</button>`)
-                    : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
+                  : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
             <button class="btn btn-edit" onclick="editBooking('${b.id}')">✏️ Edit</button>
             <button class="btn btn-convert" onclick="showReceipt('${b.id}')">📄 Receipt</button>
             <button class="btn btn-secondary" onclick="deleteBooking('${b.id}')">🗑️ Delete</button>
@@ -3062,6 +3014,18 @@
       'Confirmed': '#059669', 'Postponed': '#2f6e64', 'Completed': '#0d9488',
       'Complete': '#0d9488', 'Cancelled': '#dc2626', 'No-Show': '#1f2937'
     };
+
+    // Badge bayaran — tunjuk peringkat mana yang dah settle (deposit sahaja, atau sudah bayar penuh/baki)
+    // Nilai b.depositPaid & b.paymentStatus di-set automatik oleh webhook fiuuNotify bila FIUU confirm bayaran.
+    function paymentBadgeHtml(b) {
+      if (b.paymentStatus === 'Sudah Bayar') {
+        return '<span class="card-badge" style="background:#dcfce7;color:#16a34a;margin-left:6px;">✅ Sudah Bayar</span>';
+      }
+      if (b.depositPaid) {
+        return '<span class="card-badge" style="background:#fef3c7;color:#b45309;margin-left:6px;">💰 Deposit Diterima</span>';
+      }
+      return '';
+    }
 
     // Soft coloured badge per status (so list senang sort by warna)
     function statusBadgeStyle(status) {
