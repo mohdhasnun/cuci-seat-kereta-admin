@@ -243,6 +243,13 @@
       font-weight: 800; font-size: 15px; letter-spacing: 0.2px;
       padding: 10px 14px; border-radius: 10px; margin: 0 0 12px 0;
     }
+    .card-paymentbar {
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 800; font-size: 15px; letter-spacing: 0.2px;
+      padding: 10px 14px; border-radius: 10px; margin: 0 0 12px 0;
+    }
+    .card-paymentbar.paid-full { background: #dcfce7; border: 1.5px solid #4ade80; color: #14532d; }
+    .card-paymentbar.paid-deposit { background: #ffedd5; border: 1.5px solid #fb923c; color: #7c2d12; }
     .btn-pickup { background: #3d8f82; color: white; }
     .btn-pickup:hover { background: #2f6e64; }
     .card-badge {
@@ -569,6 +576,8 @@
     .cal-closed { background: #1f2937; color: #fff; }
     .cal-cell.is-ph { background: #fef2f2; }
     .cal-cell.is-closed { background: #f3f4f6; border-color: #9ca3af; }
+    .cal-cell.capacity-limited { box-shadow: inset 0 0 0 2px #f59e0b; }
+    .cal-cell.capacity-full { box-shadow: inset 0 0 0 2px #dc2626; }
 
     /* Finance */
     .fin-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -596,6 +605,25 @@
       cursor: pointer;
       font-weight: 600;
     }
+    .quick-add-fab { position: fixed; right: max(18px, calc((100vw - 600px) / 2 + 18px)); bottom: 88px; z-index: 120; width: 58px; height: 58px; border: 0; border-radius: 50%; background: #c9863d; color: #fff; font-size: 29px; font-weight: 800; box-shadow: 0 6px 18px rgba(31,61,56,.28); }
+    .quick-menu { display:none; position:fixed; right:max(18px,calc((100vw - 600px) / 2 + 18px)); bottom:154px; z-index:121; width:min(260px,calc(100vw - 36px)); background:#fff; border:1px solid #e2e8f0; border-radius:12px; box-shadow:0 12px 30px rgba(15,32,68,.2); padding:7px; }
+    .quick-menu.open { display:grid; }
+    .quick-menu button { border:0; background:#fff; padding:14px 12px; text-align:left; border-radius:8px; font-weight:800; color:#1f3d38; }
+    .quick-menu button:hover { background:#f1f5f9; }
+    .quick-overlay { display:none; position:fixed; inset:0; z-index:110; background:rgba(15,24,42,.42); align-items:center; justify-content:center; padding:14px; }
+    .quick-overlay.open { display:flex; }
+    .quick-dialog { width:min(520px,100%); max-height:92vh; overflow:auto; background:#fff; border-radius:14px; padding:18px; box-shadow:0 18px 55px rgba(0,0,0,.28); }
+    .quick-dialog h2 { margin:0 0 5px; color:#1f3d38; font-size:21px; }
+    .quick-dialog .qgrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0; }
+    .quick-dialog label { display:block; font-size:12px; font-weight:800; color:#475569; margin-bottom:4px; }
+    .quick-dialog input,.quick-dialog select { width:100%; min-height:44px; border:1px solid #cbd5e1; border-radius:8px; padding:10px; font-size:16px; }
+    .quick-dialog .wide { grid-column:1/-1; }
+    .quick-dialog .qactions { display:flex; gap:9px; }
+    .quick-dialog .qactions button { flex:1; border:0; border-radius:8px; padding:13px; font-weight:800; }
+    .capacity-available { background:#ecfdf3!important; border-color:#86efac!important; }
+    .capacity-limited { background:#fffbeb!important; border-color:#fcd34d!important; }
+    .capacity-full { background:#fff1f2!important; border-color:#fda4af!important; }
+    @media(max-width:600px) { .bottom-nav { grid-template-columns:repeat(5,1fr); } .quick-dialog .qgrid { grid-template-columns:1fr 1fr; } }
   </style>
   <!-- PDF libraries (html2canvas + jsPDF) are lazy-loaded only when Save PDF is used -->
 
@@ -618,6 +646,141 @@
     </div>
   </div>
 
+  <style id="workspace-design">
+    /* Presentation layer; receipt output keeps its own document styling. */
+    .sidebar-heading,.sidebar-footer { display:none; }
+    @media screen {
+      :root { --ink:#302d3e; --muted:#827e91; --accent:#8170b2; --line:#e9e6ef; --paper:#fbfafc; --lavender:#f0ecf8; --coral:#f28f79; }
+      body { background:#e9e7ec; color:var(--ink); }
+      button,input,select,textarea { font:inherit; }
+      button { cursor:pointer; touch-action:manipulation; }
+      button:focus-visible,summary:focus-visible { outline:3px solid #b6a9d4; outline-offset:3px; }
+      .app { max-width:1440px; background:var(--paper); box-shadow:0 12px 50px #3930420d; }
+      .app * { letter-spacing:0 !important; }
+      .header { max-width:none; background:#fff; color:var(--ink); border-bottom:1px solid var(--line); padding:18px 28px; gap:16px; min-height:82px; }
+      .brand-logo { background:#fff; border:1px solid var(--line); border-radius:8px; }
+      .brand-text h1 { font-size:15px; color:var(--ink); }
+      .brand-text p { color:var(--muted); font-size:10px; margin-top:5px; }
+      .add-btn { background:var(--ink); min-height:42px; border-radius:8px; font-size:12px; }
+      .datetime-bar { position:static; max-width:none; background:#fff; color:var(--muted); border-bottom:1px solid var(--line); text-align:right; padding:10px 28px; font-size:11px; }
+      #sync-banner { max-width:none !important; }
+      .content { padding:28px; margin-bottom:0; min-width:0; }
+      .page { min-width:0; }
+      .section-title { color:var(--ink); font-size:27px; font-weight:800; margin:0 0 5px; }
+      .section-subtitle { color:var(--muted); font-size:12px; margin-bottom:22px; }
+      #dashboard.active { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; }
+      #dashboard > * { min-width:0; margin:0 !important; grid-column:1 / -1; }
+      #dashboard > .section-title { order:-10; }
+      #dashboard > .section-subtitle { order:-9; margin-top:-14px !important; }
+      #dashboard > #today-ops-card { order:-8; background:#f4f1f9; padding:22px; border:0 !important; border-radius:8px; }
+      #dashboard > .kpi-grid { order:-7; }
+      #dashboard > h3 { order:-6; color:var(--ink) !important; }
+      #dashboard > .status-grid-2 { order:-5; }
+      #dashboard > .fin-card:not(#today-ops-card) { grid-column:auto; padding:20px 0; border:0 !important; border-top:1px solid var(--line) !important; background:transparent; border-radius:0; box-shadow:none; }
+      #dashboard > .fin-card:not(#today-ops-card) h3 { color:var(--ink) !important; font-size:14px !important; }
+      .workspace-tools { order:10; border-top:1px solid var(--line); padding-top:18px; }
+      .workspace-tools summary { color:var(--muted); font-size:12px; font-weight:700; cursor:pointer; padding:8px 0 16px; }
+      .workspace-tools > div { flex-wrap:wrap; }
+      .workspace-tools button { min-height:42px; font-size:12px !important; border-radius:8px !important; }
+      .kpi-grid { gap:12px; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); }
+      .kpi-card { border:1px solid var(--line); border-radius:8px; text-align:left; padding:20px; box-shadow:none; min-height:156px; transition:box-shadow .15s; }
+      .kpi-card:hover { transform:none; box-shadow:0 5px 16px #302d3e0c; }
+      .kpi-icon { font-size:19px; margin-bottom:18px; }
+      .kpi-value { font-size:26px; color:var(--ink); overflow-wrap:anywhere; }
+      .kpi-label { color:var(--muted); font-size:11px; font-weight:600; }
+      #dashboard .kpi-card.revenue { background:var(--accent); border-color:var(--accent); }
+      #dashboard .kpi-card.profit { background:var(--coral); border-color:var(--coral); }
+      #dashboard .kpi-card.revenue > *,#dashboard .kpi-card.profit > * { color:#fff !important; }
+      .status-grid-2 { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; }
+      .status-grid-2 .status-card { background:#fff !important; border:1px solid var(--line) !important; border-radius:8px; padding:15px 8px; }
+      .status-grid-2 .status-card > div:first-child { font-size:10px !important; overflow-wrap:anywhere; }
+      .status-grid-2 .status-card > div:last-child { font-size:25px !important; margin-bottom:0 !important; }
+      .fin-card { border-radius:8px; box-shadow:none; border:1px solid var(--line); }
+      #finance > .fin-card,#calendar > .fin-card { background:transparent; border:0; border-top:1px solid var(--line); border-radius:0; padding:22px 0; }
+      .cards-list { grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); align-items:start; gap:18px; }
+      .booking-card,.enquiry-card { box-shadow:none; border:1px solid var(--line); border-radius:8px; padding:20px; }
+      .card-name { color:var(--ink); }
+      .card-detail-box { background:#f7f6fa; border-color:var(--line); }
+      .btn { border-radius:6px; min-height:40px; }
+      .btn-edit,.btn-convert { background:var(--lavender); color:#66558e; }
+      .form-section { border-radius:0; border:0; border-top:1px solid var(--line); box-shadow:none; padding:22px 0; background:transparent; }
+      .form-section-title { color:var(--ink); font-size:14px; }
+      #add-booking form { max-width:850px; }
+      input:not([type=checkbox]):not([type=hidden]),select,textarea { border-color:#dfdbe8 !important; border-radius:6px !important; min-height:44px; color:var(--ink); max-width:100%; }
+      input:focus,select:focus,textarea:focus { outline:2px solid #c8bfdf; outline-offset:1px; }
+      .form-submit-btn,.pin-submit { background:var(--accent); border-radius:8px; }
+      .cal-nav-btn { background:var(--lavender); color:#66558e; border-radius:6px; }
+      .cal-month { color:var(--ink); }
+      .cal-cell { border-radius:6px; min-height:98px; }
+      .cal-cell.today { border-color:var(--accent); }
+      .cal-date { font-size:12px; }
+      .cal-dot { font-size:10px; padding:4px; }
+      .cal-tag { font-size:9px; }
+      .quick-add-fab { right:24px; bottom:28px; background:var(--accent); box-shadow:0 6px 20px #8170b240; width:54px; height:54px; }
+      .quick-menu { right:24px; bottom:92px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+      .quick-menu button:hover { background:var(--lavender); }
+      .quick-overlay { backdrop-filter:blur(4px); background:#302d3e55; z-index:1000; }
+      .bottom-nav .nav-item.active { border-top:0; }
+      .quick-dialog { border-radius:8px; box-shadow:0 20px 80px #302d3e26; }
+      .quick-dialog h2 { color:var(--ink); font-size:22px; }
+      .quick-dialog .qactions button { min-height:44px; border-radius:6px; }
+      #pin-modal { background:#ece9f1; }
+      .pin-box { border-radius:8px; border:1px solid #e0dbe9; box-shadow:0 16px 60px #302d3e0c; }
+      #receipt-printable { letter-spacing:normal; }
+      @media(min-width:1000px) {
+        .app { margin:20px auto; min-height:calc(100vh - 40px); border-radius:16px; overflow:clip; padding-left:206px; position:relative; }
+        .bottom-nav { position:fixed; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start; left:max(0px,calc((100vw - 1440px)/2)); top:20px; bottom:20px; width:206px; max-width:none; margin:0; transform:none; padding:28px 16px; background:var(--lavender); border:0; box-shadow:none; border-radius:16px 0 0 16px; gap:6px; z-index:110; }
+        .sidebar-heading { display:flex; flex-direction:column; padding:0 12px 32px; gap:24px; }
+        .sidebar-heading strong { color:var(--ink); font-size:15px; }
+        .sidebar-heading span { color:#9890ab; font-size:10px; font-weight:700; }
+        .bottom-nav .nav-item { flex:none; display:flex; flex-direction:row; justify-content:flex-start; align-items:center; width:100%; gap:12px; min-height:46px; border-radius:7px; padding:12px; background:transparent; color:#7c728f; }
+        .bottom-nav .nav-item.active { background:var(--accent); color:#fff; box-shadow:0 4px 12px #8170b21a; }
+        .nav-label { font-size:12px; font-weight:700; }
+        .nav-icon { font-size:17px; width:22px; text-align:center; }
+        .sidebar-footer { display:flex; flex-direction:column; gap:14px; margin-top:auto; padding:16px 10px 0; border-top:1px solid #ded7eb; font-size:10px; color:#9187a4; }
+        .sidebar-footer button { background:#fff; color:#66558e; border:1px solid #e0dbe9; min-height:40px; border-radius:6px; font-size:11px; }
+        .quick-add-fab,.quick-menu { right:max(28px,calc((100vw - 1440px)/2 + 28px)); }
+      }
+      @media(max-width:999px) {
+        .app { width:100%; margin:0; }
+        .content { padding:20px 18px 110px; }
+        .header { top:0; padding:12px 18px; min-height:74px; }
+        .bottom-nav { position:fixed; bottom:0; left:0; right:0; transform:none; width:100%; max-width:none; background:#fff; border-top:1px solid var(--line); box-shadow:0 -4px 20px #302d3e06; padding:8px 8px max(10px,env(safe-area-inset-bottom)); display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); }
+        .nav-item { min-height:52px; border-radius:7px; color:#8a8299; }
+        .nav-item.active { background:var(--lavender); color:#6e5999; }
+        .nav-label { font-size:10px; }
+        .quick-add-fab { bottom:92px; right:18px; }
+        .quick-menu { bottom:155px; right:18px; }
+      }
+      @media(max-width:600px) {
+        .header { gap:8px; padding:12px; }
+        .brand { gap:8px; }
+        .brand-logo { width:36px; height:36px; }
+        .brand-text h1 { font-size:12px; }
+        .brand-text p { font-size:8px; }
+        .add-btn { padding:8px 10px; min-height:40px; }
+        .datetime-bar { padding:9px 14px; font-size:10px; }
+        .section-title { font-size:24px; }
+        #dashboard.active { grid-template-columns:minmax(0,1fr); gap:16px; }
+        #dashboard > .fin-card:not(#today-ops-card) { grid-column:1; }
+        .kpi-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+        .kpi-card { min-height:140px; padding:16px; }
+        .kpi-value { font-size:23px; }
+        .status-grid-2 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+        #dashboard > #today-ops-card { padding:16px; }
+        #today-ops > div { flex-wrap:wrap; }
+        #today-ops > div > span { overflow-wrap:anywhere; }
+        .cal-cell { min-height:74px; padding:3px; }
+        .cal-dot,.cal-tag { font-size:8px; padding:2px; }
+        .cal-grid { gap:3px; }
+        .quick-dialog { padding:20px 16px; }
+        .quick-dialog .qgrid { gap:12px; }
+        .quick-dialog .qgrid > div { min-width:0; }
+      }
+      @media(prefers-reduced-motion:reduce) { * { transition:none !important; scroll-behavior:auto !important; } }
+    }
+    @media print { .sidebar-heading,.sidebar-footer,.quick-add-fab,.quick-menu,.workspace-tools { display:none !important; } }
+  </style>
   <!-- Main App -->
   <div class="app" id="app-main">
     <div class="header">
@@ -628,7 +791,7 @@
           <p>Pakar Hygiene Dalaman Kereta</p>
         </div>
       </div>
-      <button class="add-btn" onclick="newBooking()">+ Add</button>
+      <div style="display:flex;gap:6px;"><button class="add-btn" onclick="newBooking()">+ Add</button><button class="add-btn" title="Settings" onclick="openSettings()">⚙</button></div>
     </div>
     <div class="datetime-bar" id="live-clock">--</div>
     <div id="sync-banner" onclick="syncPending(true)" style="display:none; max-width:600px; margin:0 auto; cursor:pointer; text-align:center; font-size:12.5px; font-weight:700; padding:9px 12px;"></div>
@@ -638,6 +801,8 @@
       <section id="dashboard" class="page active">
         <h2 class="section-title">Dashboard</h2>
         <p class="section-subtitle">Business overview &amp; quick stats</p>
+        <details class="workspace-tools"><summary>Workspace &amp; data management</summary>
+        <div style="display:flex;gap:8px;margin-bottom:12px;"><button class="btn btn-edit" onclick="manageServices()">Manage Services</button><button class="btn btn-edit" onclick="openSettings()">Business Settings</button><button class="btn btn-secondary" onclick="resetAppData()">Reset Local Data</button></div>
 
         <div style="display:flex; gap:10px; margin-bottom:18px;">
           <button onclick="refreshFromCloud()" style="flex:1.3; padding:11px; border:none; border-radius:10px; background:#a86a28; color:#fff; font-weight:700; font-size:13px; cursor:pointer;">🔄 Refresh Cloud</button>
@@ -651,6 +816,7 @@
           <button onclick="logout()" style="padding:9px 16px; border:1.5px solid #fecaca; border-radius:9px; background:#fff; color:#dc2626; font-weight:700; font-size:13px; cursor:pointer;">🚪 Log Keluar</button>
         </div>
 
+        </details>
         <!-- Kesihatan Kewangan -->
         <div class="fin-card" style="border:2px solid #0d9488; margin-bottom:18px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
@@ -688,6 +854,7 @@
         </div>
 
         <div id="cancel-alert" style="display:none; margin-bottom:14px;"></div>
+        <div class="fin-card" id="today-ops-card" style="border:2px solid #3d8f82;"><div id="today-ops"></div></div>
 
         <div class="kpi-grid">
           <div class="kpi-card" onclick="alert('Total Bookings: ' + state.bookings.length)">
@@ -774,12 +941,20 @@
         <p class="section-subtitle">Create new booking record</p>
         <form onsubmit="saveBooking(event)" class="form-group">
 
+          <div class="form-section">
+            <div class="form-section-title">🧰 Job Type &amp; Capacity</div>
+            <div class="form-row">
+              <div><label>Job Type</label><select id="job-type" onchange="toggleMajorJobFields()"><option value="standard">Standard Job</option><option value="major">Major Job</option></select></div>
+              <div id="major-capacity-setting" style="display:none;"><label>Allow Quick Jobs During This Job?</label><select id="allow-quick-jobs"><option value="yes">Yes, allow quick jobs</option><option value="no">No, mark dates full</option></select></div>
+            </div>
+          </div>
+
           <!-- Maklumat Customer -->
           <div class="form-section">
             <div class="form-section-title">👤 Maklumat Customer</div>
             <div>
               <label>Customer Name *</label>
-              <input type="text" id="name" placeholder="Nama penuh" required="">
+              <input type="text" id="name" placeholder="Nama penuh" required="" onblur="this.value = toTitleCase(this.value)">
             </div>
             <div>
               <label>Phone Number *</label>
@@ -792,7 +967,7 @@
               </div>
               <div>
                 <label>Plate Number</label>
-                <input type="text" id="plate" placeholder="ABC 1234">
+                <input type="text" id="plate" placeholder="ABC 1234" style="text-transform:uppercase;" oninput="this.value = this.value.toUpperCase()">
               </div>
             </div>
           </div>
@@ -836,7 +1011,7 @@
             </div>
             <div class="form-row" style="margin-top:12px;">
               <div>
-                <label>🚗 Berapa hari kereta di kedai?</label>
+                <label>🚗 Estimated days at shop</label>
                 <select id="days-at-shop">
                   <option value="1">1 hari (sehari sahaja)</option>
                   <option value="2">2 hari</option>
@@ -847,7 +1022,9 @@
                   <option value="7">7 hari</option>
                 </select>
               </div>
-              <div></div>
+              <div id="major-end-date-wrap" style="display:none;">
+                <label>End Date</label><input type="date" id="major-end-date">
+              </div>
             </div>
           </div>
 
@@ -855,6 +1032,7 @@
           <div class="form-section">
             <div class="form-section-title">🔧 Servis &amp; Harga *</div>
             <div style="font-size: 12px; color: #94a3b8; margin-top: -6px;">Tick servis yang dipilih, isi harga di sebelah</div>
+            <div style="display:flex;justify-content:flex-end;margin-bottom:6px;"><button type="button" onclick="manageServices()" class="btn btn-edit">Manage Services</button></div>
             <div id="service-checklist" style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; max-height: 340px; overflow-y: auto;"></div>
 
             <!-- Summary Box -->
@@ -970,6 +1148,7 @@
             <div class="kpi-value" id="fin-ownerdraw" style="font-size:20px;">RM0</div>
             <div class="kpi-label">Owner Draw Bulan Ini</div>
           </div>
+          <div class="kpi-card" style="border-top-color:#ef4444;"><div class="kpi-icon">⏳</div><div class="kpi-value" id="fin-outstanding" style="font-size:20px;">RM0</div><div class="kpi-label">Outstanding</div></div>
         </div>
 
         <button onclick="payWorker()" style="width:100%;padding:13px;border:none;border-radius:11px;background:linear-gradient(135deg,#3d8f82,#2f6e64);color:#fff;font-weight:800;font-size:14px;cursor:pointer;margin-bottom:16px;box-shadow:0 2px 8px rgba(14,165,233,.25);">👷 Bayar Pekerja Hari Ni (RM60)</button>
@@ -1062,7 +1241,8 @@
     </div>
 
     <!-- Bottom Navigation -->
-    <div class="bottom-nav">
+    <div class="bottom-nav" aria-label="Main navigation">
+      <div class="sidebar-heading"><strong>Cuci Seat Kereta</strong><span>WORKSPACE</span></div>
       <button class="nav-item active" onclick="goToPage('dashboard')">
         <div class="nav-icon">📊</div>
         <div class="nav-label">Dashboard</div>
@@ -1083,6 +1263,35 @@
         <div class="nav-icon">💰</div>
         <div class="nav-label">Finance</div>
       </button>
+      <div class="sidebar-footer"><span>Business administration</span><button type="button" onclick="openSettings()">Business Settings</button></div>
+    </div>
+    <button class="quick-add-fab" type="button" aria-label="Quick add" onclick="toggleQuickMenu()">+</button>
+    <div class="quick-menu" id="quick-menu">
+      <button type="button" onclick="closeQuickMenu();newBooking();">＋ New Booking</button>
+      <button type="button" onclick="openQuickJob();">⚡ Quick Job</button>
+      <button type="button" onclick="closeQuickMenu();goToPage('finance');document.getElementById('exp-desc').focus();">💸 Add Expense</button>
+    </div>
+    <div class="quick-overlay" id="quick-overlay" onclick="if(event.target===this)closeQuickJob()">
+      <form class="quick-dialog" onsubmit="saveQuickJob(event)">
+        <h2>⚡ Quick Job</h2>
+        <div style="color:#64748b;font-size:13px;">Record a small job in a few seconds.</div>
+        <div class="qgrid">
+          <div><label>Customer</label><input id="quick-name" value="Walk-in"></div>
+          <div><label>Phone (optional)</label><input id="quick-phone" type="tel" placeholder="012..." list="customer-phones"></div>
+          <div><label>Vehicle</label><input id="quick-car" placeholder="Myvi"></div>
+          <div><label>Plate</label><input id="quick-plate" placeholder="ABC 1234"></div>
+          <div class="wide"><label>Service</label><input id="quick-service" list="service-options-list" placeholder="1 Seat Cleaning" required></div>
+          <div><label>Amount (RM)</label><input id="quick-amount" type="number" min="0" step="0.01" required></div>
+          <div><label>Date</label><input id="quick-date" type="date" required></div>
+          <div><label>Time</label><input id="quick-time" type="time"></div>
+          <div><label>Payment Method</label><select id="quick-method"><option>Cash</option><option>QR</option><option>Transfer</option><option>Other</option></select></div>
+          <div><label>Job Status</label><select id="quick-status"><option value="Completed">Completed</option><option value="In Progress">In Progress</option><option value="Booked">Booked</option></select></div>
+          <div><label>Payment received?</label><select id="quick-paid"><option value="yes">Yes, paid</option><option value="no">Not yet</option></select></div>
+        </div>
+        <datalist id="service-options-list"></datalist>
+        <datalist id="customer-phones"></datalist>
+        <div class="qactions"><button type="button" onclick="closeQuickJob()" style="background:#e5e7eb;color:#334155;">Cancel</button><button type="submit" style="background:#1f3d38;color:#fff;">Save Quick Job</button></div>
+      </form>
     </div>
   </div>
 
@@ -1090,7 +1299,9 @@
     const STORE_KEY = 'cuciSeatAdmin.bookings.v1';
     const EXP_KEY = 'cuciSeatAdmin.expenses.v1';
     const STOCK_KEY = 'cuciSeatAdmin.stock.v1';
-    let state = { bookings: [], expenses: [], closedDates: [], bufferBalance: 0, monthlyTarget: 0, stockItems: [] };
+    const PAYMENT_KEY = 'cuciSeatAdmin.payments.v1';
+    const APP_V2_KEY = 'cuciSeatAdmin.app.v2';
+    let state = { schemaVersion: 2, bookings: [], expenses: [], payments: [], customers: [], services: [], settings: { businessName: 'Cuci Seat Kereta | Pakar Hygiene Dalaman Kereta', businessPhone: '017-699 3876' }, closedDates: [], bufferBalance: 0, monthlyTarget: 0, stockItems: [] };
     let currentReceiptId = null;
     // Official Cuci Seat Kereta logo, embedded so it always renders in PDF/print regardless of network
     const RECEIPT_LOGO = 'data:image/jpeg;base64,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';
@@ -1121,6 +1332,8 @@
       'Sanitize Dalaman Kereta',
       'Steam Cleaning (For Deep Cleaning)'
     ];
+    const QUICK_JOB_SERVICES = ['Cuci Seat', 'Cuci 1 Seat', 'Spot Cleaning', 'Cuci Bumbung', 'Carpet Lantai', 'Carpet Kaki', 'Dashboard', 'Door Panel', 'Frame Body', 'Interior Wax', 'Odor Treatment', 'Sanitize', 'Full Interior Detailing'];
+    let userServices = DEFAULT_SERVICES.slice();
     let finChart = null, finPie = null;
 
     // ===== Firebase Auth Login =====
@@ -1307,6 +1520,7 @@
           const fbIds = new Set(fbBookings.map(x => String(x.id)));
           const localOnly = state.bookings.filter(x => !fbIds.has(String(x.id)) && x._synced === false);
           state.bookings = fbBookings.concat(localOnly);
+          migrateStateV2();
           persistLocal();
           renderAll();
           if (knownEnquiryIds === null) { knownEnquiryIds = new Set(enquiryIds); }
@@ -1352,6 +1566,15 @@
     async function loadData() {
       // 1) Seed from localStorage first so dashboard is never empty
       try {
+        const v2 = JSON.parse(localStorage.getItem(APP_V2_KEY) || 'null');
+        if (v2 && v2.schemaVersion >= 2) {
+          ['bookings','expenses','payments','customers','services','settings','stockItems','closedDates'].forEach(k => { if (v2[k] !== undefined) state[k] = v2[k]; });
+          if (Array.isArray(v2.services)) userServices = v2.services;
+          if (v2.bufferBalance !== undefined) state.bufferBalance = Number(v2.bufferBalance) || 0;
+          if (v2.monthlyTarget !== undefined) state.monthlyTarget = Number(v2.monthlyTarget) || 0;
+        }
+      } catch (e) { console.warn('v2 app cache parse', e); }
+      try {
         const s = localStorage.getItem(STORE_KEY);
         if (s) { const p = JSON.parse(s); state.bookings = Array.isArray(p) ? p : (p.bookings || []); }
       } catch (e) { console.error('cache bookings parse', e); }
@@ -1376,6 +1599,11 @@
         const st = localStorage.getItem('cuci_target');
         if (st) { const p = JSON.parse(st); state.monthlyTarget = (p && p.amount) || 0; }
       } catch (e) { state.monthlyTarget = state.monthlyTarget || 0; }
+      try {
+        const raw = localStorage.getItem(PAYMENT_KEY);
+        if (raw) { const p = JSON.parse(raw); state.payments = Array.isArray(p) ? p : (p.payments || []); }
+      } catch (e) { console.warn('cache payments parse', e); }
+      migrateStateV2();
       renderAll();
 
       // 2) Overlay live data from Firebase (MERGE, never blindly overwrite cache)
@@ -1410,6 +1638,13 @@
           console.log('✅ Loaded', fbExp.length, 'expenses from Firebase +', expOnly.length, 'pending');
         } catch (err) { console.error('Firebase expenses load failed (keeping cache):', err); }
         try {
+          const pSnap = await firebase.firestore().collection('payments').get({ source: 'server' });
+          const cloudPayments = pSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), _synced: true }));
+          const cloudIds = new Set(cloudPayments.map(p => String(p.id)));
+          const localOnlyPayments = (state.payments || []).filter(p => !cloudIds.has(String(p.id)) && !p._deleted).map(p => ({ ...p, _synced: false }));
+          state.payments = cloudPayments.concat(localOnlyPayments);
+        } catch (err) { console.warn('Firebase payments load failed (keeping cache):', err); }
+        try {
           const stkSnap = await firebase.firestore().collection('stock').get({ source: 'server' });
           const fbStock = stkSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), _synced: true }));
           const stkIds = new Set(fbStock.map(s => String(s.id)));
@@ -1440,6 +1675,8 @@
             localStorage.setItem('cuci_target', JSON.stringify({ amount: state.monthlyTarget }));
           }
         } catch (err) { console.warn('monthlyTarget load (keeping local):', err); }
+        migrateStateV2();
+        persistLocal();
         renderAll();
         syncPending(false); // push anything still local-only
       } else {
@@ -1452,9 +1689,11 @@
       localStorage.setItem(STORE_KEY, JSON.stringify({ bookings: state.bookings }));
       localStorage.setItem(EXP_KEY, JSON.stringify({ expenses: state.expenses }));
       localStorage.setItem(STOCK_KEY, JSON.stringify({ stockItems: state.stockItems || [] }));
+      localStorage.setItem(PAYMENT_KEY, JSON.stringify({ payments: state.payments || [] }));
       localStorage.setItem('cuci_closed', JSON.stringify({ dates: state.closedDates || [] }));
       localStorage.setItem('cuci_buffer', JSON.stringify({ amount: state.bufferBalance || 0 }));
       localStorage.setItem('cuci_target', JSON.stringify({ amount: state.monthlyTarget || 0 }));
+      localStorage.setItem(APP_V2_KEY, JSON.stringify({ schemaVersion: 2, bookings: state.bookings, expenses: state.expenses, payments: state.payments || [], customers: state.customers || [], services: state.services || userServices, settings: state.settings || {}, stockItems: state.stockItems || [], closedDates: state.closedDates || [], bufferBalance: state.bufferBalance || 0, monthlyTarget: state.monthlyTarget || 0 }));
     }
 
     // Force-pull the freshest data straight from Firebase server (bypass any cache)
@@ -1470,6 +1709,9 @@
         state.bookings = fbBookings;
         const eSnap = await firebase.firestore().collection('expenses').get({ source: 'server' });
         state.expenses = eSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), _synced: true }));
+        const pSnap = await firebase.firestore().collection('payments').get({ source: 'server' });
+        state.payments = pSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), _synced: true }));
+        migrateStateV2();
         persistLocal();
         renderAll();
         const enq = state.bookings.filter(b => b.status === 'Enquiry').length;
@@ -1478,6 +1720,12 @@
       } catch (e) {
         alert('⚠️ Gagal tarik dari cloud:\n' + (e && e.message ? e.message : e));
       }
+    }
+
+    // "ahmad bin ali" -> "Ahmad Bin Ali" — huruf pertama tiap perkataan besar, selebihnya kecil
+    function toTitleCase(str) {
+      if (!str) return str;
+      return str.toLowerCase().replace(/(^|\s|['-])([a-z])/g, (m, sep, ch) => sep + ch.toUpperCase());
     }
 
     // Format any date to dd/mm/yy for display (storage stays yyyy-mm-dd for sorting)
@@ -1521,7 +1769,7 @@
     }
 
     // Normalize legacy records (old app versions) so they show & count correctly
-    const LEGACY_STATUS = { 'Confirmed': 'Booking', 'Complete': 'Completed', 'Cancel': 'Cancelled', 'Done': 'Completed', 'Paid': 'Completed', 'Enquiries': 'Enquiry', 'Enquire': 'Enquiry', 'Inquiry': 'Enquiry', 'Pending Deposit': 'Pending' };
+    const LEGACY_STATUS = { 'Complete': 'Completed', 'Cancel': 'Cancelled', 'Done': 'Completed', 'Paid': 'Completed', 'Enquiries': 'Enquiry', 'Enquire': 'Enquiry', 'Inquiry': 'Enquiry', 'Pending Deposit': 'Pending' };
     function normalizeBooking(b) {
       let changed = false;
       if (b.status && LEGACY_STATUS[b.status]) { b.status = LEGACY_STATUS[b.status]; changed = true; }
@@ -1540,6 +1788,124 @@
         changed = true;
       }
       return changed;
+    }
+
+    function normalizePhone(phone) { return String(phone || '').replace(/\D/g, '').replace(/^0/, '60'); }
+    function customerIdFor(phone, fallback) { return normalizePhone(phone) || String(fallback || 'walk-in'); }
+    function migrateStateV2() {
+      state.schemaVersion = 2;
+      state.bookings = state.bookings || [];
+      state.expenses = state.expenses || [];
+      state.payments = state.payments || [];
+      state.settings = state.settings || { businessName: 'Cuci Seat Kereta | Pakar Hygiene Dalaman Kereta', businessPhone: '017-699 3876' };
+      state.services = Array.isArray(state.services) && state.services.length ? state.services : userServices.slice();
+      userServices = state.services.slice();
+      state.bookings.forEach(b => {
+        normalizeBooking(b);
+        b.jobType = b.jobType || (b.endDate && b.endDate !== b.date ? 'major' : 'standard');
+        if (b.jobType === 'major' && b.allowQuickJobsDuringJob === undefined) b.allowQuickJobsDuringJob = true;
+        b.customerId = b.customerId || customerIdFor(b.phone, b.id);
+      });
+      migrateLegacyPayments();
+      rebuildCustomers();
+      populateQuickSuggestions();
+    }
+
+    function migrateLegacyPayments() {
+      state.bookings.forEach(b => {
+        const recorded = state.payments.filter(p => String(p.jobId) === String(b.id)).reduce((sum, p) => sum + Number(p.amount || 0), 0);
+        const knownPaid = Number(b.totalPaid) || ((b.paymentStatus === 'Sudah Bayar' || b.paymentStatus === 'Paid') ? Number(b.price || 0) : ((b.depositPaid === true || b.paymentStatus === 'Terima Deposit') ? Number(b.deposit || b.depositAmount || 0) : 0));
+        const missing = Math.max(0, Math.min(Number(b.price) || knownPaid, knownPaid) - recorded);
+        if (missing > 0.009) {
+          state.payments.push({ id: 'legacy-' + b.id, jobId: b.id, customerId: b.customerId, amount: missing, date: (b.manualPaidAt || b.paymentDate || b.date || new Date().toISOString()).slice(0, 10), method: b.paymentMethod || 'Legacy record', source: 'migration-v2', _synced: false });
+        }
+        b.totalPaid = Math.min(Number(b.price) || 0, recorded + missing);
+        b.paymentMigratedV2 = true;
+      });
+    }
+
+    function rebuildCustomers() {
+      const byId = new Map();
+      state.bookings.forEach(b => {
+        const id = b.customerId || customerIdFor(b.phone, b.id);
+        b.customerId = id;
+        const current = byId.get(id) || { id, name: b.name || 'Walk-in', phone: b.phone || '', vehicles: [], plates: [], jobs: [] };
+        if (b.name && b.name !== 'Walk-in') current.name = b.name;
+        if (b.phone) current.phone = b.phone;
+        if (b.car && !current.vehicles.includes(b.car)) current.vehicles.push(b.car);
+        if (b.plate && !current.plates.includes(b.plate)) current.plates.push(b.plate);
+        current.jobs.push(b);
+        byId.set(id, current);
+      });
+      state.customers = Array.from(byId.values()).map(c => {
+        c.totalSpend = state.payments.filter(p => p.customerId === c.id).reduce((sum, p) => sum + Number(p.amount || 0), 0);
+        c.outstanding = c.jobs.reduce((sum, b) => sum + Math.max(0, (Number(b.price) || 0) - state.payments.filter(p => String(p.jobId) === String(b.id)).reduce((paid, p) => paid + Number(p.amount || 0), 0)), 0);
+        return c;
+      });
+      state.services = userServices.slice();
+    }
+
+    function populateQuickSuggestions() {
+      const servicesList = document.getElementById('service-options-list');
+      const phoneList = document.getElementById('customer-phones');
+      if (servicesList) servicesList.innerHTML = Array.from(new Set([...QUICK_JOB_SERVICES, ...userServices])).map(s => '<option value="' + escapeHtml(s) + '"></option>').join('');
+      if (phoneList) phoneList.innerHTML = (state.customers || []).filter(c => c.phone).map(c => '<option value="' + escapeHtml(c.phone) + '">' + escapeHtml(c.name) + '</option>').join('');
+    }
+    function escapeHtml(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[ch]); }
+
+    function paymentTotal(jobId) { return (state.payments || []).filter(p => String(p.jobId) === String(jobId)).reduce((sum, p) => sum + Number(p.amount || 0), 0); }
+    function outstandingFor(job) { return Math.max(0, (Number(job.price) || 0) - paymentTotal(job.id)); }
+    function actualRevenue(datePrefix) { return (state.payments || []).filter(p => !datePrefix || String(p.date || '').slice(0, datePrefix.length) === datePrefix).reduce((sum, p) => sum + Number(p.amount || 0), 0); }
+    function manageServices() {
+      const current = userServices.join(', ');
+      const value = prompt('Edit service presets (comma-separated):', current);
+      if (value === null) return;
+      const next = Array.from(new Set(value.split(',').map(x => x.trim()).filter(Boolean)));
+      if (!next.length) { alert('Keep at least one service preset.'); return; }
+      userServices = next;
+      state.services = next.slice();
+      persistLocal();
+      buildServiceChecklist();
+      populateQuickSuggestions();
+    }
+    function openSettings() {
+      const name = prompt('Business name:', state.settings.businessName || 'Cuci Seat Kereta');
+      if (name === null) return;
+      const phone = prompt('Business WhatsApp phone:', state.settings.businessPhone || '');
+      if (phone === null) return;
+      state.settings = { ...state.settings, businessName: name.trim(), businessPhone: phone.trim() };
+      persistLocal();
+      alert('Settings saved.');
+    }
+    function resetAppData() {
+      const typed = prompt('This permanently removes local bookings, payments, expenses and stock. Type RESET to continue:');
+      if (typed !== 'RESET') return;
+      if (!confirm('Final confirmation: clear all app data on this device? Export a backup first if needed.')) return;
+      state.bookings = []; state.expenses = []; state.payments = []; state.customers = []; state.stockItems = []; state.closedDates = [];
+      state.bufferBalance = 0; state.monthlyTarget = 0;
+      [STORE_KEY, EXP_KEY, STOCK_KEY, PAYMENT_KEY, APP_V2_KEY, 'cuci_closed', 'cuci_buffer', 'cuci_target'].forEach(k => localStorage.removeItem(k));
+      renderAll();
+      alert('Local data cleared. Cloud records were not deleted.');
+    }
+
+    async function recordPayment(job, amount, method, date, source = 'manual') {
+      const value = Number(amount) || 0;
+      if (!job || value <= 0) return null;
+      const payment = { id: 'pay-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7), jobId: job.id, customerId: job.customerId || customerIdFor(job.phone, job.id), amount: value, date: date || ymd(new Date()), method: method || 'Other', source, _synced: false, createdAt: new Date().toISOString() };
+      state.payments.push(payment);
+      job.totalPaid = paymentTotal(job.id);
+      job.paymentMethod = method || job.paymentMethod;
+      job.paymentStatus = outstandingFor(job) <= 0.009 ? 'Sudah Bayar' : (job.totalPaid > 0 ? 'Terima Deposit' : 'Belum Bayar');
+      job._synced = false;
+      persistLocal();
+      const synced = await fbSet('payments', payment.id, payment);
+      payment._synced = synced;
+      await fbSet('bookings', job.id, job);
+      persistLocal();
+      rebuildCustomers();
+      persistLocal();
+      updateSyncStatus();
+      return payment;
     }
 
     // Show dd/mm/yyyy over the native date picker (which follows phone locale)
@@ -1562,7 +1928,8 @@
       const b = state.bookings.filter(x => x._synced === false).length;
       const e = (state.expenses || []).filter(x => x._synced === false).length;
       const s = (state.stockItems || []).filter(x => x._synced === false).length;
-      return b + e + s;
+      const p = (state.payments || []).filter(x => x._synced === false).length;
+      return b + e + s + p;
     }
 
     function updateSyncStatus() {
@@ -1610,6 +1977,12 @@
           if (ok) { s._synced = true; pushed++; }
         }
       }
+      for (const p of (state.payments || [])) {
+        if (p._synced === false) {
+          const ok = await fbSet('payments', p.id, p);
+          if (ok) { p._synced = true; pushed++; }
+        }
+      }
       persistLocal();
       updateSyncStatus();
       if (manual) alert(pushed ? ('✅ ' + pushed + ' rekod berjaya sync ke cloud!') : '✅ Semua dah sync, takde yang tertinggal.');
@@ -1617,7 +1990,7 @@
 
     /* ====== MANUAL BACKUP / RESTORE (safety net) ====== */
     function backupData() {
-      const data = { bookings: state.bookings, expenses: state.expenses, stockItems: state.stockItems, exportedAt: new Date().toISOString() };
+      const data = { schemaVersion: 2, bookings: state.bookings, expenses: state.expenses, payments: state.payments || [], customers: state.customers || [], services: userServices, settings: state.settings || {}, stockItems: state.stockItems, closedDates: state.closedDates || [], bufferBalance: state.bufferBalance || 0, monthlyTarget: state.monthlyTarget || 0, exportedAt: new Date().toISOString() };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       const stamp = new Date().toISOString().slice(0,10);
@@ -1655,26 +2028,29 @@
       reader.onload = () => {
         try {
           const data = JSON.parse(reader.result);
-          const bks = Array.isArray(data) ? data : (data.bookings || []);
-          const exps = (data && data.expenses) || [];
-          const stks = (data && data.stockItems) || [];
-          // Merge by id (jangan timpa, gabung)
-          const byId = {};
-          state.bookings.forEach(b => byId[String(b.id)] = b);
-          bks.forEach(b => { byId[String(b.id)] = { ...byId[String(b.id)], ...b, _synced: false }; });
-          state.bookings = Object.values(byId);
-          const eById = {};
-          (state.expenses || []).forEach(e => eById[String(e.id)] = e);
-          exps.forEach(e => { eById[String(e.id)] = { ...eById[String(e.id)], ...e, _synced: false }; });
-          state.expenses = Object.values(eById);
-          const sById = {};
-          (state.stockItems || []).forEach(s => sById[String(s.id)] = s);
-          stks.forEach(s => { sById[String(s.id)] = { ...sById[String(s.id)], ...s, _synced: false }; });
-          state.stockItems = Object.values(sById);
+          const validArray = (key, required) => data && data[key] === undefined ? [] : Array.isArray(data[key]) && data[key].every(x => x && typeof x === 'object' && (required.every(k => x[k] !== undefined))) ? data[key] : null;
+          const bks = Array.isArray(data) ? data : validArray('bookings', ['id']);
+          const exps = validArray('expenses', ['id']);
+          const stks = validArray('stockItems', ['id']);
+          const pays = Array.isArray(data) ? [] : validArray('payments', ['id', 'jobId', 'amount', 'date']);
+          if (!bks || !exps || !stks || !pays || (data && !Array.isArray(data) && data.services !== undefined && !Array.isArray(data.services))) throw new Error('Invalid backup structure');
+          if (!confirm('Import ' + bks.length + ' bookings, ' + pays.length + ' payments, ' + exps.length + ' expenses and ' + stks.length + ' stock items? This will replace current records.')) return;
+          state.bookings = bks.map(x => ({ ...x, _synced: false }));
+          state.expenses = exps.map(x => ({ ...x, _synced: false }));
+          state.stockItems = stks.map(x => ({ ...x, _synced: false }));
+          state.payments = pays.map(x => ({ ...x, _synced: false }));
+          if (data && !Array.isArray(data)) {
+            if (Array.isArray(data.services) && data.services.length) userServices = data.services.filter(x => typeof x === 'string' && x.trim());
+            state.settings = data.settings && typeof data.settings === 'object' ? data.settings : state.settings;
+            state.closedDates = Array.isArray(data.closedDates) ? data.closedDates.filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x)) : state.closedDates;
+            if (Number.isFinite(Number(data.bufferBalance))) state.bufferBalance = Number(data.bufferBalance);
+            if (Number.isFinite(Number(data.monthlyTarget))) state.monthlyTarget = Number(data.monthlyTarget);
+          }
+          migrateStateV2();
           persistLocal();
           renderAll();
           syncPending(false);
-          alert('✅ Restore berjaya! ' + bks.length + ' booking + ' + exps.length + ' expense + ' + stks.length + ' item stok digabung.');
+          alert('✅ Import berjaya! ' + bks.length + ' booking + ' + pays.length + ' payment + ' + exps.length + ' expense + ' + stks.length + ' item stok.');
         } catch (err) {
           alert('❌ Fail backup tak sah / rosak.');
         }
@@ -1697,6 +2073,72 @@
       window.scrollTo(0, 0);
     }
 
+    function toggleQuickMenu() {
+      const menu = document.getElementById('quick-menu');
+      if (menu) menu.classList.toggle('open');
+    }
+    function closeQuickMenu() { document.getElementById('quick-menu')?.classList.remove('open'); }
+    function openQuickJob() {
+      closeQuickMenu();
+      document.getElementById('quick-date').value = arguments[0] || ymd(new Date());
+      document.getElementById('quick-name').value = 'Walk-in';
+      document.getElementById('quick-overlay').classList.add('open');
+      setTimeout(() => document.getElementById('quick-service').focus(), 30);
+    }
+    function closeQuickJob() { document.getElementById('quick-overlay')?.classList.remove('open'); }
+    function toggleMajorJobFields() {
+      const isMajor = document.getElementById('job-type')?.value === 'major';
+      const setting = document.getElementById('major-capacity-setting');
+      const endDate = document.getElementById('major-end-date-wrap');
+      if (setting) setting.style.display = isMajor ? 'block' : 'none';
+      if (endDate) endDate.style.display = isMajor ? 'block' : 'none';
+      const days = document.getElementById('days-at-shop');
+      if (days && isMajor && Number(days.value) < 2) days.value = '2';
+    }
+    function calendarCapacity(dateStr) {
+      if (isClosed(dateStr)) return 'full';
+      const majors = state.bookings.filter(b => !['Cancelled', 'Completed', 'Complete'].includes(b.status) && b.jobType === 'major' && bookingDates(b).includes(dateStr));
+      if (majors.some(b => b.allowQuickJobsDuringJob === false)) return 'full';
+      return majors.length ? 'limited' : 'available';
+    }
+    function confirmCapacity(jobType, startDate, endDate) {
+      const dates = [];
+      let date = new Date((startDate || ymd(new Date())) + 'T00:00:00');
+      const end = new Date((endDate || startDate || ymd(new Date())) + 'T00:00:00');
+      for (let i = 0; date <= end && i < 90; i++, date.setDate(date.getDate() + 1)) dates.push(ymd(date));
+      const full = dates.filter(d => calendarCapacity(d) === 'full');
+      if (jobType === 'quick' && full.length) return confirm('This date is marked FULL. Add the Quick Job anyway?');
+      const majorOverlap = jobType !== 'quick' && dates.filter(d => state.bookings.some(b => !['Cancelled', 'Completed', 'Complete'].includes(b.status) && b.jobType === 'major' && bookingDates(b).includes(d)));
+      if (jobType !== 'quick' && (full.length || majorOverlap.length)) return confirm('This job overlaps a busy/full day (' + Array.from(new Set([...full, ...majorOverlap])).map(formatDMY).join(', ') + '). Save this job anyway? Your details will be kept if you cancel.');
+      return true;
+    }
+    async function saveQuickJob(event) {
+      event.preventDefault();
+      const date = document.getElementById('quick-date').value || ymd(new Date());
+      if (!confirmCapacity('quick', date, date)) return;
+      const name = (document.getElementById('quick-name').value || '').trim() || 'Walk-in';
+      const phone = document.getElementById('quick-phone').value.trim();
+      const car = document.getElementById('quick-car').value.trim();
+      const plate = document.getElementById('quick-plate').value.trim().toUpperCase();
+      const service = document.getElementById('quick-service').value.trim();
+      const price = Number(document.getElementById('quick-amount').value) || 0;
+      if (!service || price <= 0) { alert('Enter a service and amount greater than RM0.'); return; }
+      const id = Date.now();
+      const job = { id, customerId: customerIdFor(phone, id), name: toTitleCase(name), phone, car, plate, service, serviceItems: [{ name: service, price }], jobType: 'quick', date, time: document.getElementById('quick-time').value, endDate: date, price, deposit: 0, totalPaid: 0, material: 0, paymentStatus: 'Belum Bayar', paymentMethod: document.getElementById('quick-method').value, status: document.getElementById('quick-status').value, source: 'Quick Job', customerSource: phone ? 'Walk-in' : 'Walk-in', allowQuickJobsDuringJob: true, _synced: false, createdAt: new Date().toISOString() };
+      state.bookings.push(job);
+      if (document.getElementById('quick-paid').value === 'yes') await recordPayment(job, price, job.paymentMethod, date, 'quick-job');
+      else { persistLocal(); await fbSet('bookings', job.id, job); }
+      rebuildCustomers();
+      renderAll();
+      closeQuickJob();
+      document.getElementById('quick-amount').value = '';
+      document.getElementById('quick-phone').value = '';
+      document.getElementById('quick-car').value = '';
+      document.getElementById('quick-plate').value = '';
+      document.getElementById('quick-service').value = '';
+      goToPage('dashboard');
+    }
+
     // ===== Service Checklist (all services visible in a box) =====
     function buildServiceChecklist(selectedItems = []) {
       const container = document.getElementById('service-checklist');
@@ -1705,7 +2147,11 @@
       const preset = {};
       selectedItems.forEach(it => { preset[it.name] = it.price; });
 
-      container.innerHTML = DEFAULT_SERVICES.map((svc, idx) => {
+      // Servis custom ("Other") — item yang bukan sebahagian DEFAULT_SERVICES
+      const services = userServices.length ? userServices : DEFAULT_SERVICES;
+      const otherItem = selectedItems.find(it => !services.includes(it.name));
+
+      const rowsHtml = services.map((svc, idx) => {
         const isChecked = preset.hasOwnProperty(svc);
         const priceVal = isChecked ? preset[svc] : '';
         const isFoc = isChecked && (Number(preset[svc]) || 0) === 0;
@@ -1720,6 +2166,46 @@
           </div>
         `;
       }).join('');
+
+      // Row "Other" — servis custom mengikut request customer (nama ditaip sendiri)
+      const otherChecked = !!otherItem;
+      const otherName = otherItem ? otherItem.name : '';
+      const otherPrice = otherItem ? otherItem.price : '';
+      const otherRowHtml = `
+        <div class="svc-item svc-other-item ${otherChecked ? 'selected' : ''}" style="display: flex; align-items: center; gap: 12px; padding: 12px; border-top: 1px solid #f1f5f9;">
+          <input type="checkbox" class="svc-check svc-other-check" id="svc-other-check" ${otherChecked ? 'checked' : ''} onchange="toggleOtherService(this)">
+          <input type="text" id="svc-other-name" placeholder="Other: terangkan servis..." value="${(otherName || '').replace(/"/g, '&quot;')}" ${otherChecked ? '' : 'disabled'} oninput="recalcTotal()" style="flex: 1; padding: 9px; border: 1px solid #ddd; border-radius: 6px; font-size: 13.5px; ${otherChecked ? '' : 'background: #f8fafc;'}">
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="font-size: 12px; color: #94a3b8;">RM</span>
+            <input type="number" id="svc-other-price" class="svc-price" placeholder="0" value="${otherPrice}" ${otherChecked ? '' : 'disabled'} oninput="recalcTotal()" style="width: 72px; padding: 9px; border: 1px solid #ddd; border-radius: 6px; text-align: right; font-size: 15px; ${otherChecked ? '' : 'background: #f8fafc;'}">
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = rowsHtml + otherRowHtml;
+      recalcTotal();
+    }
+
+    function toggleOtherService(checkbox) {
+      const nameInput = document.getElementById('svc-other-name');
+      const priceInput = document.getElementById('svc-other-price');
+      const row = checkbox.closest('.svc-item');
+      if (checkbox.checked) {
+        nameInput.disabled = false;
+        priceInput.disabled = false;
+        nameInput.style.background = '';
+        priceInput.style.background = '';
+        row.classList.add('selected');
+        nameInput.focus();
+      } else {
+        nameInput.disabled = true;
+        priceInput.disabled = true;
+        nameInput.value = '';
+        priceInput.value = '';
+        nameInput.style.background = '#f8fafc';
+        priceInput.style.background = '#f8fafc';
+        row.classList.remove('selected');
+      }
       recalcTotal();
     }
 
@@ -1778,9 +2264,14 @@
       document.querySelectorAll('#service-checklist .svc-item').forEach(row => {
         const check = row.querySelector('.svc-check');
         if (check && check.checked) {
-          const name = check.getAttribute('data-name');
           const price = Number(row.querySelector('.svc-price').value) || 0;
-          items.push({ name, price });
+          if (row.classList.contains('svc-other-item')) {
+            const otherName = (document.getElementById('svc-other-name')?.value || '').trim();
+            if (otherName) items.push({ name: otherName, price });
+          } else {
+            const name = check.getAttribute('data-name');
+            items.push({ name, price });
+          }
         }
       });
       return items;
@@ -1796,6 +2287,11 @@
     // Save booking
     async function saveBooking(e) {
       e.preventDefault();
+      const otherCheck = document.getElementById('svc-other-check');
+      if (otherCheck && otherCheck.checked && !document.getElementById('svc-other-name').value.trim()) {
+        alert('⚠️ Sila terangkan servis "Other" tu, atau nyahtick kalau tak jadi guna.');
+        return;
+      }
       const serviceItems = collectServices();
       if (serviceItems.length === 0) {
         alert('Sila tambah sekurang-kurangnya satu servis');
@@ -1807,34 +2303,44 @@
       // Berapa hari kereta di kedai → kira endDate
       const daysAtShop = Math.max(1, parseInt(document.getElementById('days-at-shop')?.value) || 1);
       const startDateStr = document.getElementById('date').value;
+      const jobType = document.getElementById('job-type')?.value || 'standard';
       let endDateVal = null;
       if (daysAtShop > 1 && startDateStr) {
         const s = new Date(startDateStr.slice(0, 10) + 'T00:00:00');
         s.setDate(s.getDate() + daysAtShop - 1);
         endDateVal = ymd(s);
       }
+      if (jobType === 'major' && document.getElementById('major-end-date')?.value) endDateVal = document.getElementById('major-end-date').value;
+      const allowQuickJobsDuringJob = jobType === 'major' ? document.getElementById('allow-quick-jobs').value === 'yes' : true;
+      if (endDateVal && endDateVal < startDateStr) { alert('End date cannot be before start date.'); return; }
+      if (!confirmCapacity(jobType, startDateStr, endDateVal || startDateStr)) return;
 
       // EDIT MODE: kemaskini rekod sedia ada (id & status kekal), bukan buat baru
       if (editingBookingId !== null) {
         const existing = state.bookings.find(b => b.id == editingBookingId);
         if (existing) {
-          existing.name = document.getElementById('name').value;
+          existing.name = toTitleCase(document.getElementById('name').value.trim());
           existing.phone = document.getElementById('phone').value;
           existing.car = document.getElementById('car').value;
-          existing.plate = document.getElementById('plate').value;
+          existing.plate = document.getElementById('plate').value.toUpperCase();
           existing.service = serviceStr;
           existing.serviceItems = serviceItems;
           existing.date = document.getElementById('date').value;
           existing.time = document.getElementById('time').value;
           existing.endDate = endDateVal;
+          existing.jobType = jobType;
+          existing.allowQuickJobsDuringJob = allowQuickJobsDuringJob;
           existing.price = total;
           existing.deposit = Number(document.getElementById('deposit').value) || 0;
           existing.material = Number(document.getElementById('material').value) || 0;
           existing.notes = document.getElementById('notes').value;
           existing.customerSource = document.getElementById('source-select')?.value || existing.customerSource || 'Walk-in';
+          existing.customerId = existing.customerId || customerIdFor(existing.phone, existing.id);
           existing._synced = false;
           persistLocal();
           renderAll();
+          const recordedNow = paymentTotal(existing.id);
+          if (existing.deposit > recordedNow) await recordPayment(existing, existing.deposit - recordedNow, existing.paymentMethod || 'Cash', ymd(new Date()), 'deposit');
           const ok = await fbSet('bookings', existing.id, existing);
           existing._synced = ok;
           persistLocal();
@@ -1849,10 +2355,10 @@
 
       const booking = {
         id: Date.now(),
-        name: document.getElementById('name').value,
+        name: toTitleCase(document.getElementById('name').value.trim()),
         phone: document.getElementById('phone').value,
         car: document.getElementById('car').value,
-        plate: document.getElementById('plate').value,
+        plate: document.getElementById('plate').value.toUpperCase(),
         service: serviceStr,
         serviceItems: serviceItems,
         date: document.getElementById('date').value,
@@ -1863,7 +2369,12 @@
         material: Number(document.getElementById('material').value) || 0,
         notes: document.getElementById('notes').value,
         customerSource: document.getElementById('source-select')?.value || 'Walk-in',
-        status: 'Pending',
+        status: 'Booked',
+        jobType,
+        allowQuickJobsDuringJob,
+        customerId: customerIdFor(document.getElementById('phone').value, Date.now()),
+        totalPaid: 0,
+        paymentStatus: 'Belum Bayar',
         source: 'Manual',
         _synced: false,
         createdAt: new Date().toISOString()
@@ -1878,6 +2389,9 @@
       const synced = await fbSet('bookings', booking.id, booking);
       booking._synced = synced;
       persistLocal();
+      const initialDeposit = Number(booking.deposit) || 0;
+      if (initialDeposit > 0) await recordPayment(booking, initialDeposit, booking.paymentMethod || 'Cash', ymd(new Date()), 'deposit');
+      rebuildCustomers();
       updateSyncStatus();
       if (synced) {
         alert('✅ Booking disimpan & sync ke cloud!');
@@ -1919,7 +2433,7 @@
       const norm = String(phone).replace(/[^0-9]/g, '');
       if (!norm) return { visits: 0, total: 0 };
       const matches = state.bookings.filter(b => isComplete(b) && String(b.phone || '').replace(/[^0-9]/g, '') === norm);
-      return { visits: matches.length, total: matches.reduce((s, b) => s + (b.price || 0), 0) };
+      return { visits: matches.length, total: matches.reduce((s, b) => s + paymentTotal(b.id), 0) };
     }
 
     function updateDashboard() {
@@ -1929,7 +2443,7 @@
       const booking = state.bookings.filter(b => b.status === 'Booking').length;
 
       const thisMonth = state.bookings.filter(b => monthMatch(b.date, now));
-      const revenue = thisMonth.filter(isComplete).reduce((s, b) => s + (b.price || 0), 0);
+      const revenue = actualRevenue(ymd(new Date(now.getFullYear(), now.getMonth(), 1)).slice(0, 7));
       const material = thisMonth.reduce((s, b) => s + (b.material || 0), 0);
       const overhead = (state.expenses || []).filter(e => monthMatch(e.date, now) && isTrueCost(e)).reduce((s, e) => s + (e.amount || 0), 0);
       const profit = revenue - material - overhead;
@@ -1944,7 +2458,8 @@
       // Trend vs bulan lepas (Revenue & Net Profit)
       const lastMonthRef = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const lastMonth = state.bookings.filter(b => monthMatch(b.date, lastMonthRef));
-      const lmRevenue = lastMonth.filter(isComplete).reduce((s, b) => s + (b.price || 0), 0);
+      const lmPrefix = lastMonthRef.getFullYear() + '-' + String(lastMonthRef.getMonth() + 1).padStart(2, '0');
+      const lmRevenue = actualRevenue(lmPrefix);
       const lmMaterial = lastMonth.reduce((s, b) => s + (b.material || 0), 0);
       const lmOverhead = (state.expenses || []).filter(e => monthMatch(e.date, lastMonthRef) && isTrueCost(e)).reduce((s, e) => s + (e.amount || 0), 0);
       const lmProfit = lmRevenue - lmMaterial - lmOverhead;
@@ -1970,6 +2485,33 @@
       renderTargetProgress();
       renderStockAlertDashboard();
       renderReimburseAlert();
+      renderOperationsDashboard();
+    }
+
+    function renderOperationsDashboard() {
+      const box = document.getElementById('today-ops');
+      if (!box) return;
+      const today = ymd(new Date());
+      const active = state.bookings.filter(b => bookingDates(b).includes(today) && b.status !== 'Cancelled');
+      const majors = active.filter(b => b.jobType === 'major');
+      const quicks = active.filter(b => b.jobType === 'quick');
+      const outstanding = state.bookings.filter(b => b.status !== 'Cancelled' && outstandingFor(b) > 0.009);
+      const unfinished = quicks.filter(b => !isComplete(b));
+      const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = ymd(yesterday);
+      const overdue = state.bookings.filter(b => b.status === 'In Progress' && bookingDates(b).some(d => d < today));
+      const row = b => '<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid #e5e7eb;"><span>' + escapeHtml(b.time || '—') + ' · ' + escapeHtml(b.name || 'Walk-in') + ' · ' + escapeHtml(b.car || 'Quick job') + '</span><span style="font-weight:700;white-space:nowrap;">' + escapeHtml(b.status) + '</span></div>';
+      const upcoming = state.bookings.filter(b => b.status !== 'Cancelled' && (b.date || '').slice(0, 10) > today).sort((a,b) => String(a.date).localeCompare(String(b.date))).slice(0, 3);
+      const alerts = [];
+      if (unfinished.length) alerts.push(unfinished.length + ' unfinished quick job' + (unfinished.length > 1 ? 's' : ''));
+      if (outstanding.length) alerts.push(outstanding.length + ' booking(s) with balance due');
+      if (overdue.length) alerts.push(overdue.length + ' prior-day job(s) still in progress');
+      box.innerHTML = '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px;"><strong>Today\'s Operations</strong><button onclick="openQuickJob(\'' + today + '\')" style="border:0;border-radius:6px;padding:7px 10px;background:#1f3d38;color:#fff;font-weight:700;">+ Quick Job</button></div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:10px;">' +
+        '<div><small>Main jobs</small><div style="font-size:20px;font-weight:800;">' + majors.length + '</div></div><div><small>Quick jobs</small><div style="font-size:20px;font-weight:800;">' + quicks.length + ' · RM' + quicks.reduce((s,b)=>s+paymentTotal(b.id),0).toLocaleString() + '</div></div><div><small>Received today</small><div style="font-size:20px;font-weight:800;">RM' + actualRevenue(today).toLocaleString() + '</div></div><div><small>Outstanding</small><div style="font-size:20px;font-weight:800;">RM' + outstanding.reduce((s,b)=>s+outstandingFor(b),0).toLocaleString() + '</div></div></div>' +
+        (alerts.length ? '<div style="background:#fff7ed;color:#9a3412;padding:8px;border-radius:6px;margin-bottom:8px;">⚠ ' + alerts.map(escapeHtml).join(' · ') + '</div>' : '') +
+        '<div style="font-weight:700;margin:8px 0 3px;">Today\'s jobs</div>' + (active.length ? active.sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(row).join('') : '<div style="color:#64748b;padding:6px 0;">No jobs scheduled today.</div>') +
+        (upcoming.length ? '<div style="font-weight:700;margin:10px 0 3px;">Upcoming</div>' + upcoming.map(b => '<div style="padding:5px 0;border-top:1px solid #e5e7eb;">' + escapeHtml(b.date) + ' · ' + escapeHtml(b.name) + ' · ' + escapeHtml(b.car) + '</div>').join('') : '');
     }
 
     // Tunjuk senarai "Belum Refund" — belanja customer yang belum dibayar balik
@@ -2103,7 +2645,7 @@
       if (!box) return;
       const target = Number(state.monthlyTarget) || 0;
       const now = new Date();
-      const revenue = state.bookings.filter(b => isComplete(b) && monthMatch(b.date, now)).reduce((s, b) => s + (b.price || 0), 0);
+      const revenue = actualRevenue(now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'));
       if (target <= 0) {
         box.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:13px;padding:8px;">Belum set target bulan ni. Tap "✏️ Set Target" untuk mula.</div>';
         return;
@@ -2211,6 +2753,7 @@
             </div>
           </div>
           ${dateTimeBar(b)}
+          ${paymentBarHtml(b)}
           <div class="card-detail-box">
             <div class="detail-row">
               <div class="detail-label">📱 Phone:</div>
@@ -2236,7 +2779,10 @@
               <select onchange="updateStatus('${b.id}', this.value)" style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
                 <option value="Enquiry" ${b.status === 'Enquiry' ? 'selected' : ''}>Enquiry</option>
                 <option value="Pending" ${b.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                <option value="Booked" ${b.status === 'Booked' ? 'selected' : ''}>Booked</option>
                 <option value="Booking" ${b.status === 'Booking' ? 'selected' : ''}>Booking</option>
+                <option value="Confirmed" ${b.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
+                <option value="In Progress" ${b.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
                 <option value="Postponed" ${b.status === 'Postponed' ? 'selected' : ''}>Postponed</option>
                 <option value="Completed" ${b.status === 'Completed' || b.status === 'Complete' ? 'selected' : ''}>Completed</option>
                 <option value="Cancelled" ${b.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
@@ -2250,9 +2796,10 @@
                 ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button><button class="btn btn-edit" onclick="generatePaymentLink('${b.id}')" style="background:#0b6e4f;color:#fff;">💳 Pautan Bayaran</button>`
                 : (b.status === 'Completed' || b.status === 'Complete')
                   ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
-                  : b.status === 'Booking'
-                    ? `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>` + (b.paymentStatus === 'Sudah Bayar' ? '' : `<button class="btn btn-edit" onclick="generatePaymentLink('${b.id}', 'baki')" style="background:#0b6e4f;color:#fff;">💳 Pautan Bayaran (Baki)</button>`)
-                    : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
+                  : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
+            ${(b.status !== 'Enquiry' && outstandingFor(b) > 0.009)
+              ? `<button class="btn" onclick="addPaymentForBooking('${b.id}')" style="background:#0891b2;color:#fff;">💳 Record Payment · RM${outstandingFor(b).toLocaleString()}</button>`
+              : ''}
             <button class="btn btn-edit" onclick="editBooking('${b.id}')">✏️ Edit</button>
             <button class="btn btn-convert" onclick="showReceipt('${b.id}')">📄 Receipt</button>
             <button class="btn btn-secondary" onclick="deleteBooking('${b.id}')">🗑️ Delete</button>
@@ -2276,7 +2823,7 @@
 
     // ⚙️ TUKAR dua URL ni lepas korang deploy Cloud Function (lihat README-DEPLOY.md)
     // Contoh selepas deploy: https://asia-southeast1-cuci-seat-kereta.cloudfunctions.net/generatePaymentLink
-    const FIUU_GENERATE_LINK_URL = 'https://asia-southeast1-cuci-seat-kereta.cloudfunctions.net/generatePaymentLink';
+    const FIUU_GENERATE_LINK_URL = 'PASTE_GENERATE_PAYMENT_LINK_URL_DI_SINI';
 
     // Format service list as a clean numbered list (with per-item price when available)
     // instead of one long "A + B + C" run-on line — used across all WhatsApp messages.
@@ -2333,6 +2880,7 @@
     }
 
     // Minta deposit (untuk Enquiry): tanya harga & deposit, hantar mesej transfer bank, tukar ke Pending
+    // Minta deposit (untuk Enquiry): tanya harga & deposit, jana pautan bayaran FIUU sekali, tukar ke Pending
     async function requestDeposit(id) {
       const booking = state.bookings.find(b => b.id == id);
       if (!booking) return;
@@ -2370,7 +2918,7 @@
       renderAll();
       fbSet('bookings', booking.id, booking).then(ok => { booking._synced = ok; persistLocal(); updateSyncStatus(); });
 
-      // 3b) Jana pautan bayaran deposit (FIUU) — kalau gagal, teruskan je dengan bank transfer sahaja
+      // 4) Jana pautan bayaran FIUU untuk jumlah deposit (supaya cuma 1 mesej WhatsApp perlu dihantar)
       const btn = event && event.target;
       const oldText = btn ? btn.textContent : null;
       let paymentLinkUrl = null;
@@ -2378,12 +2926,12 @@
       try {
         paymentLinkUrl = await fetchFiuuLink(booking.id, deposit);
       } catch (err) {
-        console.warn('Gagal jana pautan deposit:', err.message);
+        alert('⚠️ Gagal jana pautan bayaran: ' + err.message + '\n\nMesej akan dihantar dengan maklumat bank transfer sahaja.');
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = oldText; }
       }
 
-      // 4) Bina mesej minta deposit
+      // 5) Bina mesej minta deposit — pautan bayaran online + bank transfer sebagai alternatif
       const line = '─────────────────';
       const msg =
         'Hai ' + booking.name + ',\n\n' +
@@ -2401,8 +2949,9 @@
         line + '\n' +
         '⚠️ Deposit Diperlukan : RM' + deposit + '\n' +
         (paymentLinkUrl
-          ? '\n💳 Bayar terus melalui pautan ini:\n' + paymentLinkUrl + '\n\nAtau transfer terus ke:\n'
-          : 'Sila transfer deposit ke:\n') +
+          ? '\n💳 Sila klik pautan di bawah untuk bayar deposit RM' + deposit + ':\n' + paymentLinkUrl + '\n'
+          : '') +
+        '\nAtau transfer deposit ke:\n' +
         '🏦 Bank     : ' + BANK_INFO.bank + '\n' +
         '👤 Nama     : ' + BANK_INFO.name + '\n' +
         '🔢 Akaun    : ' + BANK_INFO.account + '\n\n' +
@@ -2414,22 +2963,7 @@
     }
 
     // ===== FIUU Payment Link =====
-    async function fetchFiuuLink(bookingId, amount) {
-      const user = firebase.auth().currentUser;
-      if (!user) throw new Error('Sesi log masuk tamat. Sila refresh & log masuk semula.');
-      const idToken = await user.getIdToken();
-
-      const res = await fetch(FIUU_GENERATE_LINK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
-        body: JSON.stringify({ bookingId: String(bookingId), amountOverride: amount })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.url) throw new Error(data.error || 'Gagal jana pautan.');
-      return data.url;
-    }
-
-    async function generatePaymentLink(id, mode) {
+    async function generatePaymentLink(id) {
       const booking = state.bookings.find(b => b.id == id);
       if (!booking) return;
 
@@ -2437,20 +2971,25 @@
       const deposit = Number(booking.depositAmount || booking.deposit) || 0;
       if (price <= 0) { alert('⚠️ Sila set harga booking dahulu.'); return; }
 
-      let amountToCharge;
-      if (mode === 'baki') {
-        amountToCharge = price - deposit;
-        if (amountToCharge <= 0) { alert('⚠️ Tiada baki perlu dibayar.'); return; }
-      } else {
-        amountToCharge = (deposit > 0 && booking.paymentStatus !== 'Sudah Bayar') ? deposit : price;
-      }
+      const amountToCharge = (deposit > 0 && booking.paymentStatus !== 'Sudah Bayar') ? deposit : price;
       const btn = event && event.target;
       const oldText = btn ? btn.textContent : null;
       if (btn) { btn.disabled = true; btn.textContent = '⏳ Menjana...'; }
 
       try {
-        const url = await fetchFiuuLink(booking.id, amountToCharge);
-        showPaymentLinkModal(booking, url, amountToCharge);
+        const user = firebase.auth().currentUser;
+        if (!user) { alert('⚠️ Sesi log masuk tamat. Sila refresh & log masuk semula.'); return; }
+        const idToken = await user.getIdToken();
+
+        const res = await fetch(FIUU_GENERATE_LINK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
+          body: JSON.stringify({ bookingId: String(booking.id), amountOverride: amountToCharge })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.url) throw new Error(data.error || 'Gagal jana pautan.');
+
+        showPaymentLinkModal(booking, data.url, amountToCharge);
       } catch (err) {
         alert('⚠️ Ralat: ' + err.message);
       } finally {
@@ -2458,6 +2997,28 @@
       }
     }
 
+    // Tandakan Sudah Bayar secara MANUAL — untuk bayaran tunai / QR statik di kedai
+    // (webhook FIUU tak boleh detect bayaran ni sebab tiada rujukan bookingId dalam transaksi QR statik)
+    async function markPaidManually(id) {
+      const booking = state.bookings.find(b => b.id == id);
+      if (!booking) return;
+      await addPaymentForBooking(id);
+    }
+
+    async function addPaymentForBooking(id) {
+      const booking = state.bookings.find(b => String(b.id) === String(id));
+      if (!booking) return;
+      const due = outstandingFor(booking);
+      if (due <= 0.009) { alert('This job is already fully paid.'); return; }
+      const amountInput = prompt('Payment received (RM). Balance: RM' + due.toFixed(2), String(due));
+      if (amountInput === null) return;
+      const amount = Number(amountInput);
+      if (!Number.isFinite(amount) || amount <= 0 || amount > due + 0.009) { alert('Enter an amount greater than RM0 and no more than the outstanding balance.'); return; }
+      const method = prompt('Payment method: Cash, QR, Transfer, Other', booking.paymentMethod || 'Cash');
+      if (method === null) return;
+      await recordPayment(booking, amount, method.trim() || 'Other', ymd(new Date()), 'manual');
+      renderAll();
+    }
 
     function showPaymentLinkModal(booking, url, amount) {
       const existing = document.getElementById('fiuu-link-modal');
@@ -2484,7 +3045,7 @@
       document.body.appendChild(div);
     }
 
-    async function sendWhatsApp(id) {
+    function sendWhatsApp(id) {
       const booking = state.bookings.find(b => b.id == id);
       if (!booking) return;
       const phone = waPhone(booking.phone);
@@ -2494,24 +3055,15 @@
       }
 
       const price = Number(booking.price) || 0;
-      const deposit = Number(booking.deposit || booking.depositAmount) || 0;
+      const deposit = Number(booking.deposit) || 0;
       const baki = price - deposit;
       const line = '─────────────────';
-      const needsPayment = baki > 0 && booking.paymentStatus !== 'Sudah Bayar';
 
-      const btn = event && event.target;
-      const oldText = btn ? btn.textContent : null;
-      let paymentLinkUrl = null;
-      if (needsPayment) {
-        if (btn) { btn.disabled = true; btn.textContent = '⏳ Menjana pautan...'; }
-        try {
-          paymentLinkUrl = await fetchFiuuLink(booking.id, baki);
-        } catch (err) {
-          alert('⚠️ Gagal jana pautan bayaran: ' + err.message + '\n\nMesej akan dihantar tanpa pautan bayaran.');
-        } finally {
-          if (btn) { btn.disabled = false; btn.textContent = oldText; }
-        }
-      }
+      // Rujukan bukti bayaran — FIUU (online) atau manual (tunai/QR kedai)
+      const buktiBayaran = booking.fiuuTranId
+        ? '🧾 No. Transaksi : ' + booking.fiuuTranId + '\n' +
+          '🕐 Masa Bayaran  : ' + (booking.fiuuPaidAt || '-') + '\n'
+        : (booking.manualPayment ? '🧾 Bayaran diterima (tunai/QR di kedai)\n' : '');
 
       const msg =
         'Hai ' + booking.name + ',\n\n' +
@@ -2527,19 +3079,17 @@
         (booking.notes ? '📝 Nota      : ' + booking.notes + '\n' : '') +
         line + '\n' +
         '✅ Deposit diterima : RM' + deposit + '\n' +
+        buktiBayaran +
         '💵 Baki : RM' + baki + ' (dibayar selepas servis selesai)\n' +
-        (paymentLinkUrl
-          ? '\n💳 Sila klik pautan di bawah untuk bayar baki RM' + baki + ':\n' + paymentLinkUrl + '\n'
-          : 'Sila pastikan anda hadir pada tarikh dan masa yang ditetapkan.\n') +
+        'Sila pastikan anda hadir pada tarikh dan masa yang ditetapkan.\n' +
         contactFooter() + '\n\n' +
         'Terima kasih kerana memilih perkhidmatan kami! Jumpa nanti 😊';
 
       window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
     }
 
-
     // Mesej kereta dah siap untuk pickup (untuk status Completed)
-    function sendPickup(id) {
+    async function sendPickup(id) {
       const booking = state.bookings.find(b => b.id == id);
       if (!booking) return;
       const phone = waPhone(booking.phone);
@@ -2548,7 +3098,37 @@
       const price = Number(booking.price) || 0;
       const deposit = Number(booking.deposit) || 0;
       const baki = price - deposit;
-      const bakiLine = baki > 0 ? '\n💵 Baki untuk dijelaskan : RM' + baki + '\n' : '\n';
+      const bakiSettled = booking.paymentStatus === 'Sudah Bayar';
+      const buktiBayaranBaki = bakiSettled
+        ? (booking.fiuuTranId
+            ? '🧾 No. Transaksi : ' + booking.fiuuTranId + '\n' +
+              '🕐 Masa Bayaran  : ' + (booking.fiuuPaidAt || '-') + '\n'
+            : (booking.manualPayment ? '🧾 Bayaran diterima (tunai/QR di kedai)\n' : ''))
+        : '';
+
+      // Jana pautan bayaran FIUU untuk baki (kalau masih ada baki & belum settle) — pilihan, bukan wajib
+      let paymentLinkUrl = null;
+      if (!bakiSettled && baki > 0) {
+        const btn = event && event.target;
+        const oldText = btn ? btn.textContent : null;
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Menjana pautan...'; }
+        try {
+          paymentLinkUrl = await fetchFiuuLink(booking.id, baki);
+        } catch (err) {
+          console.warn('Gagal jana pautan baki:', err.message);
+        } finally {
+          if (btn) { btn.disabled = false; btn.textContent = oldText; }
+        }
+      }
+
+      const bakiLine = bakiSettled
+        ? '\n✅ Baki RM' + baki + ' telah dijelaskan.\n' + buktiBayaranBaki
+        : (baki > 0
+            ? '\n💵 Baki untuk dijelaskan : RM' + baki + '\n' +
+              (paymentLinkUrl
+                ? '\n💳 Boleh settle online dulu guna pautan ni:\n' + paymentLinkUrl + '\n\nAtau bayar terus di kedai bila sampai.\n'
+                : '\nBoleh bayar terus di kedai bila sampai.\n')
+            : '\n');
       const msg =
         'Hai ' + booking.name + ',\n\n' +
         'Kereta anda sudah SIAP! 🚗✨\n' +
@@ -2592,6 +3172,10 @@
       resetEditMode();
       const form = document.querySelector('#add-booking form');
       if (form) form.reset();
+      document.getElementById('job-type').value = 'standard';
+      document.getElementById('allow-quick-jobs').value = 'yes';
+      document.getElementById('major-end-date').value = '';
+      toggleMajorJobFields();
       resetServiceRows();
       syncDateDisplay();
       goToPage('add-booking');
@@ -2611,6 +3195,10 @@
         document.getElementById('phone').value = booking.phone;
         document.getElementById('car').value = booking.car;
         document.getElementById('plate').value = booking.plate || '';
+        document.getElementById('job-type').value = booking.jobType === 'major' ? 'major' : 'standard';
+        document.getElementById('allow-quick-jobs').value = booking.allowQuickJobsDuringJob === false ? 'no' : 'yes';
+        document.getElementById('major-end-date').value = booking.endDate || '';
+        toggleMajorJobFields();
         document.getElementById('date').value = booking.date;
         syncDateDisplay();
         document.getElementById('time').value = booking.time || '';
@@ -2658,8 +3246,8 @@
       if (booking) {
         booking.status = status;
         persistLocal();
-        fbSet('bookings', booking.id, booking);
-        updateDashboard();
+        fbSet('bookings', booking.id, booking).then(ok => { booking._synced = ok; persistLocal(); updateSyncStatus(); });
+        renderAll();
       }
     }
 
@@ -3005,6 +3593,7 @@
             </div>
           </div>
           ${dateTimeBar(b)}
+          ${paymentBarHtml(b)}
           <div class="card-detail-box">
             <div class="detail-row">
               <div class="detail-label">📱 Phone:</div>
@@ -3044,9 +3633,10 @@
                 ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button><button class="btn btn-edit" onclick="generatePaymentLink('${b.id}')" style="background:#0b6e4f;color:#fff;">💳 Pautan Bayaran</button>`
                 : (b.status === 'Completed' || b.status === 'Complete')
                   ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
-                  : b.status === 'Booking'
-                    ? `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>` + (b.paymentStatus === 'Sudah Bayar' ? '' : `<button class="btn btn-edit" onclick="generatePaymentLink('${b.id}', 'baki')" style="background:#0b6e4f;color:#fff;">💳 Pautan Bayaran (Baki)</button>`)
-                    : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
+                  : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
+            ${(b.status !== 'Enquiry' && b.paymentStatus !== 'Sudah Bayar' && Number(b.price) > 0)
+              ? `<button class="btn" onclick="markPaidManually('${b.id}')" style="background:#0891b2;color:#fff;">✅ Tandakan Sudah Bayar</button>`
+              : ''}
             <button class="btn btn-edit" onclick="editBooking('${b.id}')">✏️ Edit</button>
             <button class="btn btn-convert" onclick="showReceipt('${b.id}')">📄 Receipt</button>
             <button class="btn btn-secondary" onclick="deleteBooking('${b.id}')">🗑️ Delete</button>
@@ -3058,10 +3648,23 @@
 
     /* ============ CALENDAR ============ */
     const STATUS_COLORS = {
-      'Enquiry': '#7c3aed', 'Booking': '#4f46e5', 'Pending': '#d97706',
+      'Enquiry': '#7c3aed', 'Booking': '#4f46e5', 'Booked': '#4f46e5', 'Pending': '#d97706',
+      'In Progress': '#c2410c',
       'Confirmed': '#059669', 'Postponed': '#2f6e64', 'Completed': '#0d9488',
       'Complete': '#0d9488', 'Cancelled': '#dc2626', 'No-Show': '#1f2937'
     };
+
+    // Bar bayaran (full-width, macam date/time bar) — tunjuk peringkat mana yang dah settle.
+    // Nilai b.depositPaid & b.paymentStatus di-set automatik oleh webhook fiuuNotify bila FIUU confirm bayaran.
+    function paymentBarHtml(b) {
+      if (b.paymentStatus === 'Sudah Bayar') {
+        return '<div class="card-paymentbar paid-full">✅ SUDAH BAYAR</div>';
+      }
+      if (b.depositPaid) {
+        return '<div class="card-paymentbar paid-deposit">💰 TERIMA DEPOSIT</div>';
+      }
+      return '';
+    }
 
     // Soft coloured badge per status (so list senang sort by warna)
     function statusBadgeStyle(status) {
@@ -3146,7 +3749,7 @@
       const todayStr = ymd(now);
       const todays = state.bookings.filter(b => bookingDates(b).indexOf(todayStr) !== -1 && b.status !== 'Cancelled')
         .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
-      const collectedToday = state.bookings.filter(b => isComplete(b) && (b.date || '').slice(0, 10) === todayStr).reduce((s, b) => s + (b.price || 0), 0);
+      const collectedToday = actualRevenue(todayStr);
       const closedToday = isClosed(todayStr);
 
       if (closedToday) {
@@ -3180,16 +3783,16 @@
       const now = new Date();
       const cutoff = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
 
-      const relevant = state.bookings.filter(b => isComplete(b) && b.date && new Date(b.date) >= cutoff);
+      const relevant = (state.payments || []).filter(p => p.date && new Date(p.date) >= cutoff);
       if (relevant.length < 5) {
         box.innerHTML = '';
         return;
       }
       const sums = [0, 0, 0, 0, 0, 0, 0];
       const counts = [0, 0, 0, 0, 0, 0, 0];
-      relevant.forEach(b => {
-        const dow = new Date(b.date.slice(0, 10) + 'T00:00:00').getDay();
-        sums[dow] += (b.price || 0);
+      relevant.forEach(p => {
+        const dow = new Date(p.date.slice(0, 10) + 'T00:00:00').getDay();
+        sums[dow] += (Number(p.amount) || 0);
         counts[dow] += 1;
       });
       const avgs = sums.map((s, i) => counts[i] > 0 ? Math.round(s / counts[i]) : 0);
@@ -3246,11 +3849,15 @@
         if (closed) tags += '<div class="cal-tag cal-closed">🔒 TUTUP</div>';
         if (ph) tags += `<div class="cal-tag cal-ph" title="${ph}">${ph}</div>`;
         else if (sch) tags += '<div class="cal-tag cal-sch" title="' + sch + '">Cuti Sekolah</div>';
-        let dots = dayBookings.slice(0, 2).map(b =>
-          `<div class="cal-dot" style="background:${STATUS_COLORS[b.status] || '#64748b'}" onclick="event.stopPropagation();showCalDay('${dateStr}')">${b.endDate ? '🚗 ' : ''}${b.name}${b.price ? ' · RM' + b.price : ''}</div>`
-        ).join('');
+        let dots = dayBookings.slice(0, 2).map(b => {
+          const dayInSpan = bookingDates(b).indexOf(dateStr) + 1;
+          const majorTag = b.jobType === 'major' ? 'Day ' + dayInSpan + '/' + bookingDates(b).length + ' · ' : '';
+          return `<div class="cal-dot" style="background:${STATUS_COLORS[b.status] || '#64748b'}" onclick="event.stopPropagation();showCalDay('${dateStr}')">${majorTag}${b.endDate ? '🚗 ' : ''}${b.name}${b.price ? ' · RM' + b.price : ''}</div>`;
+        }).join('');
         if (dayBookings.length > 2) dots += `<div class="cal-more">+${dayBookings.length - 2} more</div>`;
-        const cls = 'cal-cell' + (isToday ? ' today' : '') + (closed ? ' is-closed' : (ph ? ' is-ph' : ''));
+      const capacity = calendarCapacity(dateStr);
+      tags += '<div class="cal-tag" style="background:' + (capacity === 'full' ? '#fee2e2;color:#b91c1c' : capacity === 'limited' ? '#fef3c7;color:#92400e' : '#dcfce7;color:#166534') + '">' + (capacity === 'full' ? 'FULL' : capacity === 'limited' ? 'LIMITED' : 'AVAILABLE') + '</div>';
+      const cls = 'cal-cell' + (isToday ? ' today' : '') + (closed ? ' is-closed capacity-full' : (ph ? ' is-ph' : '')) + (!closed && capacity === 'full' ? ' capacity-full' : (!closed && capacity === 'limited' ? ' capacity-limited' : ''));
         cells += `<div class="${cls}" onclick="showCalDay('${dateStr}')">
           <div class="cal-date">${d}</div>${tags}${dots}</div>`;
       }
@@ -3297,7 +3904,7 @@
       const closedCount = (state.closedDates || []).filter(d => (d || '').slice(0, 7) === prefix).length;
 
       // Pendapatan (booking siap) bulan ni
-      const income = monthBookings.filter(isComplete).reduce((s, b) => s + (b.price || 0), 0);
+      const income = actualRevenue(prefix);
       const material = monthBookings.filter(isComplete).reduce((s, b) => s + (b.material || 0), 0);
       const avgPerBooking = siap > 0 ? Math.round(income / siap) : 0;
       // Perbelanjaan bulan ni (dari Finance) — pisahkan Upah Pekerja
@@ -3309,7 +3916,7 @@
       // Trend vs bulan lepas (pendapatan)
       const lmDate = new Date(year, month - 1, 1);
       const lmPrefix = lmDate.getFullYear() + '-' + String(lmDate.getMonth() + 1).padStart(2, '0');
-      const lmIncome = state.bookings.filter(b => (b.date || '').slice(0, 7) === lmPrefix && isComplete(b)).reduce((s, b) => s + (b.price || 0), 0);
+      const lmIncome = actualRevenue(lmPrefix);
       let trendHtml = '';
       if (lmIncome > 0) {
         const pct = Math.round(((income - lmIncome) / lmIncome) * 100);
@@ -3360,23 +3967,27 @@
       const ph = publicHoliday(dateStr);
       const sch = schoolHoliday(dateStr);
       const closed = isClosed(dateStr);
+      const capacity = calendarCapacity(dateStr);
       let head = '';
+      head += '<div style="padding:8px;margin-bottom:8px;border-radius:6px;font-weight:700;background:' + (capacity === 'full' ? '#fee2e2;color:#b91c1c' : capacity === 'limited' ? '#fef3c7;color:#92400e' : '#dcfce7;color:#166534') + '">' + capacity.toUpperCase() + (capacity === 'limited' ? ' · Major job active; quick jobs allowed' : '') + '</div>';
       if (ph) head += '<div style="background:#fee2e2;color:#b91c1c;font-weight:700;font-size:13px;padding:8px 12px;border-radius:8px;margin-bottom:8px;">🎉 ' + ph + ' (Cuti Umum)</div>';
       if (sch) head += '<div style="background:#ffedd5;color:#c2410c;font-weight:700;font-size:13px;padding:8px 12px;border-radius:8px;margin-bottom:8px;">🎒 ' + sch + '</div>';
       const closeBtn = '<button onclick="toggleClosed(\'' + dateStr + '\')" style="width:100%;padding:11px;border:none;border-radius:9px;background:' + (closed ? '#dc2626' : '#1f2937') + ';color:#fff;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:8px;">' + (closed ? '🔓 Buka Semula Kedai (' + formatDMY(dateStr) + ')' : '🔒 Tanda Kedai TUTUP hari ini') + '</button>';
+      const quickBtn = '<button onclick="openQuickJob(\'' + dateStr + '\')" style="width:100%;padding:11px;border:1.5px solid #3d8f82;border-radius:9px;background:#ecfdf5;color:#166534;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:8px;">⚡ Quick Job</button>';
       const addBtn = '<button onclick="newBookingForDate(\'' + dateStr + '\')" style="width:100%;padding:11px;border:1.5px solid #c9863d;border-radius:9px;background:#fffbeb;color:#a86a28;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:10px;">➕ Tambah Booking untuk ' + formatDMY(dateStr) + '</button>';
       if (!dayBookings.length) {
         detail.innerHTML = '<div class="fin-card">' + head +
           '<h3 style="font-size:15px;font-weight:700;color:#1f3d38;margin-bottom:10px;">📅 ' + formatDMY(dateStr) + '</h3>' +
-          addBtn + closeBtn +
+          quickBtn + addBtn + closeBtn +
           '<div style="color:#64748b;text-align:center;padding:6px;">Tiada booking hari ini</div></div>';
         return;
       }
       detail.innerHTML = '<div class="fin-card">' + head +
         '<h3 style="font-size:15px;font-weight:700;color:#1f3d38;margin-bottom:10px;">📅 ' + formatDMY(dateStr) + ' (' + dayBookings.length + ')</h3>' +
-        addBtn + closeBtn +
+        quickBtn + addBtn + closeBtn +
         dayBookings.sort((a, b) => (a.time || '').localeCompare(b.time || '')).map(b => {
-          const multi = b.endDate ? ' • 🚗 ' + bookingDates(b).length + ' hari (' + formatDMY(b.date) + '–' + formatDMY(b.endDate) + ')' : '';
+          const dayNum = bookingDates(b).indexOf(dateStr) + 1;
+          const multi = b.jobType === 'major' ? ' • Major · Day ' + dayNum + ' of ' + bookingDates(b).length : (b.endDate ? ' • 🚗 ' + bookingDates(b).length + ' hari (' + formatDMY(b.date) + '–' + formatDMY(b.endDate) + ')' : '');
           return '<div class="fin-row" style="align-items:flex-start;">' +
             '<div style="flex:1;cursor:pointer;" onclick="showReceipt(\'' + b.id + '\')">' +
             '<div style="font-weight:700;color:#1f3d38;">' + b.name + '</div>' +
@@ -3575,7 +4186,7 @@
       const edEl = document.getElementById('exp-date');
       if (edEl && !edEl.value) { const t = new Date(); edEl.value = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); }
       const exp = state.expenses || [];
-      const revenue = state.bookings.filter(isComplete).reduce((s, b) => s + (b.price || 0), 0);
+      const revenue = actualRevenue();
       const material = state.bookings.filter(isComplete).reduce((s, b) => s + (b.material || 0), 0);
       const totalExp = exp.filter(isTrueCost).reduce((s, e) => s + (e.amount || 0), 0);
       const chemical = exp.filter(e => e.category === 'Chemical/Stock').reduce((s, e) => s + (e.amount || 0), 0);
@@ -3587,6 +4198,9 @@
       document.getElementById('fin-expenses').textContent = 'RM' + totalExp.toLocaleString();
       document.getElementById('fin-chemical').textContent = 'RM' + chemical.toLocaleString();
       document.getElementById('fin-netprofit').textContent = 'RM' + net.toLocaleString();
+      const outstandingTotal = state.bookings.filter(b => b.status !== 'Cancelled').reduce((s,b)=>s+outstandingFor(b),0);
+      const outstandingEl = document.getElementById('fin-outstanding');
+      if (outstandingEl) outstandingEl.textContent = 'RM' + outstandingTotal.toLocaleString();
       const odEl = document.getElementById('fin-ownerdraw');
       if (odEl) odEl.textContent = 'RM' + ownerDraw.toLocaleString();
 
@@ -3650,8 +4264,9 @@
       // Gabung booking siap (+) dan expense (−) jadi satu senarai kronologi — KESELURUHAN masa dulu,
       // supaya baki running balance tetap betul (bawa baki dari bulan sebelumnya), baru filter untuk papar.
       const allEntries = [];
-      state.bookings.filter(isComplete).forEach(b => {
-        allEntries.push({ date: (b.date || '').slice(0, 10), desc: '✅ ' + b.name + ' (' + b.car + ')', amount: Number(b.price) || 0, sortKey: (b.date || '') + '_' + String(b.id), refType: 'booking', refId: b.id });
+      (state.payments || []).forEach(p => {
+        const b = state.bookings.find(x => String(x.id) === String(p.jobId));
+        allEntries.push({ date: (p.date || '').slice(0, 10), desc: '💳 Payment · ' + (b ? b.name + ' (' + b.car + ')' : 'Booking ' + p.jobId) + ' · ' + (p.method || 'Other'), amount: Number(p.amount) || 0, sortKey: (p.date || '') + '_' + String(p.id), refType: 'payment', refId: p.id });
       });
       (state.expenses || []).filter(isTrueCost).forEach(e => {
         const icon = e.category === 'Upah Pekerja' ? '👷' : (e.category === 'Owner Draw' ? '🏠' : (e.category === 'Chemical/Stock' ? '🧪' : '💸'));
@@ -3749,7 +4364,7 @@
       for (let i = 5; i >= 0; i--) {
         const ref = new Date(now.getFullYear(), now.getMonth() - i, 1);
         labels.push(months[ref.getMonth()]);
-        revData.push(state.bookings.filter(b => isComplete(b) && monthMatch(b.date, ref)).reduce((s, b) => s + (b.price || 0), 0));
+        revData.push(actualRevenue(ref.getFullYear() + '-' + String(ref.getMonth() + 1).padStart(2, '0')));
         expData.push((state.expenses || []).filter(e => monthMatch(e.date, ref) && isTrueCost(e)).reduce((s, e) => s + (e.amount || 0), 0));
       }
       const barCtx = document.getElementById('finChart');
