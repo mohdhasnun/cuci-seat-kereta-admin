@@ -647,6 +647,27 @@
   </div>
 
   <style id="workspace-design">
+    .month-summary { margin-top:20px; color:#302d3e; }
+    .month-summary h3 { font-size:17px; margin-bottom:5px; }
+    .month-scope,.month-job-meta { color:#70697d; font-size:12px; line-height:1.5; }
+    .month-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:16px 0; }
+    .month-stat { min-width:0; }
+    .month-stat strong { display:block; font-size:21px; overflow-wrap:anywhere; }
+    .month-stat span { display:block; color:#70697d; font-size:12px; margin-top:5px; }
+    .month-work-totals { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; padding:16px 0; border-top:1px solid #e3deeb; }
+    .month-section-heading { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; border-top:1px solid #e3deeb; padding-top:20px; margin-top:8px; margin-bottom:10px; }
+    .month-section-heading h4 { font-size:14px; }
+    .month-section-heading > span { font-size:12px; color:#70697d; }
+    .month-job { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; padding:14px 0; border-bottom:1px solid #eeebf2; font-size:13px; }
+    .month-job-detail { min-width:0; overflow-wrap:anywhere; }
+    .month-job-meta { margin:4px 0; }
+    .month-job-services { line-height:1.6; color:#5c546a; }
+    .month-job-amount { flex-shrink:0; text-align:right; }
+    .month-job-amount span { display:block; color:#70697d; font-size:11px; margin-top:4px; }
+    .month-cash-row { display:flex; justify-content:space-between; gap:16px; padding:10px 0; font-size:13px; }
+    .month-cash-net { border-top:1px solid #e3deeb; font-weight:700; }
+    .month-empty { padding:16px 0; color:#70697d; font-size:13px; }
+    @media(max-width:420px) { .month-job { flex-direction:column; gap:8px; } .month-job-amount { text-align:left; } .month-stat strong { font-size:18px; } }
     /* Presentation layer; receipt output keeps its own document styling. */
     .sidebar-heading,.sidebar-footer { display:none; }
     @media screen {
@@ -673,9 +694,9 @@
       #dashboard > .section-title { order:-10; }
       #dashboard > .section-subtitle { order:-9; margin-top:-14px !important; }
       #dashboard > #today-ops-card { order:-8; background:#f4f1f9; padding:22px; border:0 !important; border-radius:8px; }
-      #dashboard > .kpi-grid { order:-7; }
-      #dashboard > h3 { order:-6; color:var(--ink) !important; }
-      #dashboard > .status-grid-2 { order:-5; }
+      #dashboard > .kpi-grid { order:-5; }
+      #dashboard > h3 { order:-7; color:var(--ink) !important; }
+      #dashboard > .status-grid-2 { order:-6; }
       #dashboard > .fin-card:not(#today-ops-card) { grid-column:auto; padding:20px 0; border:0 !important; border-top:1px solid var(--line) !important; background:transparent; border-radius:0; box-shadow:none; }
       #dashboard > .fin-card:not(#today-ops-card) h3 { color:var(--ink) !important; font-size:14px !important; }
       .workspace-tools { order:10; border-top:1px solid var(--line); padding-top:18px; }
@@ -691,7 +712,7 @@
       #dashboard .kpi-card.revenue { background:var(--accent); border-color:var(--accent); }
       #dashboard .kpi-card.profit { background:var(--coral); border-color:var(--coral); }
       #dashboard .kpi-card.revenue > *,#dashboard .kpi-card.profit > * { color:#fff !important; }
-      .status-grid-2 { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; }
+      .status-grid-2 { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:10px; }
       .status-grid-2 .status-card { background:#fff !important; border:1px solid var(--line) !important; border-radius:8px; padding:15px 8px; }
       .status-grid-2 .status-card > div:first-child { font-size:10px !important; overflow-wrap:anywhere; }
       .status-grid-2 .status-card > div:last-child { font-size:25px !important; margin-bottom:0 !important; }
@@ -853,7 +874,6 @@
           <div id="target-progress-content"></div>
         </div>
 
-        <div id="cancel-alert" style="display:none; margin-bottom:14px;"></div>
         <div class="fin-card" id="today-ops-card" style="border:2px solid #3d8f82;"><div id="today-ops"></div></div>
 
         <div class="kpi-grid">
@@ -891,6 +911,10 @@
 
         <h3 style="font-size: 16px; font-weight: 600; margin: 30px 0 12px; color: #1f3d38;">Booking Status</h3>
         <div class="status-grid-2">
+          <div class="status-card" onclick="filterByStatus('In Progress')" style="cursor:pointer;color:#a16207;">
+            <div style="font-size:12px;font-weight:700;">In Progress</div>
+            <div style="font-size:32px;font-weight:700;margin:8px 0;" id="status-in-progress">0</div>
+          </div>
           <div class="status-card" onclick="filterByStatus('Enquiry')" style="cursor: pointer; background: linear-gradient(135deg, #e9d5ff 0%, #f3e8ff 100%); color: #7c3aed; border: 2px solid #d8b4fe;">
             <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Enquiries</div>
             <div style="font-size: 32px; font-weight: 700; margin: 8px 0;" id="status-enquiry">0</div>
@@ -1285,7 +1309,7 @@
           <div><label>Date</label><input id="quick-date" type="date" required></div>
           <div><label>Time</label><input id="quick-time" type="time"></div>
           <div><label>Payment Method</label><select id="quick-method"><option>Cash</option><option>QR</option><option>Transfer</option><option>Other</option></select></div>
-          <div><label>Job Status</label><select id="quick-status"><option value="Completed">Completed</option><option value="In Progress">In Progress</option><option value="Booked">Booked</option></select></div>
+          <div><label>Job Status</label><select id="quick-status"><option value="Completed">Completed</option><option value="In Progress">In Progress</option><option value="Pending">Pending</option></select></div>
           <div><label>Payment received?</label><select id="quick-paid"><option value="yes">Yes, paid</option><option value="no">Not yet</option></select></div>
         </div>
         <datalist id="service-options-list"></datalist>
@@ -1772,6 +1796,8 @@
     const LEGACY_STATUS = { 'Complete': 'Completed', 'Cancel': 'Cancelled', 'Done': 'Completed', 'Paid': 'Completed', 'Enquiries': 'Enquiry', 'Enquire': 'Enquiry', 'Inquiry': 'Enquiry', 'Pending Deposit': 'Pending' };
     function normalizeBooking(b) {
       let changed = false;
+      if (b.status === 'Booked') { b.status = 'Pending'; changed = true; }
+      if (b.status === 'Confirmed') { b.status = 'Booking'; changed = true; }
       if (b.status && LEGACY_STATUS[b.status]) { b.status = LEGACY_STATUS[b.status]; changed = true; }
       if (!b.status) { b.status = 'Pending'; changed = true; }
       // old schema stored a `services` array of names instead of serviceItems
@@ -1807,12 +1833,35 @@
         b.customerId = b.customerId || customerIdFor(b.phone, b.id);
       });
       migrateLegacyPayments();
+      state.bookings.forEach(b => {
+        const paid = paymentTotal(b.id);
+        if (b.status === 'Pending' && paid > 0 && paid + 0.009 >= (Number(b.deposit) || Number(b.depositAmount) || 0)) {
+          b.status = 'Booking'; b.depositPaid = true; b._synced = false;
+        }
+      });
       rebuildCustomers();
       populateQuickSuggestions();
     }
 
     function migrateLegacyPayments() {
       state.bookings.forEach(b => {
+        // Completed means fully paid for this business. Reconcile only the missing balance.
+        if (isComplete(b)) {
+          const id = 'completed-payment-' + b.id;
+          const existing = state.payments.find(p => p.id === id);
+          const otherPaid = state.payments.filter(p => String(p.jobId) === String(b.id) && p.id !== id).reduce((sum, p) => sum + Number(p.amount || 0), 0);
+          const amount = Math.max(0, Math.round(((Number(b.price) || 0) - otherPaid) * 100) / 100);
+          if (amount > 0 || existing) {
+            const explicitDate = b.manualPaidAt || b.paymentDate || b.completedAt;
+            const date = String(explicitDate || b.endDate || b.date || ymd(new Date())).slice(0, 10);
+            if (!existing) state.payments.push({ id, jobId: b.id, customerId: b.customerId || customerIdFor(b.phone, b.id), amount, date, method: b.paymentMethod || 'Not recorded', source: 'completed-full-payment', dateEstimated: !explicitDate, _synced: false });
+            else if (existing.amount !== amount) { existing.amount = amount; existing._synced = false; }
+          }
+          b.totalPaid = otherPaid + amount;
+          b.paymentStatus = 'Sudah Bayar';
+          b.paymentMigratedV2 = true;
+          return;
+        }
         const recorded = state.payments.filter(p => String(p.jobId) === String(b.id)).reduce((sum, p) => sum + Number(p.amount || 0), 0);
         const knownPaid = Number(b.totalPaid) || ((b.paymentStatus === 'Sudah Bayar' || b.paymentStatus === 'Paid') ? Number(b.price || 0) : ((b.depositPaid === true || b.paymentStatus === 'Terima Deposit') ? Number(b.deposit || b.depositAmount || 0) : 0));
         const missing = Math.max(0, Math.min(Number(b.price) || knownPaid, knownPaid) - recorded);
@@ -1896,6 +1945,11 @@
       job.totalPaid = paymentTotal(job.id);
       job.paymentMethod = method || job.paymentMethod;
       job.paymentStatus = outstandingFor(job) <= 0.009 ? 'Sudah Bayar' : (job.totalPaid > 0 ? 'Terima Deposit' : 'Belum Bayar');
+      const requiredDeposit = Number(job.deposit) || Number(job.depositAmount) || 0;
+      if (['Enquiry', 'Pending', 'Booked', 'Confirmed'].includes(job.status) && job.totalPaid > 0 && job.totalPaid + 0.009 >= requiredDeposit) {
+        job.status = 'Booking';
+        job.depositPaid = true;
+      }
       job._synced = false;
       persistLocal();
       const synced = await fbSet('payments', payment.id, payment);
@@ -1905,6 +1959,7 @@
       rebuildCustomers();
       persistLocal();
       updateSyncStatus();
+      renderAll();
       return payment;
     }
 
@@ -2114,6 +2169,10 @@
     }
     async function saveQuickJob(event) {
       event.preventDefault();
+      if (document.getElementById('quick-status').value === 'Completed' && document.getElementById('quick-paid').value !== 'yes') {
+        alert('Completed bermaksud sudah bayar penuh. Pilih In Progress jika bayaran belum diterima.');
+        return;
+      }
       const date = document.getElementById('quick-date').value || ymd(new Date());
       if (!confirmCapacity('quick', date, date)) return;
       const name = (document.getElementById('quick-name').value || '').trim() || 'Walk-in';
@@ -2369,7 +2428,7 @@
         material: Number(document.getElementById('material').value) || 0,
         notes: document.getElementById('notes').value,
         customerSource: document.getElementById('source-select')?.value || 'Walk-in',
-        status: 'Booked',
+        status: 'Pending',
         jobType,
         allowQuickJobsDuringJob,
         customerId: customerIdFor(document.getElementById('phone').value, Date.now()),
@@ -2440,7 +2499,7 @@
       const now = new Date();
       const total = state.bookings.length;
       const enquiries = state.bookings.filter(b => b.status === 'Enquiry').length;
-      const booking = state.bookings.filter(b => b.status === 'Booking').length;
+      const booking = state.bookings.filter(isBookedStatus).length;
 
       const thisMonth = state.bookings.filter(b => monthMatch(b.date, now));
       const revenue = actualRevenue(ymd(new Date(now.getFullYear(), now.getMonth(), 1)).slice(0, 7));
@@ -2480,7 +2539,8 @@
       const statusCancelled = document.getElementById('status-cancelled');
       if (statusCancelled) statusCancelled.textContent = cancelledCount;
 
-      renderCancelAlert(total, cancelledCount);
+      const inProgress = document.getElementById('status-in-progress');
+      if (inProgress) inProgress.textContent = state.bookings.filter(b => b.status === 'In Progress').length;
       renderFinancialHealth(overhead);
       renderTargetProgress();
       renderStockAlertDashboard();
@@ -2493,7 +2553,7 @@
       if (!box) return;
       const today = ymd(new Date());
       const active = state.bookings.filter(b => bookingDates(b).includes(today) && b.status !== 'Cancelled');
-      const majors = active.filter(b => b.jobType === 'major');
+      const mainJobs = active.filter(b => b.jobType !== 'quick');
       const quicks = active.filter(b => b.jobType === 'quick');
       const outstanding = state.bookings.filter(b => b.status !== 'Cancelled' && outstandingFor(b) > 0.009);
       const unfinished = quicks.filter(b => !isComplete(b));
@@ -2508,8 +2568,8 @@
       if (overdue.length) alerts.push(overdue.length + ' prior-day job(s) still in progress');
       box.innerHTML = '<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px;"><strong>Today\'s Operations</strong><button onclick="openQuickJob(\'' + today + '\')" style="border:0;border-radius:6px;padding:7px 10px;background:#1f3d38;color:#fff;font-weight:700;">+ Quick Job</button></div>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:10px;">' +
-        '<div><small>Main jobs</small><div style="font-size:20px;font-weight:800;">' + majors.length + '</div></div><div><small>Quick jobs</small><div style="font-size:20px;font-weight:800;">' + quicks.length + ' · RM' + quicks.reduce((s,b)=>s+paymentTotal(b.id),0).toLocaleString() + '</div></div><div><small>Received today</small><div style="font-size:20px;font-weight:800;">RM' + actualRevenue(today).toLocaleString() + '</div></div><div><small>Outstanding</small><div style="font-size:20px;font-weight:800;">RM' + outstanding.reduce((s,b)=>s+outstandingFor(b),0).toLocaleString() + '</div></div></div>' +
-        (alerts.length ? '<div style="background:#fff7ed;color:#9a3412;padding:8px;border-radius:6px;margin-bottom:8px;">⚠ ' + alerts.map(escapeHtml).join(' · ') + '</div>' : '') +
+        '<div><small>Standard / Major</small><div style="font-size:20px;font-weight:800;">' + mainJobs.length + '</div></div><div><small>Quick jobs</small><div style="font-size:20px;font-weight:800;">' + quicks.length + ' · RM' + quicks.reduce((s,b)=>s+paymentTotal(b.id),0).toLocaleString() + '</div></div><div><small>Received today</small><div style="font-size:20px;font-weight:800;">RM' + actualRevenue(today).toLocaleString() + '</div></div><div><small>Outstanding</small><div style="font-size:20px;font-weight:800;">RM' + outstanding.reduce((s,b)=>s+outstandingFor(b),0).toLocaleString() + '</div></div></div>' +
+        (alerts.length ? '<div style="background:#e5e1eb;color:#514a60;border:1px solid #d2ccdd;padding:8px;border-radius:6px;margin-bottom:8px;">⚠ ' + alerts.map(escapeHtml).join(' · ') + '</div>' : '') +
         '<div style="font-weight:700;margin:8px 0 3px;">Today\'s jobs</div>' + (active.length ? active.sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(row).join('') : '<div style="color:#64748b;padding:6px 0;">No jobs scheduled today.</div>') +
         (upcoming.length ? '<div style="font-weight:700;margin:10px 0 3px;">Upcoming</div>' + upcoming.map(b => '<div style="padding:5px 0;border-top:1px solid #e5e7eb;">' + escapeHtml(b.date) + ' · ' + escapeHtml(b.name) + ' · ' + escapeHtml(b.car) + '</div>').join('') : '');
     }
@@ -2779,9 +2839,7 @@
               <select onchange="updateStatus('${b.id}', this.value)" style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
                 <option value="Enquiry" ${b.status === 'Enquiry' ? 'selected' : ''}>Enquiry</option>
                 <option value="Pending" ${b.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                <option value="Booked" ${b.status === 'Booked' ? 'selected' : ''}>Booked</option>
                 <option value="Booking" ${b.status === 'Booking' ? 'selected' : ''}>Booking</option>
-                <option value="Confirmed" ${b.status === 'Confirmed' ? 'selected' : ''}>Confirmed</option>
                 <option value="In Progress" ${b.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
                 <option value="Postponed" ${b.status === 'Postponed' ? 'selected' : ''}>Postponed</option>
                 <option value="Completed" ${b.status === 'Completed' || b.status === 'Complete' ? 'selected' : ''}>Completed</option>
@@ -3010,13 +3068,18 @@
       if (!booking) return;
       const due = outstandingFor(booking);
       if (due <= 0.009) { alert('This job is already fully paid.'); return; }
-      const amountInput = prompt('Payment received (RM). Balance: RM' + due.toFixed(2), String(due));
+      const depositDue = Math.max(0, (Number(booking.deposit) || 0) - paymentTotal(id));
+      const suggested = ['Enquiry', 'Pending'].includes(booking.status) && depositDue > 0 ? Math.min(depositDue, due) : due;
+      const amountInput = prompt('Payment received (RM). Balance: RM' + due.toFixed(2), String(suggested));
       if (amountInput === null) return;
       const amount = Number(amountInput);
       if (!Number.isFinite(amount) || amount <= 0 || amount > due + 0.009) { alert('Enter an amount greater than RM0 and no more than the outstanding balance.'); return; }
       const method = prompt('Payment method: Cash, QR, Transfer, Other', booking.paymentMethod || 'Cash');
       if (method === null) return;
-      await recordPayment(booking, amount, method.trim() || 'Other', ymd(new Date()), 'manual');
+      const date = prompt('Payment date (YYYY-MM-DD):', ymd(new Date()));
+      if (date === null) return;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(new Date(date + 'T00:00:00').getTime()) || ymd(new Date(date + 'T00:00:00')) !== date) { alert('Enter a valid payment date.'); return; }
+      await recordPayment(booking, amount, method.trim() || 'Other', date, 'manual');
       renderAll();
     }
 
@@ -3232,22 +3295,34 @@
     }
 
     function convertToBooking(id) {
-      const booking = state.bookings.find(b => b.id == id);
-      if (booking) {
-        booking.status = 'Booking';
-        persistLocal();
-        fbSet('bookings', booking.id, booking);
-        updateDashboard();
-      }
+      return updateStatus(id, 'Booking');
     }
 
-    function updateStatus(id, status) {
+    async function updateStatus(id, status) {
       const booking = state.bookings.find(b => b.id == id);
       if (booking) {
+        const paid = paymentTotal(booking.id);
+        const requiredDeposit = Number(booking.deposit) || Number(booking.depositAmount) || 0;
+        if (status === 'Booking' && (paid <= 0 || paid + 0.009 < requiredDeposit)) {
+          await addPaymentForBooking(id);
+          if (paymentTotal(booking.id) <= 0 || paymentTotal(booking.id) + 0.009 < requiredDeposit) { renderAll(); return; }
+        }
+        if (status === 'Completed' && !isComplete(booking)) {
+          if (!confirm('Customer sudah pickup kereta dan bayar penuh?')) { renderAll(); return; }
+          if (outstandingFor(booking) > 0.009) {
+            await addPaymentForBooking(id);
+            if (outstandingFor(booking) > 0.009) { renderAll(); return; }
+          }
+        }
         booking.status = status;
+        if (status === 'In Progress' && !booking.arrivedAt) booking.arrivedAt = ymd(new Date());
+        if (isComplete(booking)) booking.completedAt = ymd(new Date());
+        booking._synced = false;
+        migrateStateV2();
         persistLocal();
         fbSet('bookings', booking.id, booking).then(ok => { booking._synced = ok; persistLocal(); updateSyncStatus(); });
         renderAll();
+        syncPending(false);
       }
     }
 
@@ -3558,6 +3633,8 @@
       document.getElementById('live-clock').textContent = dayName + ', ' + dateStr + '  •  ' + timeStr;
     }
 
+    function isBookedStatus(b) { return ['Booking', 'Booked', 'Confirmed'].includes(b.status); }
+
     function filterByStatus(status) {
       // Clear search first
       const searchBox = document.getElementById('search-box');
@@ -3570,6 +3647,8 @@
       let bookings;
       if (status === 'Enquiry') {
         bookings = state.bookings.filter(b => b.status === 'Enquiry');
+      } else if (status === 'Booking') {
+        bookings = state.bookings.filter(isBookedStatus);
       } else if (status === 'Completed') {
         // Handle both "Completed" and "Complete" statuses
         bookings = state.bookings.filter(b => b.status === 'Completed' || b.status === 'Complete');
@@ -3621,6 +3700,7 @@
                 <option value="Pending" ${b.status === 'Pending' ? 'selected' : ''}>Pending</option>
                 <option value="Booking" ${b.status === 'Booking' ? 'selected' : ''}>Booking</option>
                 <option value="Postponed" ${b.status === 'Postponed' ? 'selected' : ''}>Postponed</option>
+                <option value="In Progress" ${b.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
                 <option value="Completed" ${b.status === 'Completed' || b.status === 'Complete' ? 'selected' : ''}>Completed</option>
                 <option value="Cancelled" ${b.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
               </select>
@@ -3868,91 +3948,42 @@
     function renderMonthSummary(year, month) {
       const box = document.getElementById('cal-summary');
       if (!box) return;
-      const BULAN = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
-      const mm = String(month + 1).padStart(2, '0');
-      const prefix = year + '-' + mm;
-
-      // Bookings yang jatuh dalam bulan ni (guna hari mula), bukan Enquiry/Cancelled
-      const monthBookings = state.bookings.filter(b => {
-        const d = (b.date || '').slice(0, 7);
-        return d === prefix && b.status !== 'Enquiry' && b.status !== 'Cancelled';
-      });
-      const siap = monthBookings.filter(isComplete).length;
-      const cancelledThisMonth = state.bookings.filter(b => (b.date || '').slice(0, 7) === prefix && b.status === 'Cancelled').length;
-
-      // Tally ikut jenis servis (pecah "A + B" atau guna serviceItems) — kira RM juga, bukan count je
-      const svcCount = {};
-      const svcRevenue = {};
-      let bukaSeat = 0, tanpaBuka = 0;
-      monthBookings.filter(isComplete).forEach(b => {
-        let items = [];
-        if (Array.isArray(b.serviceItems) && b.serviceItems.length) items = b.serviceItems;
-        else if (b.service) items = String(b.service).split(' + ').map(n => ({ name: n.trim(), price: 0 }));
-        items.forEach(it => {
-          const n = (it.name || '').trim(); if (!n) return;
-          svcCount[n] = (svcCount[n] || 0) + 1;
-          svcRevenue[n] = (svcRevenue[n] || 0) + (Number(it.price) || 0);
-          const low = n.toLowerCase();
-          if (low.includes('tanpa buka')) tanpaBuka++;
-          else if (low.includes('buka seat')) bukaSeat++;
-        });
-      });
-      const svcRows = Object.keys(svcCount).sort((a, b) => svcRevenue[b] - svcRevenue[a])
-        .map(n => '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;"><span style="color:#334155;">' + n + '<span style="color:#94a3b8;"> ×' + svcCount[n] + '</span></span><span style="font-weight:700;color:#1f3d38;">RM' + svcRevenue[n].toLocaleString() + '</span></div>').join('');
-
-      // Kedai tutup dalam bulan ni
-      const closedCount = (state.closedDates || []).filter(d => (d || '').slice(0, 7) === prefix).length;
-
-      // Pendapatan (booking siap) bulan ni
-      const income = actualRevenue(prefix);
-      const material = monthBookings.filter(isComplete).reduce((s, b) => s + (b.material || 0), 0);
-      const avgPerBooking = siap > 0 ? Math.round(income / siap) : 0;
-      // Perbelanjaan bulan ni (dari Finance) — pisahkan Upah Pekerja
-      const monthExp = (state.expenses || []).filter(e => (e.date || '').slice(0, 7) === prefix);
-      const upah = monthExp.filter(e => e.category === 'Upah Pekerja').reduce((s, e) => s + (e.amount || 0), 0);
-      const kosLain = monthExp.filter(e => e.category !== 'Upah Pekerja' && isTrueCost(e)).reduce((s, e) => s + (e.amount || 0), 0) + material;
-      const untungBersih = income - upah - kosLain;
-
-      // Trend vs bulan lepas (pendapatan)
-      const lmDate = new Date(year, month - 1, 1);
-      const lmPrefix = lmDate.getFullYear() + '-' + String(lmDate.getMonth() + 1).padStart(2, '0');
-      const lmIncome = actualRevenue(lmPrefix);
-      let trendHtml = '';
-      if (lmIncome > 0) {
-        const pct = Math.round(((income - lmIncome) / lmIncome) * 100);
-        const up = pct >= 0;
-        trendHtml = '<div style="font-size:12px;font-weight:700;color:' + (up ? '#16a34a' : '#dc2626') + ';margin-top:4px;">' + (up ? '↑ ' : '↓ ') + Math.abs(pct) + '% berbanding ' + BULAN[lmDate.getMonth()] + ' (RM' + lmIncome.toLocaleString() + ')</div>';
-      }
-
-      const chip = (label, val, color) => '<div style="flex:1;min-width:0;background:' + color + '11;border:1px solid ' + color + '33;border-radius:10px;padding:10px;text-align:center;">' +
-        '<div style="font-size:22px;font-weight:800;color:' + color + ';">' + val + '</div>' +
-        '<div style="font-size:11px;color:#64748b;font-weight:600;">' + label + '</div></div>';
-
-      box.innerHTML = '<div class="fin-card" style="margin-top:14px;">' +
-        '<h3 style="font-size:15px;font-weight:800;color:#1f3d38;margin-bottom:2px;">📊 Ringkasan ' + BULAN[month] + ' ' + year + '</h3>' +
-        trendHtml +
-        '<div style="display:flex;gap:8px;margin:12px 0;">' +
-          chip('Jumlah Booking', monthBookings.length, '#4f46e5') +
-          chip('Siap', siap, '#0d9488') +
-          chip('Batal', cancelledThisMonth, '#dc2626') +
-          chip('Kedai Tutup', closedCount + ' hr', '#1f2937') +
-        '</div>' +
-        '<div style="display:flex;gap:8px;margin-bottom:14px;">' +
-          chip('Buka Seat', bukaSeat, '#dc2626') +
-          chip('Tanpa Buka Seat', tanpaBuka, '#3d8f82') +
-          chip('Purata/Booking', 'RM' + avgPerBooking, '#c9863d') +
-        '</div>' +
-        (svcRows ? '<div style="border-top:1px solid #eef1f5;padding-top:10px;"><div style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:6px;">PECAHAN SERVIS (RM, servis siap sahaja)</div>' + svcRows + '</div>' : '<div style="text-align:center;color:#94a3b8;padding:8px;font-size:13px;">Tiada booking bulan ni</div>') +
-        '<div style="border-top:1px solid #eef1f5;margin-top:10px;padding-top:10px;">' +
-          '<div style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:6px;">KIRA-KIRA BULAN INI</div>' +
-          finRow('💰 Pendapatan (siap)', income, '#16a34a', false) +
-          finRow('👷 Upah Pekerja', upah, '#dc2626', true) +
-          finRow('🧪 Bahan & Kos Lain', kosLain, '#dc2626', true) +
-          '<div style="border-top:1.5px solid #e2e8f0;margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;">' +
-            '<span style="font-weight:800;color:#1f3d38;font-size:14px;">📈 Untung Bersih</span>' +
-            '<span style="font-weight:800;color:' + (untungBersih >= 0 ? '#16a34a' : '#dc2626') + ';font-size:16px;">RM' + untungBersih.toLocaleString() + '</span></div>' +
-        '</div>' +
-      '</div>';
+      const monthName = new Date(year, month, 1).toLocaleDateString('ms-MY', { month: 'long', year: 'numeric' });
+      const prefix = year + '-' + String(month + 1).padStart(2, '0');
+      // Work value follows the booking start month; cash follows each payment date.
+      const bookings = state.bookings.filter(b => String(b.date || '').slice(0, 7) === prefix && b.status !== 'Enquiry');
+      const completed = bookings.filter(isComplete);
+      const cancelled = bookings.filter(b => b.status === 'Cancelled').length;
+      const workValue = completed.reduce((sum, b) => sum + (Number(b.price) || 0), 0);
+      const average = completed.length ? workValue / completed.length : 0;
+      const received = actualRevenue(prefix);
+      const costs = (state.expenses || []).filter(e => String(e.date || '').slice(0, 7) === prefix && isTrueCost(e));
+      const spent = costs.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+      const netCash = received - spent;
+      const money = value => 'RM' + Number(value).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const stat = (label, value) => '<div class="month-stat"><strong>' + value + '</strong><span>' + label + '</span></div>';
+      const rows = completed.slice().sort((a, b) => String(b.date).localeCompare(String(a.date))).map(b => {
+        const services = Array.isArray(b.serviceItems) && b.serviceItems.length
+          ? b.serviceItems.map(item => item.name).filter(Boolean)
+          : [b.service || 'Servis tidak dinyatakan'];
+        return '<div class="month-job">' +
+          '<div class="month-job-detail"><strong>' + escapeHtml(b.name || 'Walk-in') + ' · ' + escapeHtml(b.car || 'Kereta tidak dinyatakan') + '</strong>' +
+          '<div class="month-job-meta">' + escapeHtml(formatDMY(String(b.date || '').slice(0, 10))) + (b.plate ? ' · ' + escapeHtml(b.plate) : '') + ' · 1 booking</div>' +
+          '<div class="month-job-services">' + services.map(escapeHtml).join(' + ') + '</div></div>' +
+          '<div class="month-job-amount"><strong>' + money(Number(b.price) || 0) + '</strong><span>Harga booking</span></div></div>';
+      }).join('');
+      box.innerHTML = '<div class="month-summary">' +
+        '<h3>Ringkasan ' + escapeHtml(monthName) + '</h3>' +
+        '<div class="month-scope">Mengikut tarikh mula booking</div>' +
+        '<div class="month-stats">' + stat('Jumlah booking', bookings.length) + stat('Siap', completed.length) + stat('Batal', cancelled) + '</div>' +
+        '<div class="month-work-totals">' + stat('Nilai booking siap', money(workValue)) + stat('Purata setiap booking siap', money(average)) + '</div>' +
+        '<div class="month-section-heading"><h4>Booking siap &amp; servis</h4><span>' + completed.length + ' booking</span></div>' +
+        (rows || '<div class="month-empty">Belum ada booking siap untuk bulan ini.</div>') +
+        '<div class="month-section-heading"><h4>Aliran tunai bulan ini</h4></div>' +
+        '<div class="month-scope">Mengikut tarikh bayaran dan perbelanjaan, termasuk deposit untuk booking bulan lain.</div>' +
+        '<div class="month-cash-row"><span>Bayaran diterima</span><strong>' + money(received) + '</strong></div>' +
+        '<div class="month-cash-row"><span>Perbelanjaan direkod</span><strong>' + money(spent) + '</strong></div>' +
+        '<div class="month-cash-row month-cash-net"><span>Baki aliran tunai</span><strong>' + money(netCash) + '</strong></div></div>';
     }
 
     function finRow(label, val, color, isMinus) {
@@ -4327,7 +4358,7 @@
     function renderSourceBreakdown() {
       const box = document.getElementById('source-breakdown');
       if (!box) return;
-      const completed = state.bookings.filter(isComplete);
+      const completed = state.bookings.filter(b => paymentTotal(b.id) > 0);
       if (!completed.length) {
         box.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:16px;">Tiada booking siap direkod lagi</div>';
         return;
@@ -4336,10 +4367,10 @@
       completed.forEach(b => {
         const src = b.customerSource || 'Tak Direkod';
         if (!bySource[src]) bySource[src] = { revenue: 0, count: 0 };
-        bySource[src].revenue += (b.price || 0);
+        bySource[src].revenue += paymentTotal(b.id);
         bySource[src].count += 1;
       });
-      const totalRevenue = completed.reduce((s, b) => s + (b.price || 0), 0);
+      const totalRevenue = completed.reduce((s, b) => s + paymentTotal(b.id), 0);
       const sorted = Object.keys(bySource).sort((a, b) => bySource[b].revenue - bySource[a].revenue);
       box.innerHTML = sorted.map(src => {
         const d = bySource[src];
