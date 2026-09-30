@@ -2906,10 +2906,14 @@
               ? `<button class="btn btn-whatsapp" onclick="sendQuotation('${b.id}')">📋 Quotation</button>`
               : b.status === 'Pending'
                 ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button><button class="btn btn-edit" onclick="generatePaymentLink('${b.id}')" style="background:#0b6e4f;color:#fff;">💳 Pautan Bayaran</button>`
-                : b.status === 'In Progress'
-                  ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
-                  : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
-            ${(b.status !== 'Enquiry' && outstandingFor(b) > 0.009)
+                : b.status === 'Booking'
+                  ? `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan Booking</button>`
+                  : b.status === 'In Progress'
+                    ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
+                    : b.status === 'Postponed'
+                      ? `<button class="btn btn-whatsapp" onclick="sendPostponedWhatsApp('${b.id}')">📅 Atur Semula</button>`
+                      : ''}
+            ${!['Enquiry', 'Cancelled', 'Completed', 'Complete'].includes(b.status) && outstandingFor(b) > 0.009
               ? `<button class="btn" onclick="addPaymentForBooking('${b.id}')" style="background:#0891b2;color:#fff;">💳 Record Payment · RM${outstandingFor(b).toLocaleString()}</button>`
               : ''}
             <button class="btn btn-edit" onclick="editBooking('${b.id}')">✏️ Edit</button>
@@ -3191,8 +3195,8 @@
       }
 
       const price = Number(booking.price) || 0;
-      const deposit = Number(booking.deposit) || 0;
-      const baki = price - deposit;
+      const paid = paymentTotal(booking.id);
+      const baki = outstandingFor(booking);
       const line = '─────────────────';
 
       // Rujukan bukti bayaran — FIUU (online) atau manual (tunai/QR kedai)
@@ -3214,14 +3218,21 @@
         '💳 Harga     : RM' + price + '\n' +
         (booking.notes ? '📝 Nota      : ' + booking.notes + '\n' : '') +
         line + '\n' +
-        '✅ Deposit diterima : RM' + deposit + '\n' +
+        '✅ Bayaran diterima : RM' + paid.toLocaleString() + '\n' +
         buktiBayaran +
-        '💵 Baki : RM' + baki + ' (dibayar selepas servis selesai)\n' +
+        (baki > 0.009 ? '💵 Baki : RM' + baki.toLocaleString() + ' (dibayar selepas servis selesai)\n' : '✅ Bayaran penuh telah diterima.\n') +
         'Sila pastikan anda hadir pada tarikh dan masa yang ditetapkan.\n' +
         contactFooter() + '\n\n' +
         'Terima kasih kerana memilih perkhidmatan kami! Jumpa nanti 😊';
 
       openCustomerWhatsApp(phone, msg);
+    }
+
+    function sendPostponedWhatsApp(id) {
+      const booking = state.bookings.find(b => b.id == id);
+      if (!booking) return;
+      const msg = 'Hai ' + booking.name + ',\n\nTempahan servis cuci kereta anda telah ditangguhkan. Kami mohon maaf atas perubahan ini.\n\nSila balas mesej ini dengan tarikh dan masa baharu yang sesuai supaya kami boleh aturkan semula tempahan anda.\n\nTerima kasih atas kefahaman anda. 😊';
+      openCustomerWhatsApp(booking.phone, msg);
     }
 
     // Tell the customer their car is ready; completion remains a separate pickup/payment step.
@@ -3777,10 +3788,14 @@
               ? `<button class="btn btn-whatsapp" onclick="sendQuotation('${b.id}')">📋 Quotation</button>`
               : b.status === 'Pending'
                 ? `<button class="btn btn-deposit" onclick="requestDeposit('${b.id}')">💰 Minta Deposit</button><button class="btn btn-edit" onclick="generatePaymentLink('${b.id}')" style="background:#0b6e4f;color:#fff;">💳 Pautan Bayaran</button>`
-                : b.status === 'In Progress'
-                  ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
-                  : `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan</button>`}
-            ${(b.status !== 'Enquiry' && b.paymentStatus !== 'Sudah Bayar' && Number(b.price) > 0)
+                : b.status === 'Booking'
+                  ? `<button class="btn btn-whatsapp" onclick="sendWhatsApp('${b.id}')">✅ Pengesahan Booking</button>`
+                  : b.status === 'In Progress'
+                    ? `<button class="btn btn-pickup" onclick="sendPickup('${b.id}')">🚗 Sedia Pickup</button>`
+                    : b.status === 'Postponed'
+                      ? `<button class="btn btn-whatsapp" onclick="sendPostponedWhatsApp('${b.id}')">📅 Atur Semula</button>`
+                      : ''}
+            ${!['Enquiry', 'Cancelled', 'Completed', 'Complete'].includes(b.status) && b.paymentStatus !== 'Sudah Bayar' && Number(b.price) > 0
               ? `<button class="btn" onclick="markPaidManually('${b.id}')" style="background:#0891b2;color:#fff;">✅ Tandakan Sudah Bayar</button>`
               : ''}
             <button class="btn btn-edit" onclick="editBooking('${b.id}')">✏️ Edit</button>
