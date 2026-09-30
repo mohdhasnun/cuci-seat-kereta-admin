@@ -695,30 +695,38 @@
       #dashboard > .section-title { order:-10; }
       #dashboard > .section-subtitle { order:-9; margin-top:-14px !important; }
       #dashboard > #today-ops-card { order:-8; background:#f4f1f9; padding:22px; border:0 !important; border-radius:8px; }
-      #dashboard > .kpi-grid { order:-5; }
-      #dashboard > h3 { order:-7; color:var(--ink) !important; }
-      #dashboard > .status-grid-2 { order:-6; }
-      #dashboard > .monthly-target-card { order:-4; grid-column:1 / -1 !important; width:100%; padding:18px !important; border:1px solid var(--line) !important; border-top:3px solid var(--accent) !important; border-radius:8px !important; background:#fff !important; }
-      #dashboard > .financial-health-card { order:1; grid-column:1 / -1 !important; width:100%; padding:18px !important; border:1px solid var(--line) !important; border-top:3px solid #0d9488 !important; border-radius:8px !important; background:#fff !important; }
-      .financial-health-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; }
-      .financial-health-heading h3 { margin:0; color:var(--ink); font-size:15px; font-weight:800; }
-      .financial-health-heading button { padding:8px 12px; border:1px solid #99f6e4; border-radius:6px; background:#f0fdfa; color:#0d9488; font-weight:700; font-size:12px; cursor:pointer; }
-      .financial-health-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
-      .financial-health-metric { min-width:0; min-height:78px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:5px; border-radius:7px; padding:12px 8px; text-align:center; }
-      .financial-health-metric > div:last-child { color:#64748b; font-size:11px; font-weight:600; }
-      .buffer-metric { background:#f0fdfa; }
-      .survival-metric { background:#fff7ed; }
-      .days-metric { background:#eff6ff; }
-      #kh-alert { margin-top:10px; }
-      .monthly-target-heading { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:14px; }
-      .monthly-target-heading h3 { margin:0 0 4px; color:var(--ink); font-size:15px; font-weight:800; }
-      .monthly-target-heading p { margin:0; color:var(--muted); font-size:12px; }
-      .monthly-target-heading button { flex:none; padding:8px 12px; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); font-weight:700; font-size:12px; cursor:pointer; }
-      #target-progress-content { min-width:0; }
+      #dashboard > #action-queue { order:-7; }
+      #dashboard > #cash-overview { order:-6; }
+      #dashboard > #week-overview { order:-5; }
+      #dashboard > h3 { order:-4; color:var(--ink) !important; }
+      #dashboard > .status-grid-2 { order:-3; }
+      #dashboard > .kpi-grid { order:-2; }
+      .owner-section { border-top:1px solid var(--line); padding-top:18px; }
+      .owner-section h3 { font-size:16px; margin:0 0 12px; }
+      .owner-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+      .owner-tile { border:1px solid var(--line); border-radius:8px; padding:14px; background:#fff; text-align:left; color:var(--ink); min-width:0; }
+      button.owner-tile { cursor:pointer; font:inherit; }
+      button.owner-tile:hover { border-color:var(--accent); }
+      .owner-tile strong { display:block; font-size:21px; margin:5px 0; overflow-wrap:anywhere; }
+      .owner-tile small { color:var(--muted); }
+      #week-overview .owner-tile { border-left:4px solid #cbd5e1; background:#f8fafc; }
+      #week-overview .owner-tile.has-booking { border-left-color:#0d9488; background:#ecfdf5; }
+      #week-overview .owner-tile.has-booking strong { color:#0f766e; }
+      #week-overview button.owner-tile.has-booking { cursor:pointer; font:inherit; }
+      #week-overview button.owner-tile.has-booking:hover { border-color:#0d9488; }
+      #week-overview .owner-tile.is-today:not(.has-booking) { border-left-color:#94a3b8; background:#f8fafc; }
+      #week-overview .owner-tile.has-booking.is-today { border-left-color:#0d9488; background:#ecfdf5; }
+      #cash-overview .owner-tile:nth-child(1) { background:#ecfdf5; border-color:#a7f3d0; }
+      #cash-overview .owner-tile:nth-child(1) strong { color:#0f766e; }
+      #cash-overview .owner-tile:nth-child(2) { background:#f5f3ff; border-color:#ddd6fe; }
+      #cash-overview .owner-tile:nth-child(2) strong { color:#6d28d9; }
+      #cash-overview .owner-tile:nth-child(3) { background:#fff7ed; border-color:#fed7aa; }
+      #cash-overview .owner-tile:nth-child(3) strong { color:#b45309; }
+      #dashboard > .status-grid-2, #dashboard > h3.booking-status-heading { display:none; }
+      .owner-list-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-top:1px solid var(--line); }
+      .owner-list-row > button { border:0; background:transparent; color:var(--ink); text-align:left; cursor:pointer; font:inherit; min-width:0; }
+      .owner-list-row > button:hover { text-decoration:underline; }
       #dashboard > .fin-card:not(#today-ops-card) { grid-column:auto; padding:20px 0; border:0 !important; border-top:1px solid var(--line) !important; background:transparent; border-radius:0; box-shadow:none; }
-      #dashboard > .monthly-target-card { padding:18px !important; border:1px solid var(--line) !important; border-top:3px solid var(--accent) !important; border-radius:8px !important; background:#fff !important; }
-      #dashboard > .financial-health-card { grid-column:1 / -1 !important; width:100%; padding:18px !important; border:1px solid var(--line) !important; border-top:3px solid #0d9488 !important; border-radius:8px !important; background:#fff !important; }
-      #dashboard > .financial-health-card { padding:18px !important; border:1px solid var(--line) !important; border-top:3px solid #0d9488 !important; border-radius:8px !important; background:#fff !important; }
       #dashboard > .fin-card:not(#today-ops-card) h3 { color:var(--ink) !important; font-size:14px !important; }
       .workspace-tools { order:10; border-top:1px solid var(--line); padding-top:18px; }
       .workspace-tools summary { color:var(--muted); font-size:12px; font-weight:700; cursor:pointer; padding:8px 0 16px; }
@@ -805,15 +813,6 @@
         .section-title { font-size:24px; }
         #dashboard.active { grid-template-columns:minmax(0,1fr); gap:16px; }
         #dashboard > .fin-card:not(#today-ops-card) { grid-column:1; }
-        #dashboard > .monthly-target-card { grid-column:1 !important; }
-        #dashboard > .financial-health-card { grid-column:1 !important; }
-        .financial-health-metrics { gap:8px; }
-        .financial-health-metric { min-height:74px; padding:10px 4px; }
-        .monthly-target-heading { align-items:flex-start; }
-        .monthly-target-heading button { max-width:145px; }
-        #dashboard > .monthly-target-card { grid-column:1 !important; }
-        .monthly-target-heading { align-items:flex-start; }
-        .monthly-target-heading button { white-space:normal; }
         .kpi-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
         .kpi-card { min-height:140px; padding:16px; }
         .kpi-value { font-size:23px; }
@@ -868,52 +867,20 @@
         </div>
 
         </details>
-        <!-- Kesihatan Kewangan -->
-        <div class="fin-card financial-health-card">
-          <div class="financial-health-heading">
-            <h3>💚 Kesihatan Kewangan</h3>
-            <button onclick="editBufferBalance()">✏️ Set Buffer</button>
-          </div>
-          <div class="financial-health-metrics">
-            <div class="financial-health-metric buffer-metric">
-              <div id="kh-buffer" style="font-size:19px;font-weight:800;color:#0d9488;">RM0</div>
-              <div>Buffer Balance</div>
-            </div>
-            <div class="financial-health-metric survival-metric">
-              <div id="kh-survival-day" style="font-size:19px;font-weight:800;color:#c9863d;">RM0</div>
-              <div>Angka Survival/Hari</div>
-            </div>
-            <div class="financial-health-metric days-metric">
-              <div id="kh-hari-survival" style="font-size:19px;font-weight:800;color:#1f3d38;">0 hari</div>
-              <div>Hari Survival</div>
-            </div>
-          </div>
-          <div id="kh-alert"></div>
-        </div>
-
         <div id="reimburse-alert" style="display:none; margin-bottom:14px;"></div>
         <div id="stock-alert-dashboard" style="display:none; margin-bottom:14px;"></div>
 
-        <!-- Target Bulanan -->
-        <div class="fin-card monthly-target-card">
-          <div class="monthly-target-heading">
-            <div>
-              <h3>🎯 Sasaran Kutipan Bulanan</h3>
-              <p>Tetapkan jumlah jualan yang anda mahu capai bulan ini.</p>
-            </div>
-            <button onclick="editMonthlyTarget()">✏️ Tetapkan Sasaran</button>
-          </div>
-          <div id="target-progress-content"></div>
-        </div>
-
         <div class="fin-card" id="today-ops-card" style="border:2px solid #3d8f82;"><div id="today-ops"></div></div>
+        <div class="owner-section" id="action-queue"></div>
+        <div class="owner-section" id="cash-overview"></div>
+        <div class="owner-section" id="week-overview"></div>
 
         <div class="kpi-grid">
-          <div class="kpi-card" onclick="alert('Total Bookings: ' + state.bookings.length)">
+          <div class="kpi-card" onclick="goToPage('bookings')">
             <div class="kpi-icon">👥</div>
             <div class="kpi-value" id="kpi-total">0</div>
-            <div class="kpi-label">Total Customers</div>
-            <div style="font-size: 11px; color: #999; margin-top: 5px;">All bookings</div>
+            <div class="kpi-label">Jumlah Booking</div>
+            <div style="font-size: 11px; color: #999; margin-top: 5px;">Semua rekod tempahan</div>
           </div>
           <div class="kpi-card revenue" onclick="alert('Monthly Revenue: RM' + calculateRevenue())">
             <div class="kpi-icon">💰</div>
@@ -941,7 +908,7 @@
           </div>
         </div>
 
-        <h3 style="font-size: 16px; font-weight: 600; margin: 30px 0 12px; color: #1f3d38;">Booking Status</h3>
+        <h3 class="booking-status-heading" style="font-size: 16px; font-weight: 600; margin: 30px 0 12px; color: #1f3d38;">Booking Status</h3>
         <div class="status-grid-2">
           <div class="status-card" onclick="filterByStatus('In Progress')" style="cursor:pointer;color:#a16207;">
             <div style="font-size:12px;font-weight:700;">In Progress</div>
@@ -1143,11 +1110,11 @@
 
       <!-- Receipt -->
       <section id="receipt" class="page">
-        <h2 class="section-title">Receipt</h2>
+        <h2 class="section-title">Dokumen Pelanggan</h2>
         <div id="receipt-content"></div>
         <div style="text-align: center; margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-          <button onclick="shareToWhatsApp()" class="btn" style="background: #25D366; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; flex: 1; min-width: 120px;">💬 WhatsApp</button>
-          <button onclick="savePDF()" class="btn" style="background: #FF6B6B; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; flex: 1; min-width: 120px;">📄 Save PDF</button>
+          <button onclick="shareToWhatsApp()" class="btn" style="background: #25D366; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; flex: 1; min-width: 120px;">💬 Kongsi PDF</button>
+          <button onclick="savePDF()" class="btn" style="background: #FF6B6B; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; flex: 1; min-width: 120px;">📄 Muat Turun PDF</button>
           <button onclick="printReceipt()" class="print-btn" style="background: #4A90E2; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; flex: 1; min-width: 120px;">🖨️ Print</button>
         </div>
       </section>
@@ -2189,6 +2156,18 @@
       if (majors.some(b => b.allowQuickJobsDuringJob === false)) return 'full';
       return majors.length ? 'limited' : 'available';
     }
+    function calendarBookedJobs(dateStr) {
+      return state.bookings.filter(b => !['Enquiry', 'Pending', 'Postponed', 'Cancelled'].includes(b.status) && bookingDates(b).includes(dateStr));
+    }
+    function calendarDayLabel(dateStr) {
+      const capacity = calendarCapacity(dateStr);
+      if (capacity === 'full') return { text: 'PENUH', style: 'background:#fee2e2;color:#b91c1c' };
+      if (capacity === 'limited') return { text: 'TERHAD', style: 'background:#fef3c7;color:#92400e' };
+      const count = calendarBookedJobs(dateStr).length;
+      return count
+        ? { text: count + ' TEMPAHAN', style: 'background:#ccfbf1;color:#0f766e' }
+        : { text: 'KOSONG', style: 'background:#dcfce7;color:#166534' };
+    }
     function confirmCapacity(jobType, startDate, endDate) {
       const dates = [];
       let date = new Date((startDate || ymd(new Date())) + 'T00:00:00');
@@ -2573,11 +2552,80 @@
 
       const inProgress = document.getElementById('status-in-progress');
       if (inProgress) inProgress.textContent = state.bookings.filter(b => b.status === 'In Progress').length;
-      renderFinancialHealth(overhead);
-      renderTargetProgress();
       renderStockAlertDashboard();
       renderReimburseAlert();
       renderOperationsDashboard();
+      renderOwnerDashboard();
+    }
+
+    function openDashboardBooking(id) {
+      const booking = state.bookings.find(b => String(b.id) === String(id));
+      if (!booking) return;
+      if (booking.status === 'Enquiry') {
+        goToPage('bookings');
+        filterByStatus('Enquiry');
+      } else {
+        calendarBookingFocusId = id;
+        goToPage('bookings');
+      }
+    }
+
+    function renderOwnerDashboard() {
+      const today = ymd(new Date());
+      const active = state.bookings.filter(b => ['Booking', 'In Progress'].includes(b.status));
+      const due = active.filter(b => outstandingFor(b) > 0.009);
+      const dueTotal = due.reduce((sum, b) => sum + outstandingFor(b), 0);
+      const month = today.slice(0, 7);
+      const actions = [
+        { label: 'Enquiry untuk dibalas', items: state.bookings.filter(b => b.status === 'Enquiry'), tone: '#7c3aed' },
+        { label: 'Deposit belum diterima', items: state.bookings.filter(b => b.status === 'Pending'), tone: '#b45309' },
+        { label: 'Kereta dalam proses', items: state.bookings.filter(b => b.status === 'In Progress'), tone: '#0f766e' },
+        { label: 'Perlu atur semula', items: state.bookings.filter(b => b.status === 'Postponed'), tone: '#2563eb' },
+        { label: 'Booking masih ada baki', items: due, tone: '#b45309' }
+      ];
+      const queue = document.getElementById('action-queue');
+      queue.innerHTML = '<h3>Perlu tindakan</h3><div class="owner-grid">' + actions.map((group, index) =>
+        '<button class="owner-tile" data-action-group="' + index + '"><small>' + group.label + '</small><strong style="color:' + group.tone + '">' + group.items.length + '</strong><small>' + (group.items.length ? 'Lihat rekod' : 'Tiada tindakan') + '</small></button>'
+      ).join('') + '</div><div id="action-detail" style="margin-top:12px"></div>';
+      queue.querySelectorAll('[data-action-group]').forEach(button => {
+        button.onclick = () => {
+          const group = actions[Number(button.dataset.actionGroup)];
+          const detail = document.getElementById('action-detail');
+          detail.innerHTML = '<strong>' + group.label + '</strong>' + (group.items.length ? group.items.map(b =>
+            '<div class="owner-list-row"><button data-booking-id="' + escapeHtml(String(b.id)) + '">' + escapeHtml(b.name || 'Walk-in') + ' · ' + escapeHtml(b.car || 'Kereta belum dicatat') + ' · ' + escapeHtml(formatDMY(b.date || '')) + '</button>' +
+            (Number(button.dataset.actionGroup) === 4 ? '<small>RM' + outstandingFor(b).toLocaleString() + '</small>' : '<small>' + escapeHtml(b.status) + '</small>') + '</div>'
+          ).join('') : '<p>Tiada rekod.</p>');
+          detail.querySelectorAll('[data-booking-id]').forEach(link => { link.onclick = () => openDashboardBooking(link.dataset.bookingId); });
+        };
+      });
+
+      document.getElementById('cash-overview').innerHTML = '<h3>Duit sebenar</h3><div class="owner-grid">' +
+        '<div class="owner-tile"><small>Diterima hari ini</small><strong>RM' + actualRevenue(today).toLocaleString() + '</strong><small>Ikut tarikh bayaran</small></div>' +
+        '<div class="owner-tile"><small>Diterima bulan ini</small><strong>RM' + actualRevenue(month).toLocaleString() + '</strong><small>Ikut tarikh bayaran</small></div>' +
+        '<button class="owner-tile" onclick="document.querySelector(\'#action-queue [data-action-group=4]\').click()"><small>Baki Booking / In Progress</small><strong>RM' + dueTotal.toLocaleString() + '</strong><small>' + due.length + ' rekod belum bayar penuh</small></button></div>';
+
+      const end = new Date(); end.setDate(end.getDate() + 7);
+      const endDate = ymd(end);
+      const upcoming = state.bookings.filter(b => ['Booking', 'In Progress'].includes(b.status) && b.date && b.date.slice(0, 10) >= today && b.date.slice(0, 10) <= endDate)
+        .sort((a, b) => String(a.date).localeCompare(String(b.date)) || String(a.time || '').localeCompare(String(b.time || '')));
+      const days = Array.from({ length: 7 }, (_, offset) => { const date = new Date(); date.setDate(date.getDate() + offset); return ymd(date); });
+      const weekBox = document.getElementById('week-overview');
+      weekBox.innerHTML = '<h3>Jadual 7 hari</h3><div class="owner-grid">' + days.map(date => {
+        const count = upcoming.filter(b => b.date.slice(0, 10) === date).length;
+        const content = '<small>' + escapeHtml(dayName(date)) + ', ' + escapeHtml(formatDMY(date)) + (date === today ? ' · Hari ini' : '') + '</small><strong>' + count + '</strong><small>' + (count ? 'kereta dijadualkan · lihat rekod' : 'Tiada booking') + '</small>';
+        return count
+          ? '<button type="button" class="owner-tile has-booking' + (date === today ? ' is-today' : '') + '" data-week-date="' + date + '">' + content + '</button>'
+          : '<div class="owner-tile' + (date === today ? ' is-today' : '') + '">' + content + '</div>';
+      }).join('') + '</div><div id="week-detail"></div>';
+      weekBox.querySelectorAll('[data-week-date]').forEach(button => {
+        button.onclick = () => {
+          const jobs = upcoming.filter(b => b.date.slice(0, 10) === button.dataset.weekDate);
+          if (jobs.length === 1) { openDashboardBooking(jobs[0].id); return; }
+          const detail = document.getElementById('week-detail');
+          detail.innerHTML = jobs.map(b => '<div class="owner-list-row"><button data-booking-id="' + escapeHtml(String(b.id)) + '">' + escapeHtml(b.time || 'Masa belum ditetapkan') + ' · ' + escapeHtml(b.name || 'Walk-in') + ' · ' + escapeHtml(b.car || '') + '</button></div>').join('');
+          detail.querySelectorAll('[data-booking-id]').forEach(link => { link.onclick = () => openDashboardBooking(link.dataset.bookingId); });
+        };
+      });
     }
 
     function renderOperationsDashboard() {
@@ -2594,7 +2642,7 @@
       const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = ymd(yesterday);
       const overdue = state.bookings.filter(b => b.status === 'In Progress' && bookingDates(b).some(d => d < today));
-      const row = b => '<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid #e5e7eb;"><span>' + escapeHtml(b.time || '—') + ' · ' + escapeHtml(b.name || 'Walk-in') + ' · ' + escapeHtml(b.car || 'Quick job') + '</span><span style="font-weight:700;white-space:nowrap;">' + escapeHtml(b.status) + '</span></div>';
+      const row = b => '<div class="owner-list-row"><button data-booking-id="' + escapeHtml(String(b.id)) + '">' + escapeHtml(b.time || '—') + ' · ' + escapeHtml(b.name || 'Walk-in') + ' · ' + escapeHtml(b.car || 'Quick job') + '</button><span style="font-weight:700;white-space:nowrap;">' + escapeHtml(b.status) + '</span></div>';
       const upcoming = state.bookings.filter(b => b.status !== 'Cancelled' && (b.date || '').slice(0, 10) > today).sort((a,b) => String(a.date).localeCompare(String(b.date))).slice(0, 3);
       const alerts = [];
       if (unfinished.length) alerts.push(unfinished.length + ' unfinished quick job' + (unfinished.length > 1 ? 's' : ''));
@@ -2605,7 +2653,8 @@
         (alerts.length ? '<div style="background:#e5e1eb;color:#514a60;border:1px solid #d2ccdd;padding:8px;border-radius:6px;margin-bottom:8px;">⚠ Semakan: ' + alerts.map(escapeHtml).join(' · ') + '</div>' : '') +
         (activeBookings.length ? '<button onclick="showOutstandingBookings()" style="display:block;width:100%;text-align:left;background:#f4f1f9;color:#514a60;border:1px solid #d2ccdd;padding:9px;border-radius:6px;margin-bottom:8px;cursor:pointer;">' + (outstanding.length ? '⚠ ' : '✓ ') + outstanding.length + ' daripada ' + activeBookings.length + ' Booking / In Progress masih ada baki (RM' + outstandingTotal.toLocaleString() + ') · Lihat bayaran</button>' : '') +
         '<div style="font-weight:700;margin:8px 0 3px;">Today\'s jobs</div>' + (active.length ? active.sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(row).join('') : '<div style="color:#64748b;padding:6px 0;">No jobs scheduled today.</div>') +
-        (upcoming.length ? '<div style="font-weight:700;margin:10px 0 3px;">Upcoming</div>' + upcoming.map(b => '<div style="padding:5px 0;border-top:1px solid #e5e7eb;">' + escapeHtml(dayName(b.date)) + ', ' + escapeHtml(formatDMY(b.date)) + ' · ' + escapeHtml(b.time || 'Masa belum ditetapkan') + ' · ' + escapeHtml(b.name) + ' · ' + escapeHtml(b.car) + '</div>').join('') : '');
+        (upcoming.length ? '<div style="font-weight:700;margin:10px 0 3px;">Upcoming</div>' + upcoming.map(b => '<div class="owner-list-row"><button data-booking-id="' + escapeHtml(String(b.id)) + '">' + escapeHtml(dayName(b.date)) + ', ' + escapeHtml(formatDMY(b.date)) + ' · ' + escapeHtml(b.time || 'Masa belum ditetapkan') + ' · ' + escapeHtml(b.name) + ' · ' + escapeHtml(b.car) + '</button></div>').join('') : '');
+      box.querySelectorAll('[data-booking-id]').forEach(button => { button.onclick = () => openDashboardBooking(button.dataset.bookingId); });
     }
 
     function showOutstandingBookings() {
@@ -2691,96 +2740,6 @@
       } else {
         box.style.display = 'none';
       }
-    }
-
-    // ===== Kesihatan Kewangan: Buffer, Angka Survival, Hari Survival =====
-    function renderFinancialHealth(overheadThisMonth) {
-      const now = new Date();
-      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-      const survivalPerDay = overheadThisMonth > 0 ? Math.round(overheadThisMonth / daysInMonth) : 0;
-      const buffer = Number(state.bufferBalance) || 0;
-      const hariSurvival = survivalPerDay > 0 ? Math.floor(buffer / survivalPerDay) : (buffer > 0 ? 999 : 0);
-
-      const bufEl = document.getElementById('kh-buffer');
-      if (bufEl) bufEl.textContent = 'RM' + buffer.toLocaleString();
-      const survEl = document.getElementById('kh-survival-day');
-      if (survEl) survEl.textContent = 'RM' + survivalPerDay.toLocaleString();
-      const hariEl = document.getElementById('kh-hari-survival');
-      if (hariEl) {
-        hariEl.textContent = hariSurvival >= 999 ? '30+ hari' : hariSurvival + ' hari';
-        hariEl.style.color = hariSurvival < 7 ? '#dc2626' : (hariSurvival < 14 ? '#c9863d' : '#1f3d38');
-      }
-      const alertBox = document.getElementById('kh-alert');
-      if (alertBox) {
-        if (survivalPerDay > 0 && hariSurvival < 7) {
-          alertBox.innerHTML = '<div style="background:#fee2e2;border:1.5px solid #fca5a5;border-radius:10px;padding:10px 12px;color:#b91c1c;font-weight:700;font-size:12.5px;">⚠️ Buffer rendah! Cuma cukup ' + hariSurvival + ' hari kalau takde sale langsung. Elak spend tak perlu.</div>';
-        } else if (survivalPerDay === 0) {
-          alertBox.innerHTML = '<div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;color:#64748b;font-size:12.5px;">ℹ️ Belum ada rekod Overhead bulan ni — Angka Survival tak dapat dikira lagi.</div>';
-        } else {
-          alertBox.innerHTML = '';
-        }
-      }
-    }
-
-    function editBufferBalance() {
-      const inp = prompt('Berapa Buffer Balance sekarang (RM)?\n(Baki dalam Tabung/savings untuk overhead)', String(state.bufferBalance || 0));
-      if (inp === null) return;
-      const val = Number(inp);
-      if (isNaN(val) || val < 0) { alert('⚠️ Jumlah tak sah.'); return; }
-      state.bufferBalance = val;
-      persistLocal();
-      updateDashboard();
-      if (fbReady()) {
-        firebase.firestore().collection('config').doc('bufferBalance').set({ amount: val, updatedAt: new Date().toISOString() })
-          .catch(e => console.warn('bufferBalance sync', e));
-      }
-    }
-
-    // ===== Target Bulanan (Revenue Goal) =====
-    function editMonthlyTarget() {
-      const inp = prompt('Masukkan sasaran jumlah bayaran yang mahu diterima bulan ini (RM). Contoh: 1500', String(state.monthlyTarget || 0));
-      if (inp === null) return;
-      const val = Number(inp);
-      if (isNaN(val) || val < 0) { alert('⚠️ Jumlah tak sah.'); return; }
-      state.monthlyTarget = val;
-      persistLocal();
-      renderTargetProgress();
-      if (fbReady()) {
-        firebase.firestore().collection('config').doc('monthlyTarget').set({ amount: val, updatedAt: new Date().toISOString() })
-          .catch(e => console.warn('monthlyTarget sync', e));
-      }
-    }
-
-    function renderTargetProgress() {
-      const box = document.getElementById('target-progress-content');
-      if (!box) return;
-      const target = Number(state.monthlyTarget) || 0;
-      const now = new Date();
-      const revenue = actualRevenue(now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0'));
-      if (target <= 0) {
-        box.innerHTML = '<div style="color:#64748b;font-size:13px;padding:8px 0;">Belum ada sasaran. Tekan <strong>Tetapkan Sasaran</strong> dan masukkan jumlah jualan yang mahu diterima bulan ini, contohnya RM1,500.</div>';
-        return;
-      }
-      const pct = Math.round((revenue / target) * 100);
-      const barPct = Math.min(100, pct);
-      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-      const dayOfMonth = now.getDate();
-      const expectedPct = Math.round((dayOfMonth / daysInMonth) * 100);
-      const onTrack = pct >= expectedPct;
-      const barColor = pct >= 100 ? '#16a34a' : (onTrack ? '#c9863d' : '#dc2626');
-      box.innerHTML =
-        '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">' +
-          '<span style="font-size:20px;font-weight:800;color:#1f3d38;">RM' + revenue.toLocaleString() + ' diterima</span>' +
-          '<span style="font-size:13px;color:#64748b;">Sasaran RM' + target.toLocaleString() + '</span>' +
-        '</div>' +
-        '<div style="background:#f1f5f9;border-radius:8px;height:14px;overflow:hidden;">' +
-          '<div style="height:100%;width:' + barPct + '%;background:' + barColor + ';border-radius:8px;transition:width 0.3s;"></div>' +
-        '</div>' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">' +
-          '<span style="font-size:13px;font-weight:700;color:' + barColor + ';">' + pct + '% sasaran dicapai</span>' +
-          '<span style="font-size:11.5px;color:' + (revenue >= target ? '#16a34a' : (onTrack ? '#16a34a' : '#dc2626')) + ';font-weight:600;">' + (revenue >= target ? '✓ Melebihi sasaran RM' + (revenue - target).toLocaleString() : (onTrack ? '✓ On track (hari ke-' + dayOfMonth + ' dari ' + daysInMonth + ')' : '⚠️ Ketinggalan — patut dah ' + expectedPct + '%')) + '</span>' +
-        '</div>' +
-        '<div style="font-size:12px;color:#64748b;margin-top:8px;">Kegunaan: bandingkan bayaran yang sudah diterima bulan ini dengan sasaran jualan anda. Kemaskini jumlah melalui butang Tetapkan Sasaran.</div>';
     }
 
     function calculateRevenue() {
@@ -3420,18 +3379,32 @@
       }
     }
 
+    function documentNumber(booking) {
+      const type = getDocType(booking);
+      const prefix = type === 'receipt' ? 'RCP-' : type === 'quotation' ? 'QUO-' : 'INV-';
+      const year = String(booking.createdAt || booking.date || new Date().toISOString()).slice(0, 4);
+      return prefix + year + '-' + String(booking.id).slice(-6);
+    }
+    function documentFilename(booking) {
+      return (documentNumber(booking) + '_' + (booking.name || 'Pelanggan') + '.pdf').replace(/[\\/:*?"<>|]/g, '_');
+    }
+    function moneyForDocument(amount) {
+      return 'RM' + (Number(amount) || 0).toLocaleString('ms-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
     function showReceipt(id) {
       currentReceiptId = id;
       const booking = state.bookings.find(b => b.id == id);
       if (booking) {
-        const paid = isComplete(booking);
+        const payments = (state.payments || []).filter(p => String(p.jobId) === String(booking.id)).sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+        const amountPaid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+        const balance = outstandingFor(booking);
+        const paid = balance <= 0.009 && Number(booking.price) > 0;
         const docType = getDocType(booking); // 'quotation' | 'invoice' | 'receipt'
-        const docPrefix = docType === 'receipt' ? 'RCP-' : docType === 'quotation' ? 'QUO-' : 'INV-';
         const docTitle = docType === 'receipt' ? 'Resit Rasmi' : docType === 'quotation' ? 'Quotation' : 'Invois';
-        const receiptNo = docPrefix + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
-        const today = new Date();
-        const date = formatDMY(today);
-        const time = today.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' });
+        const receiptNo = documentNumber(booking);
+        const date = formatDMY(docType === 'receipt' ? (payments.at(-1)?.date || booking.date) : (booking.createdAt || booking.date));
+        const time = booking.time || '';
 
         // Official business logo, embedded (renders reliably in PDF/print)
         const logoSrc = RECEIPT_LOGO;
@@ -3439,17 +3412,17 @@
         const receiptHTML = `
           <div id="receipt-printable" style="width: 100%; max-width: 480px; margin: 0 auto; background: #ffffff; font-family: 'Manrope', Arial, sans-serif; color: #3a414c; overflow: hidden; border: 1px solid #d8dce2; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); position: relative; box-sizing: border-box;">
             <!-- Header Band -->
-            <div style="background: linear-gradient(135deg, #1f3d38 0%, #2f5650 100%); color: #f3f4f6; padding: 28px 30px 22px;">
-              <div style="display: flex; align-items: center; gap: 16px;">
-                ${logoSrc ? `<img src="${logoSrc}" style="width: 60px; height: 60px; border-radius: 13px; object-fit: cover; flex-shrink: 0; background: #ffffff; padding: 5px; box-shadow: 0 3px 10px rgba(0,0,0,0.25);">` : ''}
+            <div style="background: #eaf3f0; color: #1f3d38; padding: 26px 30px 19px;">
+              <div style="display: flex; align-items: center; gap: 13px;">
+                ${logoSrc ? `<img src="${logoSrc}" style="width: 54px; height: 54px; border-radius: 8px; object-fit: cover; flex-shrink: 0; border: 1px solid #b8d5cb;">` : ''}
                 <div style="min-width: 0;">
-                  <div style="font-family: 'Fraunces', serif; font-size: 27px; font-weight: 600; letter-spacing: -0.2px; line-height: 1.15;">Cuci Seat Kereta</div>
-                  <div style="font-size: 11px; color: #bcdcd2; margin-top: 5px; letter-spacing: 1.2px; text-transform: uppercase;">Pakar Hygiene Dalaman Kereta</div>
+                  <div style="font-family: 'Manrope', Arial, sans-serif; font-size: 20px; font-weight: 800; line-height: 1.2;">Cuci Seat Kereta</div>
+                  <div style="font-size: 10px; color: #64748b; margin-top: 4px; text-transform: uppercase;">Pakar Hygiene Dalaman Kereta</div>
                 </div>
               </div>
-              <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 14px;">
-                <div style="font-size: 10px; color: #bcdcd2; line-height: 1.7;">
-                  <b style="color: #f3f4f6; font-weight: 700;">Northern Hope Enterprise</b> (00374641-A)<br>
+              <div style="margin-top: 17px; border-top: 1px solid #c8ddd5; padding-top: 12px;">
+                <div style="font-size: 10px; color: #64748b; line-height: 1.6;">
+                  <b style="color: #1f3d38; font-weight: 700;">Northern Hope Enterprise</b> (00374641-A)<br>
                   Blok D-00-01, Pangsapuri Mawar, Jln KP 4/4, Taman Kota Perdana, 43300 Seri Kembangan, Selangor<br>
                   017-699 3876 &nbsp;|&nbsp; cuciseatkereta.com
                 </div>
@@ -3457,7 +3430,7 @@
             </div>
 
             <!-- Accent strip -->
-            <div style="height: 3px; background: #c2a878;"></div>
+            <div style="height: 3px; background: #3d8f82;"></div>
 
             <!-- Body (thin watermark strip along the left edge — not centered) -->
             <div style="position: relative; padding: 26px 30px;">
@@ -3474,7 +3447,7 @@
                     <div style="font-size: 12px; color: #b08d57; font-weight: 700; margin-top: 2px; letter-spacing: 0.3px;">No. ${receiptNo}</div>
                   </div>
                   <div style="text-align: right;">
-                    <div style="font-size: 10px; color: #9aa3b0; font-weight: 600; letter-spacing: 0.5px;">TARIKH</div>
+                    <div style="font-size: 10px; color: #9aa3b0; font-weight: 600; letter-spacing: 0.5px;">${docType === 'receipt' && payments.at(-1)?.dateEstimated ? 'TARIKH RUJUKAN' : 'TARIKH'}</div>
                     <div style="font-size: 14px; font-weight: 600; color: #2b3340;">${date}</div>
                     <div style="font-size: 10px; color: #9aa3b0; margin-top: 2px;">${time}</div>
                   </div>
@@ -3506,7 +3479,7 @@
                         `<div style="display: flex; gap: 12px; padding: 11px 14px; align-items: center; background: ${idx % 2 === 0 ? '#ffffff' : '#fafbfc'}; ${idx > 0 ? 'border-top: 1px solid #f1f3f6;' : ''}">
                           <div style="width: 22px; height: 22px; background: #eef0f4; color: #6b7480; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;">${idx + 1}</div>
                           <div style="font-size: 12px; color: #4a525e; flex: 1;">${it.name}</div>
-                          <div style="font-size: 12px; font-weight: 700; white-space: nowrap;">${(Number(it.price) || 0) > 0 ? '<span style="color:#2b3340;">RM' + it.price + '</span>' : '<span style="color:#7a9b76;font-weight:700;letter-spacing:0.3px;">FOC</span>'}</div>
+                          <div style="font-size: 12px; font-weight: 700; white-space: nowrap;">${(Number(it.price) || 0) > 0 ? '<span style="color:#2b3340;">' + moneyForDocument(it.price) + '</span>' : '<span style="color:#7a9b76;font-weight:700;">Termasuk</span>'}</div>
                         </div>`
                       ).join('')
                     }
@@ -3518,17 +3491,25 @@
                   ${docType !== 'quotation' ? `
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                     <span style="color: #8a93a0; font-size: 11px; font-weight: 600;">STATUS BAYARAN</span>
-                    <span style="background: ${paid ? '#6f9b7e' : '#bd9a5f'}; color: #fff; font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px;">${paid ? '✓ PAID' : 'PENDING'}</span>
+                    <span style="background: ${paid ? '#6f9b7e' : '#bd9a5f'}; color: #fff; font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px;">${paid ? 'BAYAR PENUH' : amountPaid > 0 ? 'BAYAR SEBAHAGIAN' : 'BELUM BAYAR'}</span>
                   </div>
+                  ${docType === 'invoice' ? `<div style="display:flex;justify-content:space-between;font-size:12px;margin:7px 0;"><span>Harga servis</span><strong>${moneyForDocument(booking.price)}</strong></div>
+                  <div style="display:flex;justify-content:space-between;font-size:12px;margin:7px 0;"><span>Bayaran diterima</span><strong>${moneyForDocument(amountPaid)}</strong></div>` : ''}
                   <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e1e6ed; padding-top: 12px;">
-                    <span style="color: #4a525e; font-size: 15px; font-weight: 600;">${paid ? 'JUMLAH' : 'JUMLAH PERLU DIBAYAR'}</span>
-                    <span style="font-family: 'Fraunces', serif; color: #2b3340; font-size: 28px; font-weight: 600;">RM${booking.price}</span>
+                    <span style="color: #4a525e; font-size: 15px; font-weight: 600;">${docType === 'receipt' ? 'JUMLAH DITERIMA' : 'BAKI PERLU DIBAYAR'}</span>
+                    <span style="font-family: 'Fraunces', serif; color: #2b3340; font-size: 28px; font-weight: 600;">${moneyForDocument(docType === 'receipt' ? amountPaid : balance)}</span>
                   </div>` : `
                   <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="color: #4a525e; font-size: 15px; font-weight: 600;">ANGGARAN KOS</span>
-                    <span style="font-family: 'Fraunces', serif; color: #2b3340; font-size: 28px; font-weight: 600;">RM${booking.price}</span>
+                    <span style="font-family: 'Fraunces', serif; color: #2b3340; font-size: 28px; font-weight: 600;">${moneyForDocument(booking.price)}</span>
                   </div>`}
                 </div>
+
+                ${docType !== 'quotation' && payments.length ? `<div style="margin-bottom:18px;font-size:11px;color:#4a525e;"><strong>REKOD BAYARAN</strong>${payments.map(p => {
+                  const method = String(p.method || '').trim();
+                  const knownMethod = method && !['not recorded', 'legacy record', 'other'].includes(method.toLowerCase());
+                  return `<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #e7ebf1;"><span>${escapeHtml(formatDMY(p.date))}${p.dateEstimated ? ' (anggaran)' : ''}${knownMethod ? ' · ' + escapeHtml(method) : ''}</span><strong>${moneyForDocument(p.amount)}</strong></div>`;
+                }).join('')}</div>` : ''}
 
                 ${docType === 'quotation' ? `
                 <!-- Validity note (quotation only) -->
@@ -3574,21 +3555,29 @@
       window.print();
     }
 
-    function shareToWhatsApp() {
+    async function shareToWhatsApp() {
       const booking = state.bookings.find(b => b.id == currentReceiptId);
       if (!booking) {
-        alert('Please open a receipt first');
+        alert('Buka dokumen pelanggan dahulu.');
         return;
       }
-
-      const receiptNo = (getDocType(booking) === 'receipt' ? 'RCP-' : getDocType(booking) === 'quotation' ? 'QUO-' : 'INV-') + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
-      const filename = `${receiptNo}_${booking.name}.pdf`;
-
-      const message = `*RESIT - ${receiptNo}*\n\n` +
-        `📋 Pelanggan: ${booking.name}\n` +
-        `🚗 Kenderaan: ${booking.car} (${booking.plate || '-'})\n` +
-        `💵 Jumlah: RM${booking.price}\n\n` +
-        `Saya sertakan resit untuk rujukan anda. Terima kasih kerana memilih perkhidmatan kami! 😊`;
+      const type = getDocType(booking);
+      const title = type === 'receipt' ? 'Resit Rasmi' : type === 'quotation' ? 'Quotation' : 'Invois';
+      const message = `Salam ${booking.name}, berikut ${title.toLowerCase()} ${documentNumber(booking)} untuk ${booking.car}. ${type === 'receipt' ? 'Terima kasih, bayaran penuh telah diterima.' : type === 'invoice' ? 'Baki semasa: ' + moneyForDocument(outstandingFor(booking)) + '.' : 'Sila semak anggaran harga ini.'}`;
+      const filename = documentFilename(booking);
+      let blob;
+      try { blob = await generateReceiptPDF(booking, filename, false); }
+      catch (e) { return; }
+      const file = new File([blob], filename, { type: 'application/pdf' });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], text: message, title }); return; }
+        catch (e) { if (e.name === 'AbortError') return; }
+      }
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url; link.download = filename; document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      alert('PDF telah dimuat turun. WhatsApp akan dibuka; lampirkan fail PDF yang baru dimuat turun secara manual.');
       openCustomerWhatsApp(booking.phone, message);
     }
 
@@ -3686,8 +3675,7 @@
         alert('Please open a receipt first');
         return;
       }
-      const receiptNo = (getDocType(booking) === 'receipt' ? 'RCP-' : getDocType(booking) === 'quotation' ? 'QUO-' : 'INV-') + new Date().getFullYear() + '-' + String(booking.id).slice(-6);
-      const filename = `${receiptNo}_${booking.name}.pdf`;
+      const filename = documentFilename(booking);
       generateReceiptPDF(booking, filename, true).catch(() => {});
     }
 
@@ -4019,7 +4007,8 @@
         }).join('');
         if (dayBookings.length > 2) dots += `<div class="cal-more">+${dayBookings.length - 2} more</div>`;
       const capacity = calendarCapacity(dateStr);
-      tags += '<div class="cal-tag" style="background:' + (capacity === 'full' ? '#fee2e2;color:#b91c1c' : capacity === 'limited' ? '#fef3c7;color:#92400e' : '#dcfce7;color:#166534') + '">' + (capacity === 'full' ? 'FULL' : capacity === 'limited' ? 'LIMITED' : 'AVAILABLE') + '</div>';
+      const dayLabel = calendarDayLabel(dateStr);
+      tags += '<div class="cal-tag" style="' + dayLabel.style + '">' + dayLabel.text + '</div>';
       const cls = 'cal-cell' + (isToday ? ' today' : '') + (closed ? ' is-closed capacity-full' : (ph ? ' is-ph' : '')) + (!closed && capacity === 'full' ? ' capacity-full' : (!closed && capacity === 'limited' ? ' capacity-limited' : ''));
         cells += `<div class="${cls}" onclick="showCalDay('${dateStr}')">
           <div class="cal-date">${d}</div>${tags}${dots}</div>`;
@@ -4092,8 +4081,9 @@
       const sch = schoolHoliday(dateStr);
       const closed = isClosed(dateStr);
       const capacity = calendarCapacity(dateStr);
+      const dayLabel = calendarDayLabel(dateStr);
       let head = '';
-      head += '<div style="padding:8px;margin-bottom:8px;border-radius:6px;font-weight:700;background:' + (capacity === 'full' ? '#fee2e2;color:#b91c1c' : capacity === 'limited' ? '#fef3c7;color:#92400e' : '#dcfce7;color:#166534') + '">' + capacity.toUpperCase() + (capacity === 'limited' ? ' · Major job active; quick jobs allowed' : '') + '</div>';
+      head += '<div style="padding:8px;margin-bottom:8px;border-radius:6px;font-weight:700;' + dayLabel.style + '">' + dayLabel.text + (capacity === 'limited' ? ' · Kerja major aktif; quick job masih boleh' : '') + '</div>';
       if (ph) head += '<div style="background:#fee2e2;color:#b91c1c;font-weight:700;font-size:13px;padding:8px 12px;border-radius:8px;margin-bottom:8px;">🎉 ' + ph + ' (Cuti Umum)</div>';
       if (sch) head += '<div style="background:#ffedd5;color:#c2410c;font-weight:700;font-size:13px;padding:8px 12px;border-radius:8px;margin-bottom:8px;">🎒 ' + sch + '</div>';
       const closeBtn = '<button onclick="toggleClosed(\'' + dateStr + '\')" style="width:100%;padding:11px;border:none;border-radius:9px;background:' + (closed ? '#dc2626' : '#1f2937') + ';color:#fff;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:8px;">' + (closed ? '🔓 Buka Semula Kedai (' + formatDMY(dateStr) + ')' : '🔒 Tanda Kedai TUTUP hari ini') + '</button>';
