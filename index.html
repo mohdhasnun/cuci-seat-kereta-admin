@@ -684,7 +684,7 @@
       .brand-text h1 { font-size:15px; color:var(--ink); }
       .brand-text p { color:var(--muted); font-size:10px; margin-top:5px; }
       .add-btn { background:var(--ink); min-height:42px; border-radius:8px; font-size:12px; }
-      .datetime-bar { position:static; max-width:none; background:#fff; color:var(--muted); border-bottom:1px solid var(--line); text-align:right; padding:10px 28px; font-size:11px; }
+      .datetime-bar { position:static; max-width:none; background:#fff; color:var(--ink); border-bottom:1px solid var(--line); text-align:center; padding:11px 20px; font-size:15px; font-weight:700; }
       #sync-banner { max-width:none !important; }
       .content { padding:28px; margin-bottom:0; min-width:0; }
       .page { min-width:0; }
@@ -801,7 +801,7 @@
         .brand-text h1 { font-size:12px; }
         .brand-text p { font-size:8px; }
         .add-btn { padding:8px 10px; min-height:40px; }
-        .datetime-bar { padding:9px 14px; font-size:10px; }
+        .datetime-bar { padding:10px 14px; font-size:13px; }
         .section-title { font-size:24px; }
         #dashboard.active { grid-template-columns:minmax(0,1fr); gap:16px; }
         #dashboard > .fin-card:not(#today-ops-card) { grid-column:1; }
@@ -2587,7 +2587,8 @@
       const active = state.bookings.filter(b => bookingDates(b).includes(today) && b.status !== 'Cancelled');
       const mainJobs = active.filter(b => b.jobType !== 'quick' && !isComplete(b));
       const quicks = active.filter(b => b.jobType === 'quick');
-      const outstanding = state.bookings.filter(b => ['Booking', 'In Progress'].includes(b.status) && outstandingFor(b) > 0.009);
+      const activeBookings = state.bookings.filter(b => ['Booking', 'In Progress'].includes(b.status));
+      const outstanding = activeBookings.filter(b => outstandingFor(b) > 0.009);
       const outstandingTotal = outstanding.reduce((sum, b) => sum + outstandingFor(b), 0);
       const unfinished = quicks.filter(b => !isComplete(b));
       const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
@@ -2602,25 +2603,26 @@
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:10px;">' +
         '<div><small>Standard / Major belum siap hari ini</small><div style="font-size:20px;font-weight:800;">' + mainJobs.length + '</div></div><div><small>Quick jobs belum siap</small><div style="font-size:20px;font-weight:800;">' + unfinished.length + ' · RM' + unfinished.reduce((s,b)=>s+paymentTotal(b.id),0).toLocaleString() + '</div></div><div><small>Bayaran diterima hari ini</small><div style="font-size:20px;font-weight:800;">RM' + actualRevenue(today).toLocaleString() + '</div></div><div><small>Baki booking (semua tarikh)</small><div style="font-size:20px;font-weight:800;">RM' + outstandingTotal.toLocaleString() + '</div></div></div>' +
         (alerts.length ? '<div style="background:#e5e1eb;color:#514a60;border:1px solid #d2ccdd;padding:8px;border-radius:6px;margin-bottom:8px;">⚠ Semakan: ' + alerts.map(escapeHtml).join(' · ') + '</div>' : '') +
-        (outstanding.length ? '<button onclick="showOutstandingBookings()" style="display:block;width:100%;text-align:left;background:#f4f1f9;color:#514a60;border:1px solid #d2ccdd;padding:9px;border-radius:6px;margin-bottom:8px;cursor:pointer;">⚠ ' + outstanding.length + ' booking masih ada baki (RM' + outstandingTotal.toLocaleString() + ') · Lihat senarai</button>' : '') +
+        (activeBookings.length ? '<button onclick="showOutstandingBookings()" style="display:block;width:100%;text-align:left;background:#f4f1f9;color:#514a60;border:1px solid #d2ccdd;padding:9px;border-radius:6px;margin-bottom:8px;cursor:pointer;">' + (outstanding.length ? '⚠ ' : '✓ ') + outstanding.length + ' daripada ' + activeBookings.length + ' Booking / In Progress masih ada baki (RM' + outstandingTotal.toLocaleString() + ') · Lihat bayaran</button>' : '') +
         '<div style="font-weight:700;margin:8px 0 3px;">Today\'s jobs</div>' + (active.length ? active.sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(row).join('') : '<div style="color:#64748b;padding:6px 0;">No jobs scheduled today.</div>') +
-        (upcoming.length ? '<div style="font-weight:700;margin:10px 0 3px;">Upcoming</div>' + upcoming.map(b => '<div style="padding:5px 0;border-top:1px solid #e5e7eb;">' + escapeHtml(b.date) + ' · ' + escapeHtml(b.name) + ' · ' + escapeHtml(b.car) + '</div>').join('') : '');
+        (upcoming.length ? '<div style="font-weight:700;margin:10px 0 3px;">Upcoming</div>' + upcoming.map(b => '<div style="padding:5px 0;border-top:1px solid #e5e7eb;">' + escapeHtml(dayName(b.date)) + ', ' + escapeHtml(formatDMY(b.date)) + ' · ' + escapeHtml(b.time || 'Masa belum ditetapkan') + ' · ' + escapeHtml(b.name) + ' · ' + escapeHtml(b.car) + '</div>').join('') : '');
     }
 
     function showOutstandingBookings() {
-      const outstanding = state.bookings.filter(b => ['Booking', 'In Progress'].includes(b.status) && outstandingFor(b) > 0.009);
-      if (!outstanding.length) {
-        alert('Tiada baki untuk booking berstatus Booking atau In Progress.');
+      const activeBookings = state.bookings.filter(b => ['Booking', 'In Progress'].includes(b.status));
+      if (!activeBookings.length) {
+        alert('Tiada rekod berstatus Booking atau In Progress.');
         renderOperationsDashboard();
         return;
       }
-      const details = outstanding.map((b, i) => {
+      const details = activeBookings.map((b, i) => {
         const paid = paymentTotal(b.id);
         return (i + 1) + '. ' + (b.name || 'Walk-in') + ' · ' + (b.car || 'Kenderaan tiada') + '\n' +
           '   Status: ' + b.status + ' · Harga: RM' + (Number(b.price) || 0).toLocaleString() +
-          ' · Dibayar: RM' + paid.toLocaleString() + ' · Baki: RM' + outstandingFor(b).toLocaleString();
+          ' · Dibayar: RM' + paid.toLocaleString() + ' · Baki: RM' + outstandingFor(b).toLocaleString() +
+          (outstandingFor(b) > 0.009 ? ' (belum selesai)' : ' (bayaran penuh)');
       }).join('\n\n');
-      alert('Baki dikira daripada harga booking ditolak bayaran yang direkodkan. Hanya status Booking dan In Progress dikira.\n\n' + details);
+      alert('Semua rekod Booking dan In Progress. Baki = harga booking - bayaran direkodkan.\n\n' + details);
     }
 
     // Tunjuk senarai "Belum Refund" — belanja customer yang belum dibayar balik
