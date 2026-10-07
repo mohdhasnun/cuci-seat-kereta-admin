@@ -1046,6 +1046,7 @@
               <option value="Enquiry">Enquiry - baru tanya harga</option>
               <option value="Pending">Pending - deposit diminta, belum dibayar</option>
               <option value="Booking">Booking - deposit sudah diterima</option>
+              <option value="NoDeposit">Walk-in / Repeat Customer — tanpa deposit</option>
             </select>
             <div id="booking-intent-hint" style="font-size:13px;color:#64748b;margin-top:8px;"></div>
           </div>
@@ -2527,8 +2528,8 @@ function renderPhase1Metrics() {
       const intent = document.getElementById('booking-intent').value;
       const editing = editingBookingId !== null;
       document.getElementById('booking-intent').disabled = editing;
-      document.getElementById('booking-intent-hint').textContent = editing ? 'Status rekod sedia ada dikemas kini di halaman Bookings.' : ({ Enquiry: 'Harga sahaja. Tarikh dan deposit belum wajib.', Pending: 'Customer mahu booking; deposit sudah diminta tetapi belum diterima.', Booking: 'Pilih kaedah dan tarikh bayaran deposit yang sudah diterima.' })[intent];
-      document.getElementById('booking-payment-section').style.display = intent === 'Enquiry' ? 'none' : 'block';
+      document.getElementById('booking-intent-hint').textContent = editing ? 'Status rekod sedia ada dikemas kini di halaman Bookings.' : ({ Enquiry: 'Harga sahaja. Tarikh dan deposit belum wajib.', Pending: 'Customer mahu booking; deposit sudah diminta tetapi belum diterima.', Booking: 'Pilih kaedah dan tarikh bayaran deposit yang sudah diterima.', NoDeposit: 'Terus masuk Booking tanpa deposit. Bayaran belum diterima; rekod bayaran kemudian melalui Bookings.' })[intent];
+      document.getElementById('booking-payment-section').style.display = ['Enquiry', 'NoDeposit'].includes(intent) ? 'none' : 'block';
       document.getElementById('booking-payment-hint').textContent = editing ? 'Bayaran terdahulu kekal dalam rekod. Bayaran baharu direkod melalui Bookings.' : intent === 'Pending' ? 'Jumlah ini baru diminta daripada pelanggan. Ia belum dikira sebagai bayaran diterima.' : 'Masukkan bayaran yang sudah benar-benar masuk. Baki dikira daripada bayaran itu.';
       document.getElementById('deposit-payment-fields').style.display = !editing && intent === 'Booking' ? 'block' : 'none';
       document.getElementById('date').required = !editing && intent !== 'Enquiry';
@@ -2599,7 +2600,7 @@ function renderPhase1Metrics() {
       const total = serviceItems.reduce((s, it) => s + it.price, 0);
       const serviceStr = serviceItems.map(it => it.name).join(' + ');
       const intent = editingBookingId !== null ? null : document.getElementById('booking-intent').value;
-      const depositRequested = intent === 'Enquiry' ? 0 : Number(document.getElementById('deposit').value) || 0;
+      const depositRequested = ['Enquiry', 'NoDeposit'].includes(intent) ? 0 : Number(document.getElementById('deposit').value) || 0;
       const paidNow = intent === 'Booking' ? Number(document.getElementById('deposit-paid').value) || 0 : 0;
       const method = document.getElementById('deposit-method').value;
       const paymentDate = document.getElementById('deposit-date').value;
@@ -2680,7 +2681,8 @@ function renderPhase1Metrics() {
         material: Number(document.getElementById('material').value) || 0,
         notes: document.getElementById('notes').value,
         customerSource: document.getElementById('source-select')?.value || 'Walk-in',
-        status: intent,
+        status: intent === 'NoDeposit' ? 'Booking' : intent,
+        depositWaived: intent === 'NoDeposit',
         jobType,
         allowQuickJobsDuringJob,
         customerId: customerIdFor(document.getElementById('phone').value, Date.now()),
@@ -3658,7 +3660,7 @@ function renderPhase1Metrics() {
         // EDIT-IN-PLACE: jangan padam rekod. Tandakan id yang sedang diedit;
         // saveBooking akan kemaskini rekod yang sama (id & status kekal).
         editingBookingId = id;
-        document.getElementById('booking-intent').value = ['Enquiry','Pending','Booking'].includes(booking.status) ? booking.status : 'Booking';
+        document.getElementById('booking-intent').value = booking.depositWaived ? 'NoDeposit' : ['Enquiry','Pending','Booking'].includes(booking.status) ? booking.status : 'Booking';
         document.getElementById('customer-matches').replaceChildren();
         updateBookingIntent();
         const sb = document.getElementById('save-booking-btn');
@@ -3678,7 +3680,7 @@ function renderPhase1Metrics() {
       if (booking) {
         const paid = paymentTotal(booking.id);
         const requiredDeposit = Number(booking.deposit) || Number(booking.depositAmount) || 0;
-        if (status === 'Booking' && (paid <= 0 || paid + 0.009 < requiredDeposit)) {
+        if (status === 'Booking' && !booking.depositWaived && (paid <= 0 || paid + 0.009 < requiredDeposit)) {
           await addPaymentForBooking(id);
           if (paymentTotal(booking.id) <= 0 || paymentTotal(booking.id) + 0.009 < requiredDeposit) { renderAll(); return; }
         }
