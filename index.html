@@ -1183,8 +1183,9 @@
               </select>
             </div>
             <div>
-              <label for="material">Kos bahan (RM)</label>
-              <input type="number" id="material" min="0" step="0.01" placeholder="0">
+              <label for="material">Override kos bahan (RM) — optional</label>
+              <input type="number" id="material" min="0" step="0.01" placeholder="Blank = standard / Not established">
+              <label for="active-override">Override active labour (min) — exceptional job sahaja</label><input type="number" id="active-override" min="0" step="1" placeholder="Blank = standard / Not established">
             </div>
               </div>
             <div>
@@ -1895,6 +1896,82 @@
 
     // Normalize legacy records (old app versions) so they show & count correctly
     const LEGACY_STATUS = { 'Complete': 'Completed', 'Cancel': 'Cancelled', 'Done': 'Completed', 'Paid': 'Completed', 'Enquiries': 'Enquiry', 'Enquire': 'Enquiry', 'Inquiry': 'Enquiry', 'Pending Deposit': 'Pending' };
+// Phase 1: additive service snapshots. Null means not established, never free.
+const SERVICE_BENCHMARKS = [
+  ['1 Seat sahaja','Any',null,8,'1–2 jam drying','Small'],
+  ['Semua Seat Sedan – tanpa buka','Sedan',170,90,'3–4 jam','Standard'],
+  ['Semua Seat SUV – tanpa buka','SUV',180,null,'3–4 jam','Standard'],
+  ['Semua Seat MPV – tanpa buka','MPV',200,null,'3–5 jam','Standard'],
+  ['Carpet Lantai – tanpa buka','Any',null,20,'Drying: belum ukur','Standard'],
+  ['Carpet Lantai – buka seat','Any',null,60,'Drying: belum ukur','Standard'],
+  ['Full Interior Detailing','Any',600,null,'2–3 hari','Blocks Capacity']
+].map((s,i)=>({id:'benchmark-'+i,name:s[0],vehicleCategory:s[1],defaultPrice:s[2],activeMinutes:s[3],materialCost:null,occupancy:s[4],capacityType:s[5]}));
+function ensureMasterServices() {
+  state.settings ||= {};
+  if (!Array.isArray(state.settings.masterServices)) {
+    state.settings.masterServices = SERVICE_BENCHMARKS.map(s=>({...s}));
+    userServices.forEach((name,i)=>{if(!state.settings.masterServices.some(s=>s.name===name)) state.settings.masterServices.push({id:'legacy-service-'+i,name,vehicleCategory:'Any',defaultPrice:null,activeMinutes:null,materialCost:null,occupancy:'Not established',capacityType:'Standard'});});
+  }
+  userServices = Array.from(new Set([...userServices,...state.settings.masterServices.map(s=>s.name)]));
+  state.services = userServices.slice();
+  return state.settings.masterServices;
+}
+function masterFor(name) { return ensureMasterServices().find(s=>s.name===name); }
+function serviceSnapshot(item) {
+  if (item.standardSnapshot) return item;
+  const m=masterFor(item.name);
+  return {...item,serviceId:m?.id || null,standardSnapshot:m ? {...m} : {activeMinutes:null,materialCost:null,occupancy:'Not established',capacityType:'Standard'}};
+}
+function sumKnown(values) { return values.length && values.every(v=>v!==null && v!==undefined && Number.isFinite(Number(v))) ? values.reduce((a,v)=>a+Number(v),0) : null; }
+function jobStandards(job) {
+  const items=job.serviceItems || [];
+  return {activeMinutes: job.activeMinutesOverride ?? sumKnown(items.map(i=>i.standardSnapshot?.activeMinutes)), materialCost: job.materialOverride ?? sumKnown(items.map(i=>i.standardSnapshot?.materialCost))};
+}
+function captureStandards(job, form=false) {
+  job.serviceItems=(job.serviceItems || []).map(serviceSnapshot);
+  job.profitSchemaVersion=1;
+  if(form) {
+    const raw=document.getElementById('material').value;
+    job.materialOverride=raw==='' ? null : Number(raw);
+    const active=document.getElementById('active-override')?.value || '';
+    job.activeMinutesOverride=active==='' ? null : Number(active);
+  }
+  const s=jobStandards(job);
+  job.material=s.materialCost;
+  job.capacityType=job.serviceItems.some(i=>i.standardSnapshot.capacityType==='Blocks Capacity') ? 'Blocks Capacity' : job.serviceItems.some(i=>i.standardSnapshot.capacityType==='Standard') ? 'Standard' : 'Small';
+}
+function editMasterServices() {
+  const overlay=document.createElement('div'); overlay.className='quick-overlay open';
+  overlay.style.cssText='position:fixed;inset:0;background:#0008;z-index:9999;display:flex;align-items:center;justify-content:center;padding:12px';
+  overlay.innerHTML='<div style="background:white;border-radius:12px;padding:20px;max-width:850px;width:100%;max-height:85vh;overflow:auto"><h3>Master Service List</h3><p>Blank price/time/cost = Not established. SUV RM180–190; MPV RM200–230. Default guna hujung bawah julat. Active time berbeza daripada occupancy.</p><form id="master-form"></form><button type="button" id="master-add">Tambah servis</button> <button type="button" id="master-close">Tutup</button></div>';
+  document.body.append(overlay);
+  let rows=ensureMasterServices().map(s=>({...s}));
+  const draw=()=>{
+    const form=overlay.querySelector('form');
+    form.innerHTML=rows.map((s,i)=>'<fieldset style="margin:12px 0;padding:12px"><legend>Servis '+(i+1)+'</legend>'+[['name','Service Name','text'],['defaultPrice','Default Price (RM)','number'],['activeMinutes','Standard Active Time (min)','number'],['materialCost','Standard Material Cost (RM)','number'],['occupancy','Typical Occupancy','text']].map(([k,label,type])=>'<label style="display:inline-block;margin:5px">'+label+'<input data-i="'+i+'" data-k="'+k+'" type="'+type+'" '+(type==='number'?'min="0" step="0.01"':'')+' placeholder="Not established" value="'+escapeHtml(s[k]??'')+'"></label>').join('')+[['vehicleCategory',['Sedan','SUV','MPV','Any']],['capacityType',['Small','Standard','Blocks Capacity']]].map(([k,opts])=>'<label>'+k+' <select data-i="'+i+'" data-k="'+k+'">'+opts.map(v=>'<option '+(v===s[k]?'selected':'')+'>'+v+'</option>').join('')+'</select></label>').join('')+'</fieldset>').join('')+'<button type="submit">Simpan Master Services</button>';
+    form.oninput=e=>{const t=e.target;if(!t.dataset.k)return;rows[Number(t.dataset.i)][t.dataset.k]=t.type==='number'?(t.value===''?null:Number(t.value)):t.value;};
+    form.onsubmit=e=>{e.preventDefault();if(rows.some(s=>!s.name.trim()) || new Set(rows.map(s=>s.name.trim())).size!==rows.length){alert('Nama servis mesti unik dan lengkap.');return;} state.settings.masterServices=rows;ensureMasterServices();persistLocal();buildServiceChecklist();populateQuickSuggestions();overlay.remove();};
+  };
+  overlay.querySelector('#master-add').onclick=()=>{rows.push({id:'service-'+Date.now(),name:'',vehicleCategory:'Any',defaultPrice:null,activeMinutes:null,materialCost:null,occupancy:'Not established',capacityType:'Standard'});draw();};
+  overlay.querySelector('#master-close').onclick=()=>overlay.remove();draw();
+}
+function ownerProfitMetrics(jobs) {
+  const revenue=jobs.reduce((a,b)=>a+Number(b.price||0),0);
+  const timed=jobs.filter(b=>jobStandards(b).activeMinutes>0);
+  const minutes=timed.reduce((a,b)=>a+jobStandards(b).activeMinutes,0);
+  const byService={};let costed=0;
+  jobs.forEach(b=>{const cost=jobStandards(b).materialCost;if(cost===null)return;costed++;const items=b.serviceItems||[];const weights=items.reduce((a,i)=>a+Number(i.price||0),0);items.forEach(i=>{const key=i.name;const share=weights ? Number(i.price||0)/weights : 1/items.length;byService[key]=(byService[key]||0)+(Number(b.price||0)-cost)*share;});});
+  const top=Object.entries(byService).sort((a,b)=>b[1]-a[1])[0];
+  return {average:jobs.length?revenue/jobs.length:null,perHour:minutes?timed.reduce((a,b)=>a+Number(b.price||0),0)/(minutes/60):null,timed:timed.length,total:jobs.length,costed,top};
+}
+function renderPhase1Metrics() {
+  let el=document.getElementById('phase1-metrics');
+  if(!el){const host=document.getElementById('cash-overview');if(!host)return;el=document.createElement('details');el.id='phase1-metrics';el.className='owner-section';host.after(el);}
+  const month=ymd(new Date()).slice(0,7);const jobs=state.bookings.filter(b=>isComplete(b) && String(b.completedAt||b.date||'').slice(0,7)===month);
+  const m=ownerProfitMetrics(jobs);const money=v=>v===null?'Not established':'RM'+v.toFixed(2);
+  el.innerHTML='<summary>Prestasi job bulan ini</summary><div class="owner-grid"><div class="owner-tile">Average Job Value<strong>'+money(m.average)+'</strong></div><div class="owner-tile">Revenue per Active Hour<strong>'+money(m.perHour)+'</strong><small>'+m.timed+'/'+m.total+' jobs ada active time; sebelum kos</small></div><div class="owner-tile">Top Service by Contribution<strong>'+escapeHtml(m.top?.[0]||'Not established')+'</strong><small>'+(m.top?money(m.top[1]):'Kos bahan belum ditetapkan')+' · '+m.costed+'/'+m.total+' jobs ada kos</small></div></div><p>Contribution = final revenue − material cost, sebelum overhead/owner draw. Masa drying dan hari di kedai bukan active labour. Rekod lama tanpa snapshot tidak diberi standard secara retroaktif.</p>';
+}
+
     function normalizeBooking(b) {
       let changed = false;
       if (b.status === 'Booked') { b.status = 'Pending'; changed = true; }
@@ -1933,6 +2010,7 @@
         if (b.jobType === 'major' && b.allowQuickJobsDuringJob === undefined) b.allowQuickJobsDuringJob = true;
         b.customerId = b.customerId || customerIdFor(b.phone, b.id);
       });
+      ensureMasterServices();
       migrateLegacyPayments();
       state.bookings.forEach(b => {
         const paid = paymentTotal(b.id);
@@ -1947,7 +2025,7 @@
     function migrateLegacyPayments() {
       state.bookings.forEach(b => {
         // Completed means fully paid for this business. Reconcile only the missing balance.
-        if (isComplete(b)) {
+        if (isComplete(b) && !b.profitSchemaVersion && !b.paymentMigratedV2) {
           const id = 'completed-payment-' + b.id;
           const existing = state.payments.find(p => p.id === id);
           const otherPaid = state.payments.filter(p => String(p.jobId) === String(b.id) && p.id !== id).reduce((sum, p) => sum + Number(p.amount || 0), 0);
@@ -2006,7 +2084,7 @@
     function paymentTotal(jobId) { return (state.payments || []).filter(p => String(p.jobId) === String(jobId)).reduce((sum, p) => sum + Number(p.amount || 0), 0); }
     function outstandingFor(job) { return Math.max(0, (Number(job.price) || 0) - paymentTotal(job.id)); }
     function actualRevenue(datePrefix) { return (state.payments || []).filter(p => !datePrefix || String(p.date || '').slice(0, datePrefix.length) === datePrefix).reduce((sum, p) => sum + Number(p.amount || 0), 0); }
-    function manageServices() {
+    function manageServices() { editMasterServices(); return;
       const current = userServices.join(', ');
       const value = prompt('Edit service presets (comma-separated):', current);
       if (value === null) return;
@@ -2238,6 +2316,7 @@
       closeQuickMenu();
       document.getElementById('quick-date').value = arguments[0] || ymd(new Date());
       document.getElementById('quick-name').value = 'Walk-in';
+      document.getElementById('quick-service').onchange=e=>{const m=masterFor(e.target.value);document.getElementById('quick-amount').value=m?.defaultPrice ?? '';};
       document.getElementById('quick-overlay').classList.add('open');
       setTimeout(() => document.getElementById('quick-service').focus(), 30);
     }
@@ -2296,8 +2375,10 @@
       const service = document.getElementById('quick-service').value.trim();
       const price = Number(document.getElementById('quick-amount').value) || 0;
       if (!service || price <= 0) { alert('Enter a service and amount greater than RM0.'); return; }
+      if(masterFor(service)?.capacityType==='Blocks Capacity') {alert('Servis ini block capacity beberapa hari. Guna New Booking untuk tarikh masuk/keluar.');return;}
       const id = Date.now();
       const job = { id, customerId: customerIdFor(phone, id), name: toTitleCase(name), phone, car, plate, service, serviceItems: [{ name: service, price }], jobType: 'quick', date, time: document.getElementById('quick-time').value, endDate: date, price, deposit: 0, totalPaid: 0, material: 0, paymentStatus: 'Belum Bayar', paymentMethod: document.getElementById('quick-method').value, status: document.getElementById('quick-status').value, source: 'Quick Job', customerSource: phone ? 'Walk-in' : 'Walk-in', allowQuickJobsDuringJob: true, _synced: false, createdAt: new Date().toISOString() };
+      captureStandards(job);
       state.bookings.push(job);
       if (document.getElementById('quick-paid').value === 'yes') await recordPayment(job, price, job.paymentMethod, date, 'quick-job');
       else { persistLocal(); await fbSet('bookings', job.id, job); }
@@ -2313,7 +2394,10 @@
     }
 
     // ===== Service Checklist (all services visible in a box) =====
+    let selectedServiceSnapshots = {};
     function buildServiceChecklist(selectedItems = []) {
+      ensureMasterServices();
+      selectedServiceSnapshots=Object.fromEntries(selectedItems.map(i=>[i.name,i]));
       const container = document.getElementById('service-checklist');
       if (!container) return;
       // Map of preselected name -> price
@@ -2388,6 +2472,9 @@
       if (checkbox.checked) {
         priceInput.disabled = false;
         priceInput.style.background = '';
+        const standard = masterFor(checkbox.dataset.name);
+        priceInput.value = standard?.defaultPrice ?? '';
+        if (standard?.capacityType === 'Blocks Capacity') { document.getElementById('job-type').value = 'major'; document.getElementById('days-at-shop').value = '3'; toggleMajorJobFields(); }
         row.classList.add('selected');
         priceInput.focus();
       } else {
@@ -2416,6 +2503,9 @@
       const priceHidden = document.getElementById('price');
       if (priceHidden) priceHidden.value = total;
       recalcBalance();
+      let info=document.getElementById("service-standard-info");
+      if(!info){info=document.createElement("p");info.id="service-standard-info";document.getElementById("form-total")?.parentElement.after(info);}
+      if(info){const items=collectServices();const standards=items.map(i=>i.standardSnapshot);const active=sumKnown(standards.map(s=>s.activeMinutes));const material=sumKnown(standards.map(s=>s.materialCost));info.textContent="Active labour: "+(active===null?"Not established":active+" min")+" · Material: "+(material===null?"Not established":"RM"+material)+" · Occupancy: "+standards.map(s=>s.occupancy).join(" + ")+" · Capacity: "+standards.map(s=>s.capacityType).join(" + ");}
     }
 
     function recalcBalance() {
@@ -2483,7 +2573,7 @@
           }
         }
       });
-      return items;
+      return items.map(i=>serviceSnapshot({...selectedServiceSnapshots[i.name],...i}));
     }
 
     function resetServiceRows() {
@@ -2558,6 +2648,7 @@
           existing.notes = document.getElementById('notes').value;
           existing.customerSource = document.getElementById('source-select')?.value || existing.customerSource || 'Walk-in';
           existing.customerId = existing.customerId || customerIdFor(existing.phone, existing.id);
+          captureStandards(existing, true);
           existing._synced = false;
           persistLocal();
           renderAll();
@@ -2599,6 +2690,7 @@
         _synced: false,
         createdAt: new Date().toISOString()
       };
+      captureStandards(booking, true);
       state.bookings.push(booking);
       persistLocal();
       renderAll();
@@ -2623,6 +2715,7 @@
     // Render all
     function renderAll() {
       updateDashboard();
+      renderPhase1Metrics();
       renderEnquiries();
       renderBookings();
       renderCalendar();
@@ -2671,7 +2764,9 @@
       document.getElementById('kpi-revenue').textContent = 'RM' + revenue.toLocaleString();
       document.getElementById('kpi-material').textContent = 'RM' + material.toLocaleString();
       document.getElementById('kpi-overhead').textContent = 'RM' + overhead.toLocaleString();
-      document.getElementById('kpi-profit').textContent = 'RM' + profit.toLocaleString();
+      const incompleteCost=thisMonth.some(b=>jobStandards(b).materialCost===null);
+      document.getElementById('kpi-profit').textContent = incompleteCost ? 'Not established' : 'RM' + profit.toLocaleString();
+      if(incompleteCost) document.getElementById('kpi-material').textContent='Not established';
 
       // Trend vs bulan lepas (Revenue & Net Profit)
       const lastMonthRef = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -2683,6 +2778,7 @@
       const lmProfit = lmRevenue - lmMaterial - lmOverhead;
       renderTrend('kpi-revenue-trend', revenue, lmRevenue);
       renderTrend('kpi-profit-trend', profit, lmProfit);
+      if(incompleteCost) document.getElementById('kpi-profit-trend').textContent='Kos bahan belum lengkap; cash flow ada di Finance.';
 
       const statusEnquiry = document.getElementById('status-enquiry');
       if (statusEnquiry) statusEnquiry.textContent = enquiries;
@@ -3541,7 +3637,8 @@
         document.getElementById('time').value = booking.time || '';
         const daysSel = document.getElementById('days-at-shop');
         if (daysSel) daysSel.value = String(booking.endDate ? bookingDates(booking).length : 1);
-        document.getElementById('material').value = booking.material || 0;
+        document.getElementById('material').value = booking.profitSchemaVersion ? (booking.materialOverride ?? '') : (booking.material ?? '');
+        document.getElementById('active-override').value = booking.activeMinutesOverride ?? ''; 
         document.getElementById('notes').value = booking.notes || '';
         if (document.getElementById('source-select')) document.getElementById('source-select').value = booking.customerSource || 'Walk-in';
         if (document.getElementById('deposit')) document.getElementById('deposit').value = booking.deposit || '';
@@ -3586,11 +3683,24 @@
           if (paymentTotal(booking.id) <= 0 || paymentTotal(booking.id) + 0.009 < requiredDeposit) { renderAll(); return; }
         }
         if (status === 'Completed' && !isComplete(booking)) {
+          const finalPrice=prompt('Sahkan harga akhir (RM). Masa/chemical tidak wajib.', String(booking.price ?? ''));
+          if(finalPrice===null || finalPrice.trim()==='' || !Number.isFinite(Number(finalPrice)) || Number(finalPrice)<0) { renderAll(); return; }
+          booking.price=Number(finalPrice); booking.profitSchemaVersion=1;
+          booking._synced=false; persistLocal();
           if (!confirm('Customer sudah pickup kereta dan bayar penuh?')) { renderAll(); return; }
           if (outstandingFor(booking) > 0.009) {
             await addPaymentForBooking(id);
             if (outstandingFor(booking) > 0.009) { renderAll(); return; }
           }
+        }
+        if(status === 'Completed') {
+          const payments=state.payments.filter(p=>String(p.jobId)===String(booking.id));
+          if(payments.some(p=>!p.method || ['Not recorded','Legacy record'].includes(p.method))) {
+            const method=prompt('Sahkan kaedah bayaran: Cash / QR / Transfer / Card');
+            if(!['Cash','QR','Transfer','Card'].includes(method)) { alert('Kaedah bayaran perlu lengkap.'); renderAll(); return; }
+            for(const p of payments.filter(p=>!p.method || ['Not recorded','Legacy record'].includes(p.method))) {p.method=method;p._synced=false;await fbSet('payments',p.id,p);}
+          }
+          booking.paymentStatus=outstandingFor(booking)<=0.009?'Sudah Bayar':paymentTotal(booking.id)>0?'Terima Deposit':'Belum Bayar';
         }
         if (status === 'In Progress' && booking.status !== 'In Progress') delete booking.pickupReadyAt;
         if (['Enquiry', 'Pending', 'Booking', 'Postponed', 'Cancelled'].includes(status)) delete booking.pickupReadyAt;
@@ -4453,22 +4563,25 @@
       const monthPrefix = ledgerMonth.getFullYear() + '-' + String(ledgerMonth.getMonth() + 1).padStart(2, '0');
       const monthExpenses = exp.filter(e => String(e.date || '').slice(0, 7) === monthPrefix);
       const revenue = actualRevenue(monthPrefix);
-      const totalExp = monthExpenses.filter(isTrueCost).reduce((s, e) => s + Number(e.amount || 0), 0);
+      const totalExp = monthExpenses.reduce((s, e) => s + Number(e.amount || 0), 0);
       const chemical = monthExpenses.filter(e => e.category === 'Chemical/Stock').reduce((s, e) => s + Number(e.amount || 0), 0);
       const net = revenue - totalExp;
       const ownerDraw = monthExpenses.filter(e => e.category === 'Owner Draw').reduce((s, e) => s + Number(e.amount || 0), 0);
 
       document.getElementById('fin-revenue').textContent = 'RM' + revenue.toLocaleString();
-      document.getElementById('fin-expenses').textContent = 'RM' + totalExp.toLocaleString();
+      document.getElementById('fin-expenses').textContent = 'RM' + monthExpenses.filter(e=>isTrueCost(e) && e.category!=='Owner Draw').reduce((a,e)=>a+Number(e.amount||0),0).toLocaleString();
       document.getElementById('fin-chemical').textContent = 'RM' + chemical.toLocaleString();
       document.getElementById('fin-netprofit').textContent = (net < 0 ? '-RM' : 'RM') + Math.abs(net).toLocaleString();
-      const outstandingTotal = state.bookings.filter(b => ['Booking', 'In Progress'].includes(b.status)).reduce((s,b)=>s+outstandingFor(b),0);
+      const outstandingTotal = state.bookings.filter(b => !['Cancelled','Enquiry'].includes(b.status)).reduce((s,b)=>s+outstandingFor(b),0);
       const outstandingEl = document.getElementById('fin-outstanding');
       if (outstandingEl) outstandingEl.textContent = 'RM' + outstandingTotal.toLocaleString();
       const odEl = document.getElementById('fin-ownerdraw');
       if (odEl) odEl.textContent = 'RM' + ownerDraw.toLocaleString();
 
       if (document.querySelector('#finance .finance-detail[open] #finChart')) renderFinCharts();
+      let saleEl=document.getElementById('phase1-sale');
+      if(!saleEl){saleEl=document.createElement('p');saleEl.id='phase1-sale';document.getElementById('fin-revenue').parentElement.after(saleEl);}
+      saleEl.textContent='Completed revenue: RM'+state.bookings.filter(b=>isComplete(b) && String(b.completedAt||b.date||'').slice(0,7)===monthPrefix).reduce((a,b)=>a+Number(b.price||0),0).toLocaleString()+' · Cash received ikut tarikh payment. Expense tidak termasuk Owner Draw; cash balance selepas semua cash-out.';
       renderSourceBreakdown();
       renderLedger();
 
@@ -4665,3 +4778,4 @@
 
 
 </body></html>
+
