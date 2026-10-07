@@ -1262,7 +1262,7 @@
           <div class="kpi-card overhead">
             <div class="kpi-icon">💸</div>
             <div class="kpi-value" id="fin-expenses" style="font-size:20px;">RM0</div>
-            <div class="kpi-label">Belanja &amp; Owner Draw</div>
+            <div class="kpi-label">Belanja operasi</div>
           </div>
           <div class="kpi-card profit">
             <div class="kpi-icon">📈</div>
@@ -4582,8 +4582,8 @@ function renderPhase1Metrics() {
 
       if (document.querySelector('#finance .finance-detail[open] #finChart')) renderFinCharts();
       let saleEl=document.getElementById('phase1-sale');
-      if(!saleEl){saleEl=document.createElement('p');saleEl.id='phase1-sale';document.getElementById('fin-revenue').parentElement.after(saleEl);}
-      saleEl.textContent='Completed revenue: RM'+state.bookings.filter(b=>isComplete(b) && String(b.completedAt||b.date||'').slice(0,7)===monthPrefix).reduce((a,b)=>a+Number(b.price||0),0).toLocaleString()+' · Cash received ikut tarikh payment. Expense tidak termasuk Owner Draw; cash balance selepas semua cash-out.';
+      if(!saleEl){saleEl=document.createElement('p');saleEl.id='phase1-sale';saleEl.style.cssText='font-size:13px;color:#64748b;margin:12px 0;';document.getElementById('fin-revenue').parentElement.parentElement.after(saleEl);}
+      saleEl.textContent='Nilai kerja siap bulan ini: RM'+state.bookings.filter(b=>isComplete(b) && String(b.completedAt||b.date||'').slice(0,7)===monthPrefix).reduce((a,b)=>a+Number(b.price||0),0).toLocaleString()+'. Bayaran diterima dikira mengikut tarikh bayaran.';
       renderSourceBreakdown();
       renderLedger();
 
