@@ -669,6 +669,9 @@
   <script src="./vendor/lucide.min.js"></script>
   <!-- PDF libraries (html2canvas + jsPDF) are lazy-loaded only when Save PDF is used -->
 
+
+
+
 </head>
 <body>
   <!-- PIN Modal -->
@@ -1694,16 +1697,16 @@
         <div class="calendar-workspace">
         <div class="calendar-main">
           <div class="cal-head">
-            <button class="cal-nav-btn" onclick="changeMonth(-1)" aria-label="Bulan sebelumnya">‹</button>
+            <button class="cal-nav-btn" onclick="navigateCalendar(-1)" aria-label="Tempoh sebelumnya">‹</button>
             <div class="cal-month" id="cal-month-label">—</div>
-            <button class="cal-nav-btn" onclick="changeMonth(1)" aria-label="Bulan seterusnya">›</button>
-            <button class="cal-today-btn" onclick="goCalendarToday()">Today</button>
+            <button class="cal-nav-btn" onclick="navigateCalendar(1)" aria-label="Tempoh seterusnya">›</button>
+            <button class="cal-today-btn" onclick="goCalendarToday()">Hari ini</button>
           </div>
-          <div class="cal-view-switch" role="group" aria-label="Paparan kalendar"><button type="button" id="cal-view-month" onclick="setCalendarView('month')">Month View</button><button type="button" id="cal-view-five" onclick="setCalendarView('five')">5-Day View</button></div>
+          <div class="cal-view-switch" role="group" aria-label="Paparan kalendar"><button type="button" id="cal-view-month" onclick="setCalendarView('month')">Bulanan</button><button type="button" id="cal-view-five" onclick="setCalendarView('five')">5 hari</button></div>
           <label class="calendar-state-picker">Negeri <select id="calendar-state" onchange="setCalendarState(this.value)"></select></label>
           <p id="calendar-holiday-coverage" class="cal-holiday-note"></p>
           <div class="cal-legend" aria-label="Petunjuk kalendar">
-            <span>● Confirmed</span><span>● Pending Deposit</span><span>● Sedang dicuci</span><span>● Konflik / tutup</span><span>● Dah siap</span>
+            <span>● Confirmed</span><span>● Pending Deposit</span><span>● Sedang dicuci</span><span>● Pertindihan jadual</span><span>● Dah siap</span><span>● Kapasiti penuh</span><span>● Kedai tutup</span>
           </div>
           <div class="cal-grid" id="cal-dow-row"></div>
           <div class="cal-grid" id="cal-grid" style="margin-top: 5px;"></div>
@@ -3715,7 +3718,7 @@ function renderPhase1Metrics() {
         card.append(header,body);
         if (group.jobs.length>1) card.append(homeNode('p','customer-card-count',group.jobs.length+' booking'));
         const actions=homeNode('div','customer-directory-actions');
-        const details=homeNode('button','','Details'); details.type='button'; details.onclick=()=>openCustomerDetails(group.id);
+        const details=homeNode('button','','Butiran'); details.type='button'; details.onclick=()=>openCustomerDetails(group.id);
         const whatsapp=homeNode('button','','WhatsApp'); whatsapp.type='button'; whatsapp.disabled=!group.contact; whatsapp.title=group.contact ? 'Pilih template WhatsApp untuk customer ini' : 'Nombor telefon tiada'; whatsapp.onclick=()=>openBookingQuickReply(group.contact.id);
         actions.append(details,whatsapp);
         const footer=homeNode('div','customer-card-footer'); footer.append(actions);
@@ -5783,6 +5786,29 @@ function renderPhase1Metrics() {
     let calendarView = window.matchMedia('(max-width: 600px)').matches ? 'five' : 'month';
     let selectedCalendarDate = ymd(new Date());
 
+    function navigateCalendar(direction) {
+      if (calendarView === 'month') { changeMonth(direction); return; }
+      const next = new Date(selectedCalendarDate + 'T00:00:00');
+      next.setDate(next.getDate() + direction * 5);
+      selectedCalendarDate = ymd(next);
+      calMonth = new Date(next.getFullYear(),next.getMonth(),1);
+      renderCalendar();
+    }
+    function calendarCellContent(cell, date, data) {
+      const holiday=publicHoliday(date),school=schoolHoliday(date);
+      if (holiday) { const tag=homeNode('span','cal-holiday-label','Cuti umum');tag.title=holiday;cell.append(tag); }
+      if (school) { const tag=homeNode('span','cal-school-label','Cuti sekolah');tag.title=school;cell.append(tag); }
+      if (data.closed) cell.append(homeNode('span','cal-calendar-label cal-closed-note','Kedai tutup'));
+      else if (data.conflict) cell.append(homeNode('span','cal-calendar-label cal-conflict-note','Jadual bertindih'));
+      calendarDaySummary(data).forEach(label=>cell.append(homeNode('span','cal-calendar-label',label)));
+      const jobs=[...data.arrivals,...data.occupied,...data.pending,...data.completed];
+      const unique=[...new Map(jobs.map(job=>[String(job.id),job])).values()];
+      for (const job of unique.slice(0,2)) {
+        const label=homeNode('span','cal-customer-preview',job.name||'Customer');
+        label.title=(job.name||'Customer')+' · '+bookingStatusLabel(job);cell.append(label);
+      }
+      if(unique.length>2)cell.append(homeNode('span','cal-customer-preview','+'+(unique.length-2)+' lagi'));
+    }
     function setCalendarView(view) {
       calendarView = view === 'five' ? 'five' : 'month';
       renderCalendar();
@@ -5800,10 +5826,12 @@ function renderPhase1Metrics() {
       const pickup = active.filter(b => b.status === 'In Progress' && String(b.endDate || '').slice(0,10) === date && String(b.date || '').slice(0,10) < date);
       const completed = active.filter(b => isComplete(b) && bookingDates(b).includes(date));
       const majors = active.filter(b => ['Booking','In Progress'].includes(b.status) && b.jobType === 'major' && bookingDates(b).includes(date));
-      return { arrivals,pending,occupied,pickup,completed,conflict:majors.length > 1,capacity:calendarCapacity(date) };
+      return { arrivals,pending,occupied,pickup,completed,conflict:majors.length > 1,capacity:calendarCapacity(date),closed:isClosed(date) };
     }
     function calendarDayTone(data) {
-      if (data.conflict || data.capacity === 'full') return 'is-conflict';
+      if (data.closed) return 'is-closed';
+      if (data.conflict) return 'is-conflict';
+      if (data.capacity === 'full') return 'has-full';
       if (data.occupied.length) return 'has-occupied';
       if (data.arrivals.length) return 'has-confirmed';
       if (data.pending.length) return 'has-pending';
@@ -5816,7 +5844,7 @@ function renderPhase1Metrics() {
       if (data.pending.length) labels.push(data.pending.length+' pending');
       if (data.occupied.length) labels.push(data.occupied.length+' aktif');
       if (data.completed.length) labels.push(data.completed.length+' siap');
-      return labels.length ? labels : [data.capacity === 'full' ? 'Penuh / tutup' : data.capacity === 'limited' ? 'Quick job boleh' : 'Tersedia'];
+      return labels.length ? labels : [data.closed ? 'Kedai tutup' : data.capacity === 'full' ? 'Kapasiti penuh' : data.capacity === 'limited' ? 'Quick job boleh' : 'Tersedia'];
     }
     function renderCalendar() {
       const grid=document.getElementById('cal-grid'); if (!grid) return;
@@ -5843,12 +5871,10 @@ function renderPhase1Metrics() {
           const date=ymd(new Date(year,month,day)),data=calendarDayData(date);
           const cell=homeNode('button','cal-cell '+calendarDayTone(data), ''); cell.type='button';
           cell.classList.toggle('today',date===ymd(new Date())); cell.classList.toggle('is-selected',date===selectedCalendarDate);
-          cell.setAttribute('aria-label',formatBookingDate(date)+' '+calendarDaySummary(data).join(', '));
+          cell.setAttribute('aria-label',formatBookingDate(date)+' '+calendarDaySummary(data).join(', ')+(date===ymd(new Date())?' · Hari ini':''));
+          cell.setAttribute('aria-pressed',String(date===selectedCalendarDate));
           cell.append(homeNode('strong','cal-date',String(day)));
-          const holiday=publicHoliday(date),school=schoolHoliday(date);
-          if (holiday) cell.append(homeNode('span','cal-holiday-label','Cuti umum: '+holiday));
-          if (school) cell.append(homeNode('span','cal-school-label','Cuti sekolah: '+school));
-          calendarDaySummary(data).forEach(label=>cell.append(homeNode('span','cal-calendar-label',label)));
+          calendarCellContent(cell,date,data);
           cell.onclick=()=>showCalDay(date); grid.append(cell);
         }
       } else {
@@ -5859,9 +5885,8 @@ function renderPhase1Metrics() {
           button.classList.toggle('is-selected',date===selectedCalendarDate);
           const dayDate=new Date(date+'T00:00:00');
           button.append(homeNode('strong','',dayDate.toLocaleDateString('ms-MY',{weekday:'short'})),homeNode('span','',String(dayDate.getDate()).padStart(2,'0')+'/'+String(dayDate.getMonth()+1).padStart(2,'0')));
-          if (publicHoliday(date)) button.append(homeNode('span','cal-holiday-label','Cuti umum'));
-          if (schoolHoliday(date)) button.append(homeNode('span','cal-school-label','Cuti sekolah'));
-          calendarDaySummary(data).forEach(label=>button.append(homeNode('span','',label)));
+          button.classList.toggle('today',date===ymd(new Date()));
+          calendarCellContent(button,date,data);
           button.onclick=()=>showCalDay(date); five.append(button);
         }
       }
@@ -5877,8 +5902,9 @@ function renderPhase1Metrics() {
       if (holiday) panel.append(homeNode('div','cal-holiday-label','Cuti umum: '+holiday));
       if (school) panel.append(homeNode('div','cal-school-label','Cuti sekolah: '+school));
       if (holiday||school) panel.append(homeNode('p','cal-holiday-note','Rujukan jadual sahaja; slot tidak ditutup secara automatik.'));
-      const capacity=data.conflict ? 'Konflik: lebih daripada satu full detailing' : isClosed(date) ? 'Kedai tutup' : data.capacity==='full' ? 'Kapasiti penuh' : data.capacity==='limited' ? 'Full detailing aktif · quick job boleh jika sesuai' : 'Masih boleh menerima booking';
-      panel.append(homeNode('div','cal-capacity',capacity));
+      const capacity=data.conflict ? 'Jadual bertindih: lebih daripada satu full detailing aktif' : isClosed(date) ? 'Kedai tutup' : data.capacity==='full' ? 'Kapasiti penuh' : data.capacity==='limited' ? 'Full detailing aktif · quick job boleh jika sesuai' : 'Masih boleh menerima booking';
+      const capacityNote=homeNode('div','cal-capacity',date<ymd(new Date()) && !data.conflict && !data.closed ? 'Sejarah booking · '+formatBookingDate(date) : capacity);
+      capacityNote.classList.toggle('is-warning',data.conflict);panel.append(capacityNote);
       if (!data.arrivals.length&&!data.pending.length&&!data.occupied.length&&!data.pickup.length&&!data.completed.length) panel.append(homeNode('p','home-empty','Tiada booking atau kerja pada tarikh ini.'));
       const groups=[['Booking masuk',data.arrivals],['Kerja sedang dicuci',data.occupied],['Pending Deposit',data.pending],['Pickup dijangka',data.pickup],['Booking dah siap',data.completed]];
       groups.forEach(([title,jobs])=>{
@@ -5890,7 +5916,7 @@ function renderPhase1Metrics() {
           const timing=title==='Kerja sedang dicuci' ? 'Masuk '+formatBookingDate(job.date)+' · Jangka siap '+formatBookingDate(job.endDate||job.date) : (job.time||'Masa belum ditetapkan');
           item.append(head,homeNode('div','cal-detail-meta',[job.car||'Kereta belum dicatat',timing,job.service||'Servis belum dicatat'].join(' · ')));
           const actions=homeNode('div','cal-detail-actions');
-          const details=homeNode('button','','Details'); details.type='button'; details.onclick=()=>openBookingDetails(job.id);
+          const details=homeNode('button','','Butiran'); details.type='button'; details.onclick=()=>openBookingDetails(job.id);
           const whatsapp=homeNode('button','','WhatsApp'); whatsapp.type='button'; whatsapp.disabled=!job.phone; whatsapp.onclick=()=>openBookingQuickReply(job.id);
           actions.append(details,whatsapp); item.append(actions); group.append(item);
         }); panel.append(group);
@@ -6440,6 +6466,72 @@ function renderPhase1Metrics() {
   </script>
 
 
+
+  <style id="calendar-ui-refinement">
+    #calendar { max-width:1540px; width:100%; margin:0 auto; }
+    #calendar .section-title { font-size:28px; }
+    #calendar .section-subtitle { font-size:14px; margin-bottom:22px; }
+    .calendar-workspace { grid-template-columns:minmax(0,1fr) 350px; gap:24px; }
+    .calendar-main,#cal-day-detail { padding:24px; border-radius:14px; border-color:#e1e3ee; box-shadow:0 3px 18px #29304705; }
+    #cal-day-detail { position:sticky; top:100px; }
+    .calendar-main .cal-month { font-size:22px; font-weight:800; }
+    .calendar-main .cal-head { margin-bottom:18px; }
+    .cal-view-switch button { font-size:14px; }
+    .calendar-state-picker { margin:16px 0 10px; }
+    .calendar-main .cal-legend { gap:9px 14px; font-size:12px; margin:12px 0 18px; }
+    .calendar-main .cal-legend span:nth-child(6) { color:#956018; }
+    .calendar-main .cal-legend span:nth-child(7) { color:#656b7d; }
+    .cal-holiday-note { font-size:12px; line-height:1.5; }
+    .calendar-main .cal-grid { gap:7px; }
+    .calendar-main .cal-dow { font-size:12px; padding:9px 0; }
+    .calendar-main .cal-cell { min-height:132px; padding:10px; text-align:left; border-radius:9px; gap:5px; align-items:stretch; justify-content:flex-start; }
+    .calendar-main .cal-date { align-self:flex-start; display:grid; place-items:center; min-width:27px; height:27px; font-size:15px; border-radius:50%; color:#30314b; }
+    .calendar-main .cal-cell.today { border-width:1px; border-color:#ded9ed; }
+    .calendar-main .today .cal-date { background:#7663b0; color:#fff; }
+    .calendar-main .cal-cell.is-selected,.cal-five-day.is-selected { outline:2px solid #7663b0; outline-offset:1px; box-shadow:0 0 0 4px #7663b015; }
+    .cal-calendar-label { font-size:12px; color:#646b7e; }
+    .cal-customer-preview { font-size:12px; font-weight:700; color:#32344e; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .calendar-main .cal-holiday-label,.calendar-main .cal-school-label { font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:3px 5px; }
+    .cal-cell.has-full,.cal-five-day.has-full { background:#fff8eb; border-color:#e7c88d; }
+    .cal-cell.is-closed,.cal-five-day.is-closed { background:#f0f1f5; border-color:#c9cbd5; }
+    .cal-cell.is-conflict,.cal-five-day.is-conflict { background:#fff1f1; border-color:#d46670; }
+    .cal-conflict-note,.cal-capacity.is-warning { color:#a92f42; }
+    .cal-capacity.is-warning { background:#fff0f1; }
+    .cal-detail-heading { font-size:21px; line-height:1.4; }
+    .cal-capacity { line-height:1.5; font-size:13px; margin:14px 0 20px; }
+    .cal-detail-group h4 { font-size:14px; }
+    .cal-detail-name { font-size:15px; }
+    .cal-detail-status { padding:4px 7px; border-radius:5px; background:#f1eef8; font-size:11px; }
+    .cal-detail-meta { font-size:13px; margin-left:0; }
+    .cal-detail-actions { margin-left:0; }
+    .cal-day-actions { border-top:1px solid #ececf2; padding-top:18px; }
+    .cal-day-actions button:first-child { background:#7663b0; color:#fff; border-color:#7663b0; }
+    #cal-five-grid { gap:10px; }
+    .cal-five-day { min-height:155px; padding:14px; gap:8px; border-radius:10px; }
+    .cal-five-day strong { font-size:15px; }
+    .cal-five-day.today strong { color:#7663b0; }
+    @media(min-width:1600px) { .calendar-main .cal-cell { min-height:145px; } }
+    @media(max-width:1100px) { .calendar-workspace { grid-template-columns:minmax(0,1fr); } #cal-day-detail { position:static; } }
+    @media(max-width:600px) {
+      #calendar .section-title { font-size:24px; } #calendar .section-subtitle { font-size:13px; line-height:1.5; }
+      .calendar-workspace { gap:16px; }
+      .calendar-main,#cal-day-detail { padding:14px; border-radius:12px; }
+      .calendar-main .cal-head { grid-template-columns:44px minmax(0,1fr) 44px; gap:8px; }
+      .calendar-main .cal-month { font-size:18px; }.cal-today-btn { grid-column:1/-1; }
+      .cal-view-switch { margin-bottom:14px; }.cal-view-switch button { flex:1; }
+      .calendar-main .cal-legend { font-size:11px; gap:8px 12px; }
+      .calendar-main .cal-grid { gap:4px; }
+      .calendar-main .cal-cell { min-height:83px; padding:4px 3px; gap:3px; border-radius:6px; }
+      .calendar-main .cal-date { min-width:24px; height:24px; font-size:13px; }
+      .calendar-main .cal-calendar-label { font-size:10px; line-height:1.25; }
+      .calendar-main .cal-cell .cal-customer-preview { display:none; }
+      .calendar-main .cal-cell .cal-holiday-label,.calendar-main .cal-cell .cal-school-label { font-size:8px; padding:2px; }
+      #cal-five-grid { display:flex; overflow-x:auto; gap:8px; padding:4px 3px 10px; scroll-snap-type:x mandatory; }
+      .cal-five-day { flex:0 0 108px; min-height:150px; padding:10px; scroll-snap-align:start; }
+      .cal-five-day span { font-size:11px; }.cal-five-day .cal-customer-preview { font-size:12px; }
+      .cal-detail-heading { font-size:19px; }.cal-detail-actions button { flex:1; }
+    }
+  </style>
 </body></html>
 
 
