@@ -603,6 +603,8 @@
     .calendar-main .cal-cell.today { border-color:#8170b4; }
     .cal-cell.has-confirmed,.cal-five-day.has-confirmed { background:#fffbea; border-color:#ead99b; }
     .cal-cell.has-pending,.cal-five-day.has-pending { background:#fff8f0; border-color:#f1d3b0; }
+    .cal-cell.has-completed,.cal-five-day.has-completed { background:#f0faf4; border-color:#b9dfc9; }
+    .calendar-main .cal-legend span:nth-child(5) { color:#25724d; }
     .cal-cell.has-occupied,.cal-five-day.has-occupied { background:#f3f0fb; border-color:#d8d0ef; }
     .cal-cell.is-conflict,.cal-five-day.is-conflict { border-color:#e99ca2; }
     .cal-calendar-label { font-size:11px; line-height:1.3; color:#51576c; overflow-wrap:anywhere; }
@@ -1701,7 +1703,7 @@
           <label class="calendar-state-picker">Negeri <select id="calendar-state" onchange="setCalendarState(this.value)"></select></label>
           <p id="calendar-holiday-coverage" class="cal-holiday-note"></p>
           <div class="cal-legend" aria-label="Petunjuk kalendar">
-            <span>● Confirmed</span><span>● Pending Deposit</span><span>● Sedang dicuci</span><span>● Konflik / tutup</span>
+            <span>● Confirmed</span><span>● Pending Deposit</span><span>● Sedang dicuci</span><span>● Konflik / tutup</span><span>● Dah siap</span>
           </div>
           <div class="cal-grid" id="cal-dow-row"></div>
           <div class="cal-grid" id="cal-grid" style="margin-top: 5px;"></div>
@@ -5796,14 +5798,16 @@ function renderPhase1Metrics() {
       const pending = active.filter(b => b.status === 'Pending' && String(b.date || '').slice(0,10) === date);
       const occupied = active.filter(b => b.status === 'In Progress' && String(b.date || '').slice(0,10) < date && bookingDates(b).includes(date));
       const pickup = active.filter(b => b.status === 'In Progress' && String(b.endDate || '').slice(0,10) === date && String(b.date || '').slice(0,10) < date);
+      const completed = active.filter(b => isComplete(b) && bookingDates(b).includes(date));
       const majors = active.filter(b => ['Booking','In Progress'].includes(b.status) && b.jobType === 'major' && bookingDates(b).includes(date));
-      return { arrivals,pending,occupied,pickup,conflict:majors.length > 1,capacity:calendarCapacity(date) };
+      return { arrivals,pending,occupied,pickup,completed,conflict:majors.length > 1,capacity:calendarCapacity(date) };
     }
     function calendarDayTone(data) {
       if (data.conflict || data.capacity === 'full') return 'is-conflict';
       if (data.occupied.length) return 'has-occupied';
       if (data.arrivals.length) return 'has-confirmed';
       if (data.pending.length) return 'has-pending';
+      if (data.completed.length) return 'has-completed';
       return '';
     }
     function calendarDaySummary(data) {
@@ -5811,6 +5815,7 @@ function renderPhase1Metrics() {
       if (data.arrivals.length) labels.push(data.arrivals.length+' masuk');
       if (data.pending.length) labels.push(data.pending.length+' pending');
       if (data.occupied.length) labels.push(data.occupied.length+' aktif');
+      if (data.completed.length) labels.push(data.completed.length+' siap');
       return labels.length ? labels : [data.capacity === 'full' ? 'Penuh / tutup' : data.capacity === 'limited' ? 'Quick job boleh' : 'Tersedia'];
     }
     function renderCalendar() {
@@ -5874,8 +5879,8 @@ function renderPhase1Metrics() {
       if (holiday||school) panel.append(homeNode('p','cal-holiday-note','Rujukan jadual sahaja; slot tidak ditutup secara automatik.'));
       const capacity=data.conflict ? 'Konflik: lebih daripada satu full detailing' : isClosed(date) ? 'Kedai tutup' : data.capacity==='full' ? 'Kapasiti penuh' : data.capacity==='limited' ? 'Full detailing aktif · quick job boleh jika sesuai' : 'Masih boleh menerima booking';
       panel.append(homeNode('div','cal-capacity',capacity));
-      if (!data.arrivals.length&&!data.pending.length&&!data.occupied.length&&!data.pickup.length) panel.append(homeNode('p','home-empty','Tiada booking atau kerja pada tarikh ini.'));
-      const groups=[['Booking masuk',data.arrivals],['Kerja sedang dicuci',data.occupied],['Pending Deposit',data.pending],['Pickup dijangka',data.pickup]];
+      if (!data.arrivals.length&&!data.pending.length&&!data.occupied.length&&!data.pickup.length&&!data.completed.length) panel.append(homeNode('p','home-empty','Tiada booking atau kerja pada tarikh ini.'));
+      const groups=[['Booking masuk',data.arrivals],['Kerja sedang dicuci',data.occupied],['Pending Deposit',data.pending],['Pickup dijangka',data.pickup],['Booking dah siap',data.completed]];
       groups.forEach(([title,jobs])=>{
         if (!jobs.length) return;
         const group=homeNode('section','cal-detail-group'); group.append(homeNode('h4','',title));
