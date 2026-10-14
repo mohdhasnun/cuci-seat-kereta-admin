@@ -2221,6 +2221,9 @@
         if (!server) {
           // Preserve pending local additions, but do not resurrect a synced cloud deletion.
           if (item._synced === false || item._syncConflict) merged.push(item);
+        } else if (coll==='payments' && server.voided) {
+          // A cancelled erroneous transaction cannot be resurrected by an old device copy.
+          continue;
         } else if (item._synced === false || item._syncConflict) {
           if (comparableRecord(item) === comparableRecord(server)) continue;
           if ((cloudRevision(server) !== cloudRevision(item) || (cloudRevision(server) === 0 && item._cloudBase !== comparableRecord(server))) && !pendingCloudWrites.has(coll + '/' + key)) markSyncConflict(coll, item, server);
@@ -2741,7 +2744,7 @@ function renderPhase1Metrics() {
     function htmlJsArg(value) { return escapeHtml(JSON.stringify(String(value))); }
     function safeImageSrc(value) { return /^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/i.test(String(value || '')) ? value : ''; }
 
-    function paymentTotal(jobId) { return (state.payments || []).filter(p => String(p.jobId) === String(jobId)).reduce((sum, p) => sum + Number(p.amount || 0), 0); }
+    function paymentTotal(jobId) { return (state.payments || []).filter(p => !p.voided && String(p.jobId) === String(jobId)).reduce((sum, p) => sum + Number(p.amount || 0), 0); }
     function outstandingFor(job) { return Math.max(0, (Number(job.price) || 0) - paymentTotal(job.id)); }
     const WAIVER_NOTE_PREFIX = 'Pengecualian deposit (admin): ';
     function waiverReasonFromNotes(notes) { return String(notes || '').split('\n').find(line => line.startsWith(WAIVER_NOTE_PREFIX))?.slice(WAIVER_NOTE_PREFIX.length).trim() || ''; }
@@ -2766,7 +2769,7 @@ function renderPhase1Metrics() {
       if (job.status === 'In Progress' && job.pickupReadyAt) return 'Ready for Pickup';
       return job.status;
     }
-    function actualRevenue(datePrefix) { return (state.payments || []).filter(p => !datePrefix || String(p.date || '').slice(0, datePrefix.length) === datePrefix).reduce((sum, p) => sum + Number(p.amount || 0), 0); }
+    function actualRevenue(datePrefix) { return (state.payments || []).filter(p => !p.voided && (!datePrefix || String(p.date || '').slice(0, datePrefix.length) === datePrefix)).reduce((sum, p) => sum + Number(p.amount || 0), 0); }
     function manageServices() { editMasterServices(); return;
       const current = userServices.join(', ');
       const value = prompt('Edit service presets (comma-separated):', current);
@@ -2927,7 +2930,8 @@ function renderPhase1Metrics() {
           // Deleted cloud records require a separate review; never resurrect them here.
           if (!snapshot.exists) { if (!automatic) alert('Rekod ' + local.id + ' tiada dalam cloud. Konflik dikekalkan untuk semakan.'); continue; }
           const remote = snapshot.data();
-          if (comparableRecord(local) === comparableRecord(remote)) {
+          if ((coll==='payments' && remote.voided) || comparableRecord(local) === comparableRecord(remote)) {
+            if(coll==='payments' && remote.voided) Object.assign(local,remote);
             local.cloudRevision=cloudRevision(remote);local._cloudBase=comparableRecord(remote);local._synced=true;local._syncConflict=false;delete local._conflictRevision;resolved++;persistLocal();continue;
           }
           const reviewedRemote = comparableRecord(remote);
@@ -4370,7 +4374,7 @@ function renderPhase1Metrics() {
       const action=(label,fn)=>{ const button=add('button','booking-detail-action',label,actions); button.type='button'; button.onclick=fn; };
       action('WhatsApp',()=>openBookingQuickReply(booking.id));
       action('Edit',()=>{closeBookingDetails();editBooking(booking.id);});
-      action('Rekod bayaran',()=>addPaymentForBooking(booking.id));
+      action('Tambah bayaran baru',()=>addPaymentForBooking(booking.id));
       if (['Enquiry','Pending'].includes(booking.status)) action('Minta deposit',()=>{openBookingQuickReply(booking.id);const select=document.getElementById('booking-reply-template');select.value='deposit';previewBookingReply();});
       if (booking.status==='Postponed') action('Atur semula',()=>{closeBookingDetails();editBooking(booking.id);});
       if (booking.status==='Postponed') action('Sahkan semula',()=>{if(confirm('Sahkan semula tarikh dan deposit booking ini?')) updateStatus(booking.id,'Booking');});
@@ -4381,7 +4385,7 @@ function renderPhase1Metrics() {
       const money=bookingPaymentBreakdown(booking);
       section('Payment',[['Harga servis','RM'+money.total.toFixed(2)],['Deposit diminta','RM'+money.requested.toFixed(2)],['Bayaran diterima','RM'+money.paid.toFixed(2)],['Deposit masih perlu','RM'+money.depositRemaining.toFixed(2)],['Baki servis','RM'+money.outstanding.toFixed(2)],['Lebihan / refund','RM'+money.overpayment.toFixed(2)]]);
       const history=(state.payments||[]).filter(payment=>String(payment.jobId)===String(booking.id));
-      section('Sejarah bayaran',history.length ? history.map(payment=>[formatBookingDate(payment.date)+' · '+(payment.method||'Kaedah belum direkod'),'RM'+(Number(payment.amount)||0).toFixed(2)]) : [['Tiada transaksi','-']]);
+      const historyBox=add('section','booking-detail-section','');add('h3','','Sejarah bayaran',historyBox);renderEditablePaymentHistory(historyBox,booking.id);
       section('Job Progress',[['Booking disahkan',['Booking','In Progress'].includes(booking.status)||isComplete(booking)?'Ya':'Belum'],['Kereta diterima',booking.arrivedAt?formatBookingDate(booking.arrivedAt):'-'],['Kerja siap',booking.pickupReadyAt?formatBookingDate(booking.pickupReadyAt):'-'],['Kereta diambil',booking.completedAt?formatBookingDate(booking.completedAt):'-']]);
       document.getElementById('booking-detail-modal').hidden=false;
     }
@@ -4785,13 +4789,88 @@ function renderPhase1Metrics() {
       await addPaymentForBooking(id);
     }
 
+
+    function renderEditablePaymentHistory(host, jobId) {
+      const payments=(state.payments||[]).filter(p=>String(p.jobId)===String(jobId)).slice().sort((a,b)=>String(a.createdAt||a.date||'').localeCompare(String(b.createdAt||b.date||'')));
+      if(!payments.length){host.append(homeNode('p','','Belum ada transaksi direkod.'));return;}
+      host.append(homeNode('p','payment-history-hint','Edit bayaran mengubah transaksi asal. Tambah bayaran baru hanya untuk duit yang baru diterima.'));
+      for(const payment of payments){
+        const row=homeNode('div','payment-history-row');row.dataset.paymentId=String(payment.id);
+        const original=payment.voided ? Number(payment.voidedAmount||0) : Number(payment.amount||0);
+        row.append(homeNode('strong','',formatBookingDate(payment.date)+' · '+(payment.method||'Belum direkod')+' · RM'+original.toFixed(2)));
+        row.append(homeNode('small','',payment.source==='migration-v2'?'Diimport daripada rekod lama':payment.createdAt?'Direkod: '+new Date(payment.createdAt).toLocaleString('ms-MY'):'Transaksi lama'));
+        if(payment.voided){row.classList.add('is-voided');row.append(homeNode('p','','Dibatalkan · tidak dikira dalam jumlah bayaran. '+(payment.correctionReason||'')));}
+        else {
+          const actions=homeNode('div','payment-history-actions');
+          const edit=homeNode('button','','Edit bayaran');edit.type='button';edit.onclick=()=>openPaymentCorrection(payment.id,'edit');
+          const cancel=homeNode('button','','Batalkan rekod salah');cancel.type='button';cancel.onclick=()=>openPaymentCorrection(payment.id,'void');
+          actions.append(edit,cancel);row.append(actions);
+        }
+        if(payment.correctionAudit?.length)row.append(homeNode('small','','Sejarah pembetulan: '+payment.correctionAudit.length+' perubahan'));
+        host.append(row);
+      }
+    }
+    function paymentCorrectionDraft(original, changes, reason, mode) {
+      const audit={at:new Date().toISOString(),action:mode==='void'?'void':'edit',reason,before:{amount:original.amount,date:original.date,method:original.method},after:{amount:mode==='void'?0:changes.amount,date:changes.date,method:changes.method}};
+      return {...original,...audit.after,voided:mode==='void',...(mode==='void'?{voidedAmount:Number(original.amount||0)}:{}),correctionReason:reason,correctionAudit:[...(original.correctionAudit||[]),audit],updatedAt:audit.at,_synced:false};
+    }
+    async function savePaymentCorrection(original, changes, reason, mode) {
+      if(!fbReady() || !navigator.onLine)throw new Error('Sambung internet dahulu. Pembetulan perlu disahkan cloud.');
+      const draft=paymentCorrectionDraft(original,changes,reason,mode);
+      if(!await fbSet('payments',original.id,draft))throw new Error(cloudUiError || 'Versi cloud berubah. Muat semula dan semak transaksi sebelum cuba lagi.');
+      draft._synced=true;
+      const index=state.payments.findIndex(p=>String(p.id)===String(original.id));
+      if(index<0)throw new Error('Transaksi asal tidak ditemui. Muat semula rekod.');
+      state.payments[index]=draft;
+      const job=state.bookings.find(b=>String(b.id)===String(original.jobId));
+      persistLocal();
+      if(job){
+        job.totalPaid=paymentTotal(job.id);job.paymentStatus=job.totalPaid>=Number(job.price||0)?'Sudah Bayar':job.totalPaid>0?'Terima Deposit':'Belum Bayar';job._synced=false;
+        job._synced=await fbSet('bookings',job.id,job);
+      }
+      rebuildCustomers();persistLocal();renderAll();updateSyncStatus();
+      if(typeof editingBookingId!=='undefined' && String(editingBookingId)===String(original.jobId)){
+        const history=document.getElementById('booking-edit-history');
+        if(history){history.replaceChildren(homeNode('h3','','Sejarah bayaran'));renderEditablePaymentHistory(history,original.jobId);}
+        recalcBalance();
+      }
+      return draft;
+    }
+    function openPaymentCorrection(paymentId,mode='edit') {
+      const original=state.payments.find(p=>String(p.id)===String(paymentId));
+      if(!original || original.voided)return;
+      const job=state.bookings.find(b=>String(b.id)===String(original.jobId));
+      const captured=JSON.parse(JSON.stringify(original));
+      const overlay=homeNode('div','payment-correction-overlay');const form=homeNode('form','payment-correction-form');
+      const title=homeNode('h3','',mode==='void'?'Batalkan rekod bayaran salah':'Edit bayaran asal');
+      form.append(title,homeNode('p','',job?.name||'Customer'),homeNode('p','payment-history-hint','Transaksi asal dikemas kini; tiada transaksi baru ditambah. Ini pembetulan rekod, bukan pemulangan duit.'));
+      const field=(label,type,value)=>{const wrapper=homeNode('label','',label);const input=document.createElement('input');input.type=type;input.value=value;input.required=true;wrapper.append(input);form.append(wrapper);return input;};
+      const amount=field('Amaun (RM)','number',original.amount);amount.min='0.01';amount.step='0.01';
+      const date=field('Tarikh bayaran sebenar','date',String(original.date||'').slice(0,10));
+      const method=field('Kaedah bayaran','text',original.method||'QR');
+      if(mode==='void'){amount.readOnly=true;date.readOnly=true;method.readOnly=true;}
+      const reason=field('Sebab pembetulan (wajib)','text','');reason.maxLength=300;
+      const preview=homeNode('p','payment-correction-preview','');form.append(preview);
+      const update=()=>{const next=mode==='void'?0:Number(amount.value||0);preview.textContent='Jumlah diterima: RM'+paymentTotal(original.jobId).toFixed(2)+' → RM'+(paymentTotal(original.jobId)-Number(original.amount||0)+next).toFixed(2);};amount.oninput=update;update();
+      const error=homeNode('p','payment-correction-error','');error.setAttribute('role','alert');form.append(error);
+      const actions=homeNode('div','payment-history-actions');const cancel=homeNode('button','','Kembali');cancel.type='button';cancel.onclick=()=>overlay.remove();const save=homeNode('button','primary',mode==='void'?'Sahkan pembatalan rekod':'Simpan pembetulan');save.type='submit';actions.append(cancel,save);form.append(actions);overlay.append(form);document.body.append(overlay);
+      form.onsubmit=async event=>{
+        event.preventDefault();if(save.disabled)return;
+        const numeric=Number(amount.value);const note=reason.value.trim();
+        if(!note || !method.value.trim() || !Number.isFinite(numeric) || numeric<=0){error.textContent='Isi amaun, kaedah bayaran dan sebab pembetulan.';return;}
+        save.disabled=true;cancel.disabled=true;error.textContent='';
+        try{await savePaymentCorrection(captured,{amount:numeric,date:date.value,method:method.value.trim()},note,mode);overlay.remove();closeBookingDetails();openBookingDetails(original.jobId);}
+        catch(err){error.textContent=err.message||String(err);save.disabled=false;cancel.disabled=false;}
+      };
+    }
+
     async function addPaymentForBooking(id) {
       const booking = state.bookings.find(b => String(b.id) === String(id));
       if (!booking) return;
       const due = outstandingFor(booking);
       const depositDue = Math.max(0, depositRequiredFor(booking) - paymentTotal(id));
       const suggested = ['Enquiry', 'Pending'].includes(booking.status) && depositDue > 0 ? Math.min(depositDue, due) : due;
-      const amountInput = prompt('Payment received (RM). Balance: RM' + due.toFixed(2), String(suggested));
+      const amountInput = prompt('Tambah BAYARAN BARU sahaja. Untuk betulkan rekod lama, gunakan Edit bayaran dalam Sejarah bayaran.\n\nAmaun diterima sekarang (RM). Baki: RM'+due.toFixed(2), '');
       if (amountInput === null) return;
       const amount = Number(amountInput);
       if (!Number.isFinite(amount) || amount <= 0) { alert('Enter a payment amount greater than RM0.'); return; }
@@ -4802,6 +4881,9 @@ function renderPhase1Metrics() {
       if (date === null) return;
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(new Date(date + 'T00:00:00').getTime()) || ymd(new Date(date + 'T00:00:00')) !== date) { alert('Enter a valid payment date.'); return; }
       if (!method.trim()) { alert('Kaedah bayaran wajib diisi.'); return; }
+      const paidBefore=paymentTotal(id);
+      const samePayment=(state.payments||[]).some(payment=>!payment.voided && String(payment.jobId)===String(id) && Math.abs(Number(payment.amount)-amount)<0.009 && payment.date===date && payment.method===method.trim());
+      if (!confirm((samePayment?'AMARAN: transaksi dengan amaun, tarikh dan kaedah sama sudah ada. Teruskan hanya jika ini bayaran tambahan yang berasingan.\n\n':'')+'Tambah transaksi baru RM'+amount.toFixed(2)+'?\nDiterima sekarang: RM'+paidBefore.toFixed(2)+'\nJumlah selepas tambah: RM'+(paidBefore+amount).toFixed(2)+'\n\nIni bukan edit bayaran lama.')) return;
       await recordPayment(booking, amount, method.trim(), date, 'manual');
       renderAll();
     }
@@ -5085,8 +5167,7 @@ function renderPhase1Metrics() {
         history.replaceChildren();
         const title=document.createElement('h3'); title.textContent='Sejarah bayaran'; history.appendChild(title);
         const payments=(state.payments||[]).filter(payment=>String(payment.jobId)===String(booking.id));
-        payments.forEach(payment=>{const row=document.createElement('p'); row.textContent=(payment.date||'-')+' · '+(payment.method||'Kaedah belum direkod')+' · RM'+Number(payment.amount||0).toFixed(2);history.appendChild(row);});
-        if (!payments.length) {const empty=document.createElement('p');empty.textContent='Belum ada transaksi direkod.';history.appendChild(empty);}
+        renderEditablePaymentHistory(history,booking.id);
         history.hidden=false;
         showBookingStep(1);
         const sb = document.getElementById('save-booking-btn');
@@ -5183,7 +5264,7 @@ function renderPhase1Metrics() {
       currentReceiptId = id;
       const booking = state.bookings.find(b => b.id == id);
       if (booking) {
-        const payments = (state.payments || []).filter(p => String(p.jobId) === String(booking.id)).sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+        const payments = (state.payments || []).filter(p => !p.voided && String(p.jobId) === String(booking.id)).sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
         const amountPaid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
         const balance = outstandingFor(booking);
         const paid = balance <= 0.009 && Number(booking.price) > 0;
@@ -5668,7 +5749,7 @@ function renderPhase1Metrics() {
       const now = new Date();
       const cutoff = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
 
-      const relevant = (state.payments || []).filter(p => p.date && new Date(p.date) >= cutoff);
+      const relevant = (state.payments || []).filter(p => !p.voided && p.date && new Date(p.date) >= cutoff);
       if (relevant.length < 5) {
         box.innerHTML = '';
         return;
@@ -6377,7 +6458,7 @@ function renderPhase1Metrics() {
       // Gabung booking siap (+) dan expense (−) jadi satu senarai kronologi — KESELURUHAN masa dulu,
       // supaya baki running balance tetap betul (bawa baki dari bulan sebelumnya), baru filter untuk papar.
       const allEntries = [];
-      (state.payments || []).forEach(p => {
+      (state.payments || []).filter(p=>!p.voided).forEach(p => {
         const b = state.bookings.find(x => String(x.id) === String(p.jobId));
         const method = String(p.method || '').trim();
         const knownMethod = method && !['not recorded', 'legacy record', 'other'].includes(method.toLowerCase());
@@ -6613,6 +6694,9 @@ function renderPhase1Metrics() {
       #add-booking .booking-step-panel { scroll-margin-bottom:150px; }
     }
   </style>
+<style id="payment-correction-ui">
+.payment-history-hint{font-size:13px;line-height:1.5;color:#676c7f}.payment-history-row{padding:14px 0;border-top:1px solid #e5e4ed}.payment-history-row>strong,.payment-history-row>small{display:block;line-height:1.5}.payment-history-row>small{color:#767b8d;font-size:12px}.payment-history-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.payment-history-actions button{min-height:44px;padding:9px 12px;border:1px solid #d7d3e5;border-radius:7px;background:#fff;color:#55468e;font:inherit;font-size:13px;font-weight:700}.payment-history-actions button.primary{background:#7663b0;color:white}.payment-history-row.is-voided{color:#74798b;background:#f7f7fa}.payment-correction-overlay{position:fixed;inset:0;z-index:11000;background:#20253688;display:flex;justify-content:center;align-items:center;padding:16px}.payment-correction-form{width:min(480px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:12px;padding:22px;box-shadow:0 20px 70px #20253644}.payment-correction-form h3{font-size:21px;margin:0 0 10px}.payment-correction-form label{display:block;margin-top:14px;font-size:13px;font-weight:700}.payment-correction-form input{display:block;width:100%;box-sizing:border-box;min-height:44px;font-size:16px;border:1px solid #d7d3e5;border-radius:7px;padding:10px;margin-top:5px}.payment-correction-preview{background:#f3f0fb;padding:12px;border-radius:7px;line-height:1.5}.payment-correction-error{color:#a3283e;font-size:13px}.payment-correction-form input[readonly]{background:#f4f5f8;color:#60667b}
+</style>
 </body></html>
 
 
