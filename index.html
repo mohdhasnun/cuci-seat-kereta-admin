@@ -6592,6 +6592,15 @@ function renderPhase1Metrics() {
       .cal-detail-heading { font-size:19px; }.cal-detail-actions button { flex:1; }
     }
   </style>
+  <style id="booking-footer-spacing-fix">
+    @media(min-width:651px) {
+      #add-booking .booking-form-actions { position:static; bottom:auto; margin-top:20px; padding:16px 0; border-top:1px solid #e5e4ec; background:transparent; }
+    }
+    @media(max-width:650px) {
+      #add-booking form { padding-bottom:90px; }
+      #add-booking .booking-step-panel { scroll-margin-bottom:150px; }
+    }
+  </style>
 </body></html>
 
 
