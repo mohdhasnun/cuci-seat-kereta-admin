@@ -1175,6 +1175,7 @@
     .job-card-status[data-status="Confirmed"] { background:#fff9df; color:#7b611d; }
     .job-card-status[data-status="Completed"] { background:#eaf8f1; color:#186c51; }
     .job-card-status[data-status="Cancelled"] { background:#fff0f0; color:#a3373e; }
+    .job-card-fact strong.booking-day-name { font-weight:800; font-size:14px; }.booking-date-time { font-size:13px; color:#34384b; }
     .job-card-facts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px 18px; margin:20px 0; }
     .job-card-fact { display:grid; gap:4px; min-width:0; }.job-card-fact small { color:#7c8192; font-size:11px; }.job-card-fact strong { color:#34384b; font-size:13px; font-weight:600; overflow-wrap:anywhere; }
     .job-card-payment { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; padding:13px 0; border-top:1px solid #ececf2; border-bottom:1px solid #ececf2; }
@@ -4509,7 +4510,7 @@ function renderPhase1Metrics() {
         head.append(homeNode('span','job-card-number',String(index+1).padStart(2,'0')),identity,status);card.append(head);
         const facts=homeNode('div','job-card-facts');
         const fact=(label,value)=>{const node=homeNode('div','job-card-fact');node.append(homeNode('small','',label),homeNode('strong','',value||'-'));facts.append(node);};
-        fact('Tarikh & masa',[(dayName(job.date) ? dayName(job.date)+', ' : '')+formatBookingDate(job.date),job.time].filter(Boolean).join(' · '));
+        const dateFact=homeNode('div','job-card-fact');dateFact.append(homeNode('small','','Tarikh & masa'));if(dayName(job.date))dateFact.append(homeNode('strong','booking-day-name',dayName(job.date)));dateFact.append(homeNode('span','booking-date-time',[formatBookingDate(job.date),job.time].filter(Boolean).join(' · ')||'-'));facts.append(dateFact);
         const serviceFact=homeNode('div','job-card-fact');serviceFact.append(homeNode('small','','Servis'));
         const serviceNames=Array.isArray(job.serviceItems)&&job.serviceItems.length ? job.serviceItems.map(item=>item.name).filter(Boolean) : String(job.service||'').split(/\s*\+\s*/).map(name=>name.trim()).filter(Boolean);
         const serviceList=homeNode('ol','job-card-service-list');
