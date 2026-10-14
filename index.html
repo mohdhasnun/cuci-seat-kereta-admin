@@ -1622,7 +1622,7 @@
             <div id="deposit-payment-fields" style="display:none;">
               <div class="form-row">
                 <div><label for="deposit-paid">Bayaran diterima (RM)</label><input type="number" id="deposit-paid" min="0" step="0.01" placeholder="0" oninput="recalcBalance()"></div>
-                <div><label for="deposit-method">Kaedah bayaran</label><select id="deposit-method"><option value="">Pilih kaedah</option><option value="Cash">Tunai</option><option value="Bank Transfer">Transfer bank</option><option value="QR">QR</option><option value="Card">Kad</option><option value="Other">Lain-lain</option></select></div>
+                <div><label for="deposit-method">Kaedah bayaran</label><select id="deposit-method"><option value="">Pilih kaedah</option><option value="Cash">Tunai</option><option value="Bank Transfer">Transfer bank</option><option value="QR" selected>QR</option><option value="Card">Kad</option><option value="Other">Lain-lain</option></select></div>
               </div>
               <label for="deposit-date">Tarikh bayaran</label><input type="date" id="deposit-date">
             </div>
@@ -1882,7 +1882,7 @@
           <div><label>Amount (RM)</label><input id="quick-amount" type="number" min="0" step="0.01" required></div>
           <div><label>Date</label><input id="quick-date" type="date" required></div>
           <div><label>Time</label><input id="quick-time" type="time"></div>
-          <div><label>Payment Method</label><select id="quick-method"><option>Cash</option><option>QR</option><option>Transfer</option><option>Other</option></select></div>
+          <div><label>Payment Method</label><select id="quick-method"><option>Cash</option><option selected>QR</option><option>Transfer</option><option>Other</option></select></div>
           <div><label>Job Status</label><select id="quick-status"><option value="Completed">Completed</option><option value="In Progress">In Progress</option><option value="Pending">Pending</option></select></div>
           <div><label>Payment received?</label><select id="quick-paid"><option value="yes">Yes, paid</option><option value="no">Not yet</option></select></div>
         </div>
@@ -1941,9 +1941,11 @@
       'Interior Wax',
       'Odor Treatment',
       'Sanitize Dalaman Kereta',
-      'Steam Cleaning (For Deep Cleaning)'
+      'Steam Cleaning (For Deep Cleaning)',
+      'Baby Car Seat',
+      'Stroller'
     ];
-    const QUICK_JOB_SERVICES = ['Cuci Seat', 'Cuci 1 Seat', 'Spot Cleaning', 'Cuci Bumbung', 'Carpet Lantai', 'Carpet Kaki', 'Dashboard', 'Door Panel', 'Frame Body', 'Interior Wax', 'Odor Treatment', 'Sanitize', 'Full Interior Detailing'];
+    const QUICK_JOB_SERVICES = ['Cuci Seat', 'Cuci 1 Seat', 'Spot Cleaning', 'Cuci Bumbung', 'Carpet Lantai', 'Carpet Kaki', 'Dashboard', 'Door Panel', 'Frame Body', 'Interior Wax', 'Odor Treatment', 'Sanitize', 'Full Interior Detailing', 'Baby Car Seat', 'Stroller'];
     let userServices = DEFAULT_SERVICES.slice();
     let finChart = null, finPie = null;
 
@@ -2550,6 +2552,9 @@ function ensureMasterServices() {
   if (!Array.isArray(state.settings.masterServices)) {
     state.settings.masterServices = SERVICE_BENCHMARKS.map(s=>({...s}));
     userServices.forEach((name,i)=>{if(!state.settings.masterServices.some(s=>s.name===name)) state.settings.masterServices.push({id:'legacy-service-'+i,name,vehicleCategory:'Any',defaultPrice:null,activeMinutes:null,materialCost:null,occupancy:'Not established',capacityType:'Standard'});});
+  }
+  for (const [id,name] of [['service-baby-car-seat','Baby Car Seat'],['service-stroller','Stroller']]) {
+    if (!state.settings.masterServices.some(service=>service.name===name)) state.settings.masterServices.push({id,name,vehicleCategory:'Any',defaultPrice:null,activeMinutes:null,materialCost:null,occupancy:'Not established',capacityType:'Standard'});
   }
   userServices = Array.from(new Set([...userServices,...state.settings.masterServices.map(s=>s.name)]));
   state.services = userServices.slice();
@@ -4787,7 +4792,7 @@ function renderPhase1Metrics() {
       const amount = Number(amountInput);
       if (!Number.isFinite(amount) || amount <= 0) { alert('Enter a payment amount greater than RM0.'); return; }
       if (amount > due + 0.009 && !confirm('Bayaran melebihi baki RM' + due.toFixed(2) + '. Rekod lebihan untuk refund?')) return;
-      const method = prompt('Payment method: Cash, QR, Transfer, Other', booking.paymentMethod || 'Cash');
+      const method = prompt('Payment method: QR, Cash, Transfer, Other', 'QR');
       if (method === null) return;
       const date = prompt('Payment date (YYYY-MM-DD):', ymd(new Date()));
       if (date === null) return;
