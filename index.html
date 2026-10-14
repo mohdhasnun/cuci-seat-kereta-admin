@@ -4811,7 +4811,7 @@ function renderPhase1Metrics() {
       }
     }
     function paymentCorrectionDraft(original, changes, reason, mode) {
-      const audit={at:new Date().toISOString(),action:mode==='void'?'void':'edit',reason,before:{amount:original.amount,date:original.date,method:original.method},after:{amount:mode==='void'?0:changes.amount,date:changes.date,method:changes.method}};
+      const audit={at:new Date().toISOString(),action:mode==='void'?'void':'edit',reason,before:{amount:Number(original.amount||0),date:original.date||'',method:original.method||''},after:{amount:mode==='void'?0:changes.amount,date:changes.date,method:changes.method}};
       return {...original,...audit.after,voided:mode==='void',...(mode==='void'?{voidedAmount:Number(original.amount||0)}:{}),correctionReason:reason,correctionAudit:[...(original.correctionAudit||[]),audit],updatedAt:audit.at,_synced:false};
     }
     async function savePaymentCorrection(original, changes, reason, mode) {
@@ -4828,6 +4828,7 @@ function renderPhase1Metrics() {
         job.totalPaid=paymentTotal(job.id);job.paymentStatus=job.totalPaid>=Number(job.price||0)?'Sudah Bayar':job.totalPaid>0?'Terima Deposit':'Belum Bayar';job._synced=false;
         job._synced=await fbSet('bookings',job.id,job);
       }
+      if (cloudUiErrorType==='write' && (!job || job._synced) && countPending()===0) { cloudUiError='';cloudUiErrorType=''; }
       rebuildCustomers();persistLocal();renderAll();updateSyncStatus();
       if(typeof editingBookingId!=='undefined' && String(editingBookingId)===String(original.jobId)){
         const history=document.getElementById('booking-edit-history');
