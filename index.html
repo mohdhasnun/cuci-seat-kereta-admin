@@ -2059,7 +2059,7 @@
     function initApp() {
       homeBookingDataState = 'loading';
       homePaymentDataState = 'loading';
-      loadData();
+      loadData().then(() => { setupEnquiryWatch(); setupSharedCloudWatch(); });
       const sidebarLogo = document.getElementById('sidebar-logo');
       if (sidebarLogo) sidebarLogo.src = document.querySelector('.brand-logo')?.src || '';
       if (window.lucide) lucide.createIcons();
@@ -2070,9 +2070,8 @@
       // Auto-retry sync bila internet kembali / berkala
       window.addEventListener('online', () => { console.log('🌐 Online — cuba sync'); syncPending(false); });
       window.addEventListener('offline', () => { cloudUiVerified = false; updateSyncStatus(); });
-      setInterval(() => { if (countPending() > 0) syncPending(false); }, 20000);
+      setInterval(() => { if (sharedCloudErrors.size) setupSharedCloudWatch(); if (countPending() > 0) syncPending(false); }, 20000);
       // Notifikasi enquiry baru (real-time)
-      setupEnquiryWatch();
       if ('Notification' in window && Notification.permission === 'default') {
         setTimeout(() => { try { Notification.requestPermission(); } catch (e) {} }, 1500);
       }
@@ -2122,7 +2121,9 @@
     function setupEnquiryWatch() {
       if (!fbReady()) return;
       try {
-        firebase.firestore().collection('bookings').onSnapshot((snap) => {
+        firebase.firestore().collection('bookings').onSnapshot({ includeMetadataChanges: true }, (snap) => {
+          if (snap.metadata && (snap.metadata.fromCache || snap.metadata.hasPendingWrites)) return;
+          cloudUiVerified = true;
           const enquiryIds = []; const newOnes = []; const fbBookings = [];
           snap.forEach((doc) => {
             const data = Object.assign({ id: doc.id }, doc.data(), { _synced: true });
@@ -2140,9 +2141,46 @@
           renderAll();
           if (knownEnquiryIds === null) { knownEnquiryIds = new Set(enquiryIds); }
           else { newOnes.forEach(notifyNewEnquiry); enquiryIds.forEach(id => knownEnquiryIds.add(id)); }
-        }, (err) => console.warn('enquiry watch:', err && err.message));
+        }, (err) => { cloudUiError = cloudErrorDescription('bookings', err); cloudUiErrorType = 'load'; updateSyncStatus(); console.warn('enquiry watch:', err && err.message); });
       } catch (e) { console.warn('enquiry watch setup', e); }
     }
+
+    function cloudErrorDescription(collection, error) {
+      const code=String(error?.code || '').replace('firestore/','');
+      const labels={bookings:'booking',payments:'bayaran',expenses:'belanja',stock:'stok',config:'tetapan'};
+      const label=labels[collection] || collection;
+      if(code==='permission-denied') return 'Akses cloud untuk '+label+' disekat. Semak akaun admin dan Firebase Rules ('+code+').';
+      return 'Sync '+label+' gagal: '+(code || error?.message || 'ralat tidak diketahui')+'. Rekod peranti dikekalkan.';
+    }
+    const sharedCloudErrors = new Map();
+    const sharedCloudSubscriptions = new Map();
+    function setupSharedCloudWatch() {
+      if (!fbReady()) return;
+      for (const [collection, stateKey] of [['payments','payments'],['expenses','expenses'],['stock','stockItems']]) {
+        if (sharedCloudSubscriptions.has(collection)) continue;
+        const stop=firebase.firestore().collection(collection).onSnapshot({includeMetadataChanges:true},snapshot=>{
+          // Only server-acknowledged snapshots can replace synced cache or mark data ready.
+          if(snapshot.metadata && (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites)) return;
+          const remote=snapshot.docs.map(doc=>({id:doc.id,...doc.data(),_synced:true}));
+          state[stateKey]=mergeCloudCollection(collection,remote,state[stateKey]);
+          if(collection==='payments') homePaymentDataState='ready';
+          sharedCloudErrors.delete(collection);
+          if (cloudUiErrorType==='load' && cloudUiError===cloudErrorDescription(collection,{code:'permission-denied'})) { cloudUiError=''; cloudUiErrorType=''; }
+          cloudUiVerified=true;
+          persistLocal();
+          renderAll();
+          updateSyncStatus();
+        },error=>{
+          sharedCloudErrors.set(collection,cloudErrorDescription(collection,error));
+          sharedCloudSubscriptions.delete(collection);
+          if(collection==='payments' && !(state.payments || []).length) homePaymentDataState='unavailable';
+          updateSyncStatus();
+          renderAll();
+        });
+        sharedCloudSubscriptions.set(collection,stop);
+      }
+    }
+
     function enableNotifications() {
       if (!('Notification' in window)) { alert('Browser ni tak sokong notifikasi.'); return; }
       Notification.requestPermission().then((perm) => {
@@ -2226,7 +2264,7 @@
           return true;
         } catch (e) {
           if (e.code === 'SYNC_CONFLICT') markSyncConflict(coll, data, { cloudRevision: e.actualRevision });
-          else { if (cloudUiErrorType !== 'load') { cloudUiError = 'Simpan ke cloud gagal. Rekod lokal masih disimpan.'; cloudUiErrorType = 'write'; } console.error('fbSet error', e); }
+          else { if (cloudUiErrorType !== 'load') { cloudUiError = cloudErrorDescription(coll,e); cloudUiErrorType = 'write'; } console.error('fbSet error', e); }
           return false;
         }
       });
@@ -2341,13 +2379,13 @@
           const cloudPayments = pSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), _synced: true }));
           state.payments = mergeCloudCollection('payments', cloudPayments, state.payments);
           homePaymentDataState = 'ready';
-        } catch (err) { cloudUiError = 'Gagal memuatkan rekod bayaran dari cloud.'; cloudUiErrorType = 'load'; if (!hasPaymentCache) homePaymentDataState = 'unavailable'; console.warn('Firebase payments load failed (keeping cache):', err); }
+        } catch (err) { cloudUiError = cloudErrorDescription('payments',err); cloudUiErrorType = 'load'; if (!hasPaymentCache) homePaymentDataState = 'unavailable'; console.warn('Firebase payments load failed (keeping cache):', err); }
         try {
           const stkSnap = await firebase.firestore().collection('stock').get({ source: 'server' });
           const fbStock = stkSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), _synced: true }));
           state.stockItems = mergeCloudCollection('stock', fbStock, state.stockItems);
           localStorage.setItem(STOCK_KEY, JSON.stringify({ stockItems: state.stockItems }));
-        } catch (err) { cloudUiError = 'Sebahagian rekod cloud gagal dimuatkan.'; cloudUiErrorType = 'load'; console.error('Firebase stock load failed (keeping cache):', err); }
+        } catch (err) { cloudUiError = cloudErrorDescription('stock',err); cloudUiErrorType = 'load'; console.error('Firebase stock load failed (keeping cache):', err); }
         try {
           const cSnap = await firebase.firestore().collection('config').doc('closedDates').get({ source: 'server' });
           const fbDates = (cSnap.exists && cSnap.data() && cSnap.data().dates) || [];
@@ -2811,13 +2849,14 @@ function renderPhase1Metrics() {
       const conflicts = [...state.bookings, ...(state.expenses || []), ...(state.payments || []), ...(state.stockItems || [])].filter(x => x._syncConflict).length;
       const offline = !navigator.onLine || !fbReady();
       const syncing = cloudUiLoading || cloudUiSyncing || pendingCloudWrites.size > 0;
-      const status = offline ? 'offline' : syncing ? 'syncing' : conflicts ? 'error' : cloudUiError ? 'error' : pending ? 'pending' : cloudUiVerified ? 'synced' : 'unknown';
+      const sharedError=sharedCloudErrors.values().next().value || '';
+      const status = offline ? 'offline' : syncing ? 'syncing' : conflicts ? 'error' : (cloudUiError || sharedError) ? 'error' : pending ? 'pending' : cloudUiVerified ? 'synced' : 'unknown';
       const labels = { error:'Sync Error', offline:'Offline', syncing:'Syncing', pending:pending + ' Pending', synced:'Synced', unknown:'Cloud ?' };
       badge.dataset.state = status;
       document.getElementById('sync-badge-label').textContent = labels[status];
       badge.setAttribute('aria-label', 'Cloud Sync: ' + labels[status] + '. Buka butiran status');
       document.getElementById('sync-popover-title').textContent = 'Cloud Sync · ' + labels[status];
-      document.getElementById('sync-popover-detail').textContent = conflicts ? 'Rekod sedang menunggu penyelarasan automatik. Perubahan phone diutamakan; salinan cloud disimpan sebelum sync.' : offline ? 'Cloud tidak dapat dihubungi. Rekod pada peranti ini belum semestinya selamat di cloud.' : syncing ? 'Operasi cloud sedang berjalan. Tunggu sehingga status dikemas kini.' : cloudUiError ? cloudUiError : pending ? 'Sambungan cloud tersedia, tetapi masih ada rekod yang belum sync.' : cloudUiVerified ? 'Cloud telah memberi respons dan tiada rekod lokal yang ditanda belum sync.' : 'Sambungan cloud belum disahkan. Jangan anggap rekod telah selamat di cloud.';
+      document.getElementById('sync-popover-detail').textContent = conflicts ? 'Rekod sedang menunggu penyelarasan automatik. Perubahan phone diutamakan; salinan cloud disimpan sebelum sync.' : offline ? 'Cloud tidak dapat dihubungi. Rekod pada peranti ini belum semestinya selamat di cloud.' : syncing ? 'Operasi cloud sedang berjalan. Tunggu sehingga status dikemas kini.' : (sharedError || cloudUiError) ? (sharedError || cloudUiError) : pending ? 'Sambungan cloud tersedia, tetapi masih ada rekod yang belum sync.' : cloudUiVerified ? 'Cloud telah memberi respons dan tiada rekod lokal yang ditanda belum sync.' : 'Sambungan cloud belum disahkan. Jangan anggap rekod telah selamat di cloud.';
       document.getElementById('sync-popover-count').textContent = pending + ' rekod belum sync' + (conflicts ? ' · ' + conflicts + ' konflik' : '');
       document.getElementById('sync-popover-guidance').textContent = conflicts ? 'App cuba selaraskan automatik. Tekan Sync sekarang untuk cuba lagi; Semak konflik tersedia jika masih gagal.' : offline ? 'Semak internet. Backup data lokal jika rekod penting; sync semula selepas sambungan pulih.' : syncing ? 'Jangan tutup halaman semasa operasi ini berjalan.' : cloudUiError || pending ? 'Backup data jika perlu, kemudian tekan Sync sekarang untuk cuba semula.' : 'Backup berkala tetap digalakkan.';
       document.getElementById('sync-now-button').disabled = offline || syncing || pending === 0;
@@ -2928,8 +2967,10 @@ function renderPhase1Metrics() {
       }
     }
 
+    function sharedErrorForAlert() { return sharedCloudErrors.values().next().value || ''; }
     function manualSyncFromPopover() {
       closeSyncPopover();
+      setupSharedCloudWatch();
       syncPending(true);
     }
     document.addEventListener('click', event => { if (!event.target.closest('.sync-control')) closeSyncPopover(); });
@@ -2975,7 +3016,7 @@ function renderPhase1Metrics() {
       }
       persistLocal();
       if (pendingAtStart > 0 && countPending() === 0 && cloudUiErrorType === 'write' && ![...state.bookings, ...(state.expenses || []), ...(state.payments || []), ...(state.stockItems || [])].some(x => x._syncConflict)) { cloudUiError = ''; cloudUiErrorType = ''; }
-      if (manual) alert(pushed ? ('✅ ' + pushed + ' rekod berjaya sync ke cloud!') : (countPending() ? '⚠️ Masih ada rekod belum sync atau konflik. Semak status Cloud Sync.' : '✅ Semua dah sync, takde yang tertinggal.'));
+      if (manual) alert(countPending() ? '⚠️ '+countPending()+' rekod belum sync. '+(cloudUiError || 'Masih ada konflik; semak panel Cloud Sync.') : cloudUiError || sharedErrorForAlert() ? '⚠️ '+(cloudUiError || sharedErrorForAlert()) : '✅ Semua rekod peranti ini berjaya sync ke cloud.');
       } catch (err) {
         if (cloudUiErrorType !== 'load') { cloudUiError = 'Proses sync gagal. Rekod lokal dikekalkan.'; cloudUiErrorType = 'write'; }
         throw err;
