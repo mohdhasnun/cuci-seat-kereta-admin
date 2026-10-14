@@ -4799,7 +4799,7 @@ function renderPhase1Metrics() {
         const original=payment.voided ? Number(payment.voidedAmount||0) : Number(payment.amount||0);
         row.append(homeNode('strong','',formatBookingDate(payment.date)+' · '+(payment.method||'Belum direkod')+' · RM'+original.toFixed(2)));
         row.append(homeNode('small','',payment.source==='migration-v2'?'Diimport daripada rekod lama':payment.createdAt?'Direkod: '+new Date(payment.createdAt).toLocaleString('ms-MY'):'Transaksi lama'));
-        if(payment.voided){row.classList.add('is-voided');row.append(homeNode('p','','Dibatalkan · tidak dikira dalam jumlah bayaran. '+(payment.correctionReason||'')));}
+        if(payment.voided){row.classList.add('is-voided');row.append(homeNode('p','','Dibatalkan · tidak dikira dalam jumlah bayaran. '+(payment.correctionReason||'')));const restore=homeNode('button','','Pulihkan rekod bayaran');restore.type='button';restore.onclick=()=>openPaymentCorrection(payment.id,'restore');row.append(restore);}
         else {
           const actions=homeNode('div','payment-history-actions');
           const edit=homeNode('button','','Edit bayaran');edit.type='button';edit.onclick=()=>openPaymentCorrection(payment.id,'edit');
@@ -4811,7 +4811,7 @@ function renderPhase1Metrics() {
       }
     }
     function paymentCorrectionDraft(original, changes, reason, mode) {
-      const audit={at:new Date().toISOString(),action:mode==='void'?'void':'edit',reason,before:{amount:Number(original.amount||0),date:original.date||'',method:original.method||''},after:{amount:mode==='void'?0:changes.amount,date:changes.date,method:changes.method}};
+      const audit={at:new Date().toISOString(),action:mode==='void'?'void':mode==='restore'?'restore':'edit',reason,before:{amount:Number(original.amount||0),date:original.date||'',method:original.method||''},after:{amount:mode==='void'?0:changes.amount,date:changes.date,method:changes.method}};
       return {...original,...audit.after,voided:mode==='void',...(mode==='void'?{voidedAmount:Number(original.amount||0)}:{}),correctionReason:reason,correctionAudit:[...(original.correctionAudit||[]),audit],updatedAt:audit.at,_synced:false};
     }
     async function savePaymentCorrection(original, changes, reason, mode) {
@@ -4839,22 +4839,22 @@ function renderPhase1Metrics() {
     }
     function openPaymentCorrection(paymentId,mode='edit') {
       const original=state.payments.find(p=>String(p.id)===String(paymentId));
-      if(!original || original.voided)return;
+      if(!original || (original.voided && mode!=='restore') || (!original.voided && mode==='restore'))return;
       const job=state.bookings.find(b=>String(b.id)===String(original.jobId));
       const captured=JSON.parse(JSON.stringify(original));
       const overlay=homeNode('div','payment-correction-overlay');const form=homeNode('form','payment-correction-form');
-      const title=homeNode('h3','',mode==='void'?'Batalkan rekod bayaran salah':'Edit bayaran asal');
+      const title=homeNode('h3','',mode==='void'?'Batalkan rekod bayaran salah':mode==='restore'?'Pulihkan rekod bayaran asal':'Edit bayaran asal');
       form.append(title,homeNode('p','',job?.name||'Customer'),homeNode('p','payment-history-hint','Transaksi asal dikemas kini; tiada transaksi baru ditambah. Ini pembetulan rekod, bukan pemulangan duit.'));
       const field=(label,type,value)=>{const wrapper=homeNode('label','',label);const input=document.createElement('input');input.type=type;input.value=value;input.required=true;wrapper.append(input);form.append(wrapper);return input;};
-      const amount=field('Amaun (RM)','number',original.amount);amount.min='0.01';amount.step='0.01';
+      const amount=field('Amaun (RM)','number',mode==='restore'?original.voidedAmount:original.amount);amount.min='0.01';amount.step='0.01';
       const date=field('Tarikh bayaran sebenar','date',String(original.date||'').slice(0,10));
       const method=field('Kaedah bayaran','text',original.method||'QR');
-      if(mode==='void'){amount.readOnly=true;date.readOnly=true;method.readOnly=true;}
+      if(mode==='void'||mode==='restore'){amount.readOnly=true;date.readOnly=true;method.readOnly=true;}
       const reason=field('Sebab pembetulan (wajib)','text','');reason.maxLength=300;
       const preview=homeNode('p','payment-correction-preview','');form.append(preview);
       const update=()=>{const next=mode==='void'?0:Number(amount.value||0);preview.textContent='Jumlah diterima: RM'+paymentTotal(original.jobId).toFixed(2)+' → RM'+(paymentTotal(original.jobId)-Number(original.amount||0)+next).toFixed(2);};amount.oninput=update;update();
       const error=homeNode('p','payment-correction-error','');error.setAttribute('role','alert');form.append(error);
-      const actions=homeNode('div','payment-history-actions');const cancel=homeNode('button','','Kembali');cancel.type='button';cancel.onclick=()=>overlay.remove();const save=homeNode('button','primary',mode==='void'?'Sahkan pembatalan rekod':'Simpan pembetulan');save.type='submit';actions.append(cancel,save);form.append(actions);overlay.append(form);document.body.append(overlay);
+      const actions=homeNode('div','payment-history-actions');const cancel=homeNode('button','','Kembali');cancel.type='button';cancel.onclick=()=>overlay.remove();const save=homeNode('button','primary',mode==='void'?'Sahkan pembatalan rekod':mode==='restore'?'Sahkan pemulihan rekod':'Simpan pembetulan');save.type='submit';actions.append(cancel,save);form.append(actions);overlay.append(form);document.body.append(overlay);
       form.onsubmit=async event=>{
         event.preventDefault();if(save.disabled)return;
         const numeric=Number(amount.value);const note=reason.value.trim();
