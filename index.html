@@ -1332,7 +1332,7 @@
           <p>Pakar Hygiene Dalaman Kereta</p>
         </div>
       </div>
-      <div class="top-actions"><span id="header-page-title">Dashboard</span><div class="sync-control"><button type="button" id="header-sync" aria-expanded="false" aria-controls="sync-popover" onclick="toggleSyncPopover()"><span class="sync-dot" aria-hidden="true"></span><span id="sync-badge-label">Cloud</span></button><div id="sync-popover" class="sync-popover" role="region" aria-label="Status Cloud Sync" hidden><div class="sync-popover-head"><strong id="sync-popover-title">Cloud Sync</strong><button type="button" aria-label="Tutup status Cloud Sync" onclick="closeSyncPopover()">×</button></div><p id="sync-popover-detail"></p><p id="sync-popover-count" class="sync-count"></p><p id="sync-popover-guidance"></p><div class="sync-popover-actions"><button type="button" class="sync-now" id="sync-now-button" onclick="manualSyncFromPopover()">Sync sekarang</button><button type="button" onclick="backupData()">Backup data</button></div></div></div><button class="add-btn" onclick="newBooking()"><i data-lucide="plus"></i> Add</button><button class="add-btn settings-button" title="Settings" aria-label="Settings" onclick="openSettings()"><i data-lucide="settings-2"></i></button></div>
+      <div class="top-actions"><span id="header-page-title">Dashboard</span><div class="sync-control"><button type="button" id="header-sync" aria-expanded="false" aria-controls="sync-popover" onclick="toggleSyncPopover()"><span class="sync-dot" aria-hidden="true"></span><span id="sync-badge-label">Cloud</span></button><div id="sync-popover" class="sync-popover" role="region" aria-label="Status Cloud Sync" hidden><div class="sync-popover-head"><strong id="sync-popover-title">Cloud Sync</strong><button type="button" aria-label="Tutup status Cloud Sync" onclick="closeSyncPopover()">×</button></div><p id="sync-popover-detail"></p><p id="sync-popover-count" class="sync-count"></p><p id="sync-popover-guidance"></p><button type="button" id="resolve-conflict-button" onclick="resolveSyncConflicts()" hidden style="width:100%;padding:10px;border:1px solid #dadfeb;border-radius:6px;background:#fff;font-weight:700;color:#6256a9;">Semak konflik</button><div class="sync-popover-actions"><button type="button" class="sync-now" id="sync-now-button" onclick="manualSyncFromPopover()">Sync sekarang</button><button type="button" onclick="backupData()">Backup data</button></div></div></div><button class="add-btn" onclick="newBooking()"><i data-lucide="plus"></i> Add</button><button class="add-btn settings-button" title="Settings" aria-label="Settings" onclick="openSettings()"><i data-lucide="settings-2"></i></button></div>
     </div>
     <div class="datetime-bar" id="live-clock">--</div>
     <div id="sync-alert" role="alert" hidden></div>
@@ -2814,8 +2814,10 @@ function renderPhase1Metrics() {
       document.getElementById('sync-popover-title').textContent = 'Cloud Sync · ' + labels[status];
       document.getElementById('sync-popover-detail').textContent = conflicts ? 'Konflik versi dikesan. Salinan lokal dikekalkan dan cloud tidak ditimpa secara automatik.' : offline ? 'Cloud tidak dapat dihubungi. Rekod pada peranti ini belum semestinya selamat di cloud.' : syncing ? 'Operasi cloud sedang berjalan. Tunggu sehingga status dikemas kini.' : cloudUiError ? cloudUiError : pending ? 'Sambungan cloud tersedia, tetapi masih ada rekod yang belum sync.' : cloudUiVerified ? 'Cloud telah memberi respons dan tiada rekod lokal yang ditanda belum sync.' : 'Sambungan cloud belum disahkan. Jangan anggap rekod telah selamat di cloud.';
       document.getElementById('sync-popover-count').textContent = pending + ' rekod belum sync' + (conflicts ? ' · ' + conflicts + ' konflik' : '');
-      document.getElementById('sync-popover-guidance').textContent = conflicts ? 'Backup data dahulu. Jangan Refresh atau Restore sebelum konflik disemak.' : offline ? 'Semak internet. Backup data lokal jika rekod penting; sync semula selepas sambungan pulih.' : syncing ? 'Jangan tutup halaman semasa operasi ini berjalan.' : cloudUiError || pending ? 'Backup data jika perlu, kemudian tekan Sync sekarang untuk cuba semula.' : 'Backup berkala tetap digalakkan.';
-      document.getElementById('sync-now-button').disabled = offline || syncing || conflicts > 0 || pending === 0;
+      document.getElementById('sync-popover-guidance').textContent = conflicts ? 'Backup dahulu, kemudian tekan Semak konflik. Rekod lain boleh dihantar melalui Sync sekarang.' : offline ? 'Semak internet. Backup data lokal jika rekod penting; sync semula selepas sambungan pulih.' : syncing ? 'Jangan tutup halaman semasa operasi ini berjalan.' : cloudUiError || pending ? 'Backup data jika perlu, kemudian tekan Sync sekarang untuk cuba semula.' : 'Backup berkala tetap digalakkan.';
+      document.getElementById('sync-now-button').disabled = offline || syncing || ![...state.bookings, ...(state.expenses || []), ...(state.payments || []), ...(state.stockItems || [])].some(x => x._synced === false && !x._syncConflict);
+      document.getElementById('resolve-conflict-button').hidden = conflicts === 0;
+      document.getElementById('resolve-conflict-button').disabled = offline || syncing;
       const alertBar = document.getElementById('sync-alert');
       alertBar.hidden = conflicts === 0 && pending === 0;
       alertBar.textContent = conflicts ? conflicts + ' konflik sync · Backup dan semak status cloud' : pending ? pending + ' rekod belum selamat di cloud · Semak status cloud' : '';
@@ -2832,6 +2834,79 @@ function renderPhase1Metrics() {
       document.getElementById('sync-popover').hidden = true;
       document.getElementById('header-sync').setAttribute('aria-expanded', 'false');
     }
+
+    function conflictRecordSummary(record) {
+      if (!record) return 'Rekod tiada dalam cloud';
+      return [record.name || record.jobId || record.id, record.car, record.plate,
+        'Tarikh: ' + (record.date || '-'), 'Status: ' + (record.status || '-'),
+        'Bayaran: ' + (record.paymentStatus || '-'),
+        'Jumlah dibayar: RM' + (record.totalPaid ?? record.amount ?? 0),
+        'Kaedah: ' + (record.paymentMethod || record.method || '-')].filter(Boolean).join(' · ');
+    }
+    async function resolveSyncConflicts() {
+      if (!fbReady() || !navigator.onLine || cloudUiSyncing || cloudUiLoading || pendingCloudWrites.size) return;
+      const collections = [['bookings', state.bookings], ['payments', state.payments], ['expenses', state.expenses], ['stock', state.stockItems]];
+      const conflicts = collections.flatMap(([coll, records]) => (records || []).filter(x => x._syncConflict).map(local => ({ coll, local })));
+      cloudUiSyncing = true;
+      updateSyncStatus();
+      let resolved = 0;
+      try {
+        for (const { coll, local } of conflicts) {
+          const db = firebase.firestore();
+          const ref = db.collection(coll).doc(String(local.id));
+          const snapshot = await ref.get({ source: 'server' });
+          // Deleted cloud records require a separate review; never resurrect them here.
+          if (!snapshot.exists) { alert('Rekod ' + local.id + ' tiada dalam cloud. Konflik dikekalkan untuk semakan.'); continue; }
+          const remote = snapshot.data();
+          const reviewedRemote = comparableRecord(remote);
+          const reviewedLocal = comparableRecord(local);
+          if (!confirm('Semak konflik ' + coll + '/' + local.id + '\n\nPHONE: ' + conflictRecordSummary(local) + '\n\nCLOUD: ' + conflictRecordSummary(remote) + '\n\nOK: gunakan versi PHONE untuk rekod ini. Cancel: biarkan konflik untuk semakan.')) continue;
+          // Preserve both versions before any write. Storage failure aborts resolution.
+          const archiveKey = 'cuci_sync_conflict_backups';
+          const archive = JSON.parse(localStorage.getItem(archiveKey) || '[]');
+          if (!Array.isArray(archive)) throw new Error('Salinan konflik tidak dapat disimpan.');
+          archive.push({ coll, id: local.id, savedAt: new Date().toISOString(), local: JSON.parse(JSON.stringify(local)), remote });
+          localStorage.setItem(archiveKey, JSON.stringify(archive));
+          const clean = {};
+          for (const key of Object.keys(local)) if (!key.startsWith('_')) clean[key] = local[key];
+          const nextRevision = cloudRevision(remote) + 1;
+          const cloudData = { ...clean, cloudRevision: nextRevision };
+          const key = coll + '/' + String(local.id);
+          const write = db.runTransaction(async tx => {
+            const current = await tx.get(ref);
+            if (!current.exists || cloudRevision(current.data()) !== cloudRevision(remote) || comparableRecord(current.data()) !== reviewedRemote || comparableRecord(local) !== reviewedLocal) {
+              throw new Error('Rekod berubah selepas semakan. Sila semak konflik sekali lagi.');
+            }
+            tx.set(ref, cloudData);
+          });
+          pendingCloudWrites.set(key, write);
+          try {
+            await write;
+            local.cloudRevision = nextRevision;
+            local._cloudBase = comparableRecord(cloudData);
+            local._synced = true;
+            local._syncConflict = false;
+            delete local._conflictRevision;
+            resolved++;
+            cloudUiVerified = true;
+            persistLocal();
+          } finally {
+            if (pendingCloudWrites.get(key) === write) pendingCloudWrites.delete(key);
+          }
+        }
+        if (resolved) {
+          if (cloudUiErrorType === 'write') { cloudUiError = ''; cloudUiErrorType = ''; }
+          renderAll();
+          alert(resolved + ' konflik selesai. Tekan Sync sekarang untuk hantar baki rekod.');
+        }
+      } catch (err) {
+        alert('Konflik belum selesai: ' + (err.message || err) + '\nSalinan phone dikekalkan.');
+      } finally {
+        cloudUiSyncing = false;
+        updateSyncStatus();
+      }
+    }
+
     function manualSyncFromPopover() {
       closeSyncPopover();
       syncPending(true);
@@ -6343,4 +6418,5 @@ function renderPhase1Metrics() {
 
 
 </body></html>
+
 
