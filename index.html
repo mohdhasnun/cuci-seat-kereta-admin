@@ -1499,7 +1499,7 @@
         <div class="booking-page-head"><div><h2 class="section-title" id="add-booking-title">New Customer / Booking</h2><p class="section-subtitle" id="booking-subtitle">Rekod pelanggan, servis dan tempahan dengan mudah.</p><p id="booking-edit-meta" class="booking-edit-meta" hidden></p></div><button type="button" class="booking-wa-button" onclick="openBookingQuickReply()">WhatsApp</button></div>
         <div class="booking-journey" role="group" aria-label="Tahap pelanggan"><button type="button" data-journey="Enquiry" onclick="selectBookingJourney('Enquiry')">💬 Enquiry</button><button type="button" data-journey="Quotation" onclick="selectBookingJourney('Quotation')">📄 Quotation</button><button type="button" data-journey="Booking" onclick="selectBookingJourney('Booking')">📅 Booking</button></div>
         <nav class="booking-steps" aria-label="Langkah borang"><button type="button" data-booking-step="1" onclick="showBookingStep(1)">1 · Customer</button><button type="button" data-booking-step="2" onclick="showBookingStep(2)">2 · Servis &amp; jadual</button><button type="button" data-booking-step="3" onclick="showBookingStep(3)">3 · Semak &amp; simpan</button></nav>
-        <form onsubmit="saveBooking(event)" class="form-group">
+        <form onsubmit="saveBooking(event)" class="form-group" novalidate>
           <div class="form-section">
             <div class="form-section-title">Tahap pelanggan</div>
             <select id="booking-intent" onchange="updateBookingIntent()">
@@ -1525,11 +1525,11 @@
             <div class="form-section-title">👤 Maklumat Customer</div>
             <div>
               <label>Customer Name *</label>
-              <input type="text" id="name" placeholder="Nama penuh" required="" onblur="this.value = toTitleCase(this.value)">
+              <input type="text" id="name" oninput="showCustomerMatches('name')" aria-controls="customer-matches" autocomplete="off" placeholder="Nama penuh" required="" onblur="this.value = toTitleCase(this.value)">
             </div>
             <div>
               <label>Phone Number *</label>
-              <input type="tel" id="phone" placeholder="cth: 012-3456789" required="" oninput="showCustomerMatches()">
+              <input type="tel" id="phone" placeholder="cth: 012-3456789" required="" aria-controls="customer-matches" oninput="showCustomerMatches('phone')">
               <div id="customer-matches" style="margin-top:6px;"></div>
             </div>
             <div class="form-row">
@@ -1603,8 +1603,8 @@
           </div>
 
           <!-- Services & Pricing (checklist) -->
-          <div class="form-section">
-            <div class="form-section-title">🔧 Servis &amp; Harga *</div>
+          <div class="form-section service-section">
+            <div class="form-section-title service-heading">Pilih Servis</div>
             <div style="font-size: 12px; color: #64748b; margin-top: -6px;">Pilih servis dan isi harga yang dipersetujui</div>
             <div style="display:flex;justify-content:flex-end;margin-bottom:6px;"><button type="button" onclick="manageServices()" class="btn btn-edit">Manage Services</button></div>
             <div id="service-categories" class="service-categories" role="group" aria-label="Kategori servis"></div><div id="service-checklist"></div>
@@ -1704,6 +1704,7 @@
             <button class="cal-today-btn" onclick="goCalendarToday()">Hari ini</button>
           </div>
           <div class="cal-view-switch" role="group" aria-label="Paparan kalendar"><button type="button" id="cal-view-month" onclick="setCalendarView('month')">Bulanan</button><button type="button" id="cal-view-five" onclick="setCalendarView('five')">5 hari</button></div>
+          
           <label class="calendar-state-picker">Negeri <select id="calendar-state" onchange="setCalendarState(this.value)"></select></label>
           <p id="calendar-holiday-coverage" class="cal-holiday-note"></p>
           <div class="cal-legend" aria-label="Petunjuk kalendar">
@@ -1718,6 +1719,17 @@
       </section>
 
       <!-- Finance -->
+      <dialog id="closure-dialog" class="closure-dialog" aria-labelledby="closure-title">
+        <form id="closure-form" onsubmit="saveClosure(event)">
+          <h3 id="closure-title">Block Date / Tutup Kedai</h3>
+          <label>Jenis penutupan<select id="closure-type"><option value="Emergency">Emergency</option><option value="Cuti kedai">Cuti kedai</option><option value="Urusan peribadi">Urusan peribadi</option><option value="Lain-lain">Lain-lain</option></select></label>
+          <div class="closure-dates"><label>Tarikh mula<input id="closure-start" type="date" required></label><label>Tarikh tamat<input id="closure-end" type="date" required></label></div>
+          <label>Sekatan booking<select id="closure-scope"><option value="full">Tutup sepenuhnya</option><option value="major">Block kerja besar sahaja</option></select></label>
+          <label>Catatan (pilihan)<textarea id="closure-reason" rows="2" maxlength="500"></textarea></label>
+          <div id="closure-conflicts" class="closure-warning" hidden></div>
+          <div class="closure-actions"><button type="button" onclick="document.getElementById('closure-dialog').close()">Batal</button><button id="closure-unblock" type="button" onclick="unblockClosure()" hidden>Unblock</button><button class="primary" type="submit">Simpan sekatan</button></div>
+        </form>
+      </dialog>
       <section id="finance" class="page">
         <h2 class="section-title">Finance</h2>
         <p class="section-subtitle">Bayaran diterima dan perbelanjaan yang direkodkan</p>
@@ -1900,7 +1912,8 @@
     const STOCK_KEY = 'cuciSeatAdmin.stock.v1';
     const PAYMENT_KEY = 'cuciSeatAdmin.payments.v1';
     const APP_V2_KEY = 'cuciSeatAdmin.app.v2';
-    let state = { schemaVersion: 2, bookings: [], expenses: [], payments: [], customers: [], services: [], settings: { businessName: 'Cuci Seat Kereta | Pakar Hygiene Dalaman Kereta', businessPhone: '017-699 3876' }, closedDates: [], bufferBalance: 0, monthlyTarget: 0, stockItems: [] };
+    const CLOSURE_KEY = 'cuciSeatAdmin.closures.v1';
+    let state = { schemaVersion: 2, bookings: [], expenses: [], payments: [], customers: [], services: [], settings: { businessName: 'Cuci Seat Kereta | Pakar Hygiene Dalaman Kereta', businessPhone: '017-699 3876' }, closedDates: [], closures: [], bufferBalance: 0, monthlyTarget: 0, stockItems: [] };
     let homeBookingDataState = 'ready';
     let homePaymentDataState = 'ready';
     let cloudUiVerified = false;
@@ -2159,7 +2172,7 @@
     const sharedCloudSubscriptions = new Map();
     function setupSharedCloudWatch() {
       if (!fbReady()) return;
-      for (const [collection, stateKey] of [['payments','payments'],['expenses','expenses'],['stock','stockItems']]) {
+      for (const [collection, stateKey] of [['payments','payments'],['expenses','expenses'],['stock','stockItems'],['closures','closures']]) {
         if (sharedCloudSubscriptions.has(collection)) continue;
         const stop=firebase.firestore().collection(collection).onSnapshot({includeMetadataChanges:true},snapshot=>{
           // Only server-acknowledged snapshots can replace synced cache or mark data ready.
@@ -2243,7 +2256,7 @@
         try {
           const db = firebase.firestore();
           const ref = db.collection(coll).doc(String(id));
-          const guarded = ['bookings', 'payments', 'expenses', 'stock'].includes(coll);
+          const guarded = ['bookings', 'payments', 'expenses', 'stock', 'closures'].includes(coll);
           const clean = {};
           for (const k in data) { if (!k.startsWith('_')) clean[k] = data[k]; }
           if (guarded) {
@@ -2315,12 +2328,15 @@
           hasV2Snapshot = true;
           hasBookingCache = Array.isArray(v2.bookings);
           hasPaymentCache = Array.isArray(v2.payments);
-          ['bookings','expenses','payments','customers','services','settings','stockItems','closedDates'].forEach(k => { if (v2[k] !== undefined) state[k] = v2[k]; });
+          ['bookings','expenses','payments','customers','services','settings','stockItems','closedDates','closures'].forEach(k => { if (v2[k] !== undefined) state[k] = v2[k]; });
           if (Array.isArray(v2.services)) userServices = v2.services;
           if (v2.bufferBalance !== undefined) state.bufferBalance = Number(v2.bufferBalance) || 0;
           if (v2.monthlyTarget !== undefined) state.monthlyTarget = Number(v2.monthlyTarget) || 0;
         }
       } catch (e) { console.warn('v2 app cache parse', e); }
+      if (!hasV2Snapshot) {
+        try { const cached = JSON.parse(localStorage.getItem(CLOSURE_KEY) || '[]'); if (Array.isArray(cached)) state.closures = cached; } catch (e) { console.warn('closure cache parse', e); }
+      }
       if (!hasV2Snapshot) {
       try {
         const s = localStorage.getItem(STORE_KEY);
@@ -2395,6 +2411,10 @@
           localStorage.setItem(STOCK_KEY, JSON.stringify({ stockItems: state.stockItems }));
         } catch (err) { cloudUiError = cloudErrorDescription('stock',err); cloudUiErrorType = 'load'; console.error('Firebase stock load failed (keeping cache):', err); }
         try {
+          const snap = await firebase.firestore().collection('closures').get({ source: 'server' });
+          state.closures = mergeCloudCollection('closures', snap.docs.map(doc => ({ id: doc.id, ...doc.data(), _synced: true })), state.closures);
+        } catch (err) { cloudUiError = cloudErrorDescription('closures',err); cloudUiErrorType = 'load'; console.warn('closures load (keeping local):', err); }
+        try {
           const cSnap = await firebase.firestore().collection('config').doc('closedDates').get({ source: 'server' });
           const fbDates = (cSnap.exists && cSnap.data() && cSnap.data().dates) || [];
           // GABUNG localStorage + Firebase supaya hari tutup tak hilang walau satu sumber kosong
@@ -2420,9 +2440,11 @@
         migrateStateV2();
         persistLocal();
         renderAll();
+        buildServiceChecklist();
         syncPending(false); // push anything still local-only
       } else {
         console.log('Firebase not available — using local cache only');
+        buildServiceChecklist();
         renderAll();
       }
     }
@@ -2433,9 +2455,10 @@
       localStorage.setItem(STOCK_KEY, JSON.stringify({ stockItems: state.stockItems || [] }));
       localStorage.setItem(PAYMENT_KEY, JSON.stringify({ payments: state.payments || [] }));
       localStorage.setItem('cuci_closed', JSON.stringify({ dates: state.closedDates || [] }));
+      localStorage.setItem(CLOSURE_KEY, JSON.stringify(state.closures || []));
       localStorage.setItem('cuci_buffer', JSON.stringify({ amount: state.bufferBalance || 0 }));
       localStorage.setItem('cuci_target', JSON.stringify({ amount: state.monthlyTarget || 0 }));
-      localStorage.setItem(APP_V2_KEY, JSON.stringify({ schemaVersion: 2, bookings: state.bookings, expenses: state.expenses, payments: state.payments || [], customers: state.customers || [], services: state.services || userServices, settings: state.settings || {}, stockItems: state.stockItems || [], closedDates: state.closedDates || [], bufferBalance: state.bufferBalance || 0, monthlyTarget: state.monthlyTarget || 0 }));
+      localStorage.setItem(APP_V2_KEY, JSON.stringify({ schemaVersion: 2, bookings: state.bookings, expenses: state.expenses, payments: state.payments || [], customers: state.customers || [], services: state.services || userServices, settings: state.settings || {}, stockItems: state.stockItems || [], closedDates: state.closedDates || [], closures: state.closures || [], bufferBalance: state.bufferBalance || 0, monthlyTarget: state.monthlyTarget || 0 }));
     }
 
     // Force-pull the freshest data straight from Firebase server (bypass any cache)
@@ -2446,7 +2469,7 @@
       }
       try {
         const cloud = await fetchCloudRecords();
-        const collections = [['bookings', state.bookings], ['expenses', state.expenses], ['payments', state.payments], ['stockItems', state.stockItems]];
+        const collections = [['bookings', state.bookings], ['expenses', state.expenses], ['payments', state.payments], ['stockItems', state.stockItems], ['closures', state.closures]];
         const conflicting = collections.flatMap(([key, local]) => {
           const remote = new Map(cloud[key].map(item => [String(item.id), item]));
           return (local || []).filter(item => item._syncConflict || (item._synced === false && remote.has(String(item.id)) && cloudRevision(item) !== cloudRevision(remote.get(String(item.id))))).map(item => key + '/' + item.id);
@@ -2456,14 +2479,15 @@
           return;
         }
         const pending = countPending();
-        if (!confirm('Preview Refresh Cloud: ' + cloud.bookings.length + ' booking, ' + cloud.payments.length + ' bayaran, ' + cloud.expenses.length + ' belanja, ' + cloud.stockItems.length + ' stok. ' + pending + ' perubahan lokal belum sync akan dikekalkan. Teruskan?')) return;
+        if (!confirm('Preview Refresh Cloud: ' + cloud.bookings.length + ' booking, ' + cloud.payments.length + ' bayaran, ' + cloud.expenses.length + ' belanja, ' + cloud.stockItems.length + ' stok, ' + cloud.closures.length + ' sekatan. ' + pending + ' perubahan lokal belum sync akan dikekalkan. Teruskan?')) return;
         const next = {
           bookings: mergeCloudCollection('bookings', cloud.bookings, state.bookings),
           expenses: mergeCloudCollection('expenses', cloud.expenses, state.expenses),
           payments: mergeCloudCollection('payments', cloud.payments, state.payments),
-          stockItems: mergeCloudCollection('stock', cloud.stockItems, state.stockItems)
+          stockItems: mergeCloudCollection('stock', cloud.stockItems, state.stockItems),
+          closures: mergeCloudCollection('closures', cloud.closures, state.closures)
         };
-        const before = { bookings: state.bookings, expenses: state.expenses, payments: state.payments, stockItems: state.stockItems };
+        const before = { bookings: state.bookings, expenses: state.expenses, payments: state.payments, stockItems: state.stockItems, closures: state.closures };
         try {
           Object.assign(state, next);
           migrateStateV2();
@@ -2482,7 +2506,7 @@
     }
     async function fetchCloudRecords() {
       const db = firebase.firestore();
-      const entries = await Promise.all([['bookings','bookings'],['expenses','expenses'],['payments','payments'],['stockItems','stock']].map(async ([key, coll]) => {
+      const entries = await Promise.all([['bookings','bookings'],['expenses','expenses'],['payments','payments'],['stockItems','stock'],['closures','closures']].map(async ([key, coll]) => {
         const snap = await db.collection(coll).get({ source: 'server' });
         return [key, snap.docs.map(doc => ({ id: doc.id, ...doc.data(), _synced: true }))];
       }));
@@ -2551,20 +2575,35 @@ const SERVICE_BENCHMARKS = [
   ['Carpet Lantai – buka seat','Any',null,60,'Drying: belum ukur','Standard'],
   ['Full Interior Detailing','Any',600,null,'2–3 hari','Blocks Capacity']
 ].map((s,i)=>({id:'benchmark-'+i,name:s[0],vehicleCategory:s[1],defaultPrice:s[2],activeMinutes:s[3],materialCost:null,occupancy:s[4],capacityType:s[5]}));
+const SERVICE_RECEIPT_NAMES={"Cuci Semua Seat (Tanpa Buka Seat)":"Cuci Semua Seat (Tanpa Buka Seat)","All Seats Cleaning (Without Seat Removal)":"Cuci Semua Seat (Tanpa Buka Seat)","Cuci Semua Seat (Buka Seat)":"Cuci Semua Seat (Buka Seat)","All Seats Cleaning (With Seat Removal)":"Cuci Semua Seat (Buka Seat)","Leather Seat Cleaning (Tanpa Buka Seat)":"Cuci Leather Seat (Tanpa Buka Seat)","Leather Seat Cleaning (Without Seat Removal)":"Cuci Leather Seat (Tanpa Buka Seat)","Leather Seat Cleaning (Buka Seat)":"Cuci Leather Seat (Buka Seat)","Leather Seat Cleaning (With Seat Removal)":"Cuci Leather Seat (Buka Seat)","Cuci Satu Seat Sahaja (Tanpa Buka Seat)":"Cuci Satu Seat (Tanpa Buka Seat)","Single Seat Cleaning (Without Seat Removal)":"Cuci Satu Seat (Tanpa Buka Seat)","Cuci Satu Seat Sahaja (Buka Seat)":"Cuci Satu Seat (Buka Seat)","Single Seat Cleaning (With Seat Removal)":"Cuci Satu Seat (Buka Seat)","Cuci Bumbung Kereta":"Cuci Bumbung Kereta","Roof Lining Cleaning":"Cuci Bumbung Kereta","Cuci Carpet Lantai":"Cuci Karpet Lantai","Floor Carpet Cleaning":"Cuci Karpet Lantai","Cuci Carpet Lantai (Satu Bahagian Sahaja)":"Cuci Karpet Lantai (Satu Bahagian)","Floor Carpet Cleaning (Single Section)":"Cuci Karpet Lantai (Satu Bahagian)","Cuci Carpet Kaki":"Cuci Karpet Alas Kaki","Floor Mat Cleaning":"Cuci Karpet Alas Kaki","Cuci Dashboard & Console Tengah":"Cuci Dashboard & Console Tengah","Dashboard & Centre Console Cleaning":"Cuci Dashboard & Console Tengah","Cuci Door Panel":"Cuci Door Panel","Door Panel Cleaning":"Cuci Door Panel","Cuci Seat Belt":"Cuci Seat Belt","Seat Belt Cleaning":"Cuci Seat Belt","Cuci Boot Belakang":"Cuci Ruang But","Boot Compartment Cleaning":"Cuci Ruang But","Cuci Frame Body Kereta":"Cuci Frame Kereta","Body Frame Cleaning":"Cuci Frame Kereta","Interior Wax":"Interior Wax","Interior Wax Treatment":"Interior Wax","Odor Treatment":"Odor Treatment","Odour Treatment":"Odor Treatment","Sanitize Dalaman Kereta":"Sanitasi Dalaman Kereta","Interior Sanitisation":"Sanitasi Dalaman Kereta","Steam Cleaning (For Deep Cleaning)":"Steam Cleaning (Deep Cleaning)","Steam Deep Cleaning":"Steam Cleaning (Deep Cleaning)","Baby Car Seat":"Cuci Baby Car Seat","Child Car Seat Cleaning":"Cuci Baby Car Seat","Stroller":"Cuci Stroller Bayi","Stroller Cleaning":"Cuci Stroller Bayi","1 Seat sahaja":"Cuci Satu Seat","Single Seat Cleaning":"Cuci Satu Seat","Semua Seat Sedan – tanpa buka":"Cuci Semua Seat Sedan (Tanpa Buka Seat)","All Seats Cleaning – Sedan (Without Seat Removal)":"Cuci Semua Seat Sedan (Tanpa Buka Seat)","Semua Seat SUV – tanpa buka":"Cuci Semua Seat SUV (Tanpa Buka Seat)","All Seats Cleaning – SUV (Without Seat Removal)":"Cuci Semua Seat SUV (Tanpa Buka Seat)","Semua Seat MPV – tanpa buka":"Cuci Semua Seat MPV (Tanpa Buka Seat)","All Seats Cleaning – MPV (Without Seat Removal)":"Cuci Semua Seat MPV (Tanpa Buka Seat)","Carpet Lantai – tanpa buka":"Cuci Karpet Lantai (Tanpa Buka Seat)","Floor Carpet Cleaning (Without Seat Removal)":"Cuci Karpet Lantai (Tanpa Buka Seat)","Carpet Lantai – buka seat":"Cuci Karpet Lantai (Buka Seat)","Floor Carpet Cleaning (With Seat Removal)":"Cuci Karpet Lantai (Buka Seat)","Full Interior Detailing":"Full Interior Detailing","Cuci Seat":"Cuci Seat","Seat Cleaning":"Cuci Seat","Cuci 1 Seat":"Cuci Satu Seat","Spot Cleaning":"Cuci Kotoran Setempat (Spot Cleaning)","Cuci Bumbung":"Cuci Bumbung Kereta","Carpet Lantai":"Cuci Karpet Lantai","Carpet Kaki":"Cuci Karpet Alas Kaki","Dashboard":"Cuci Dashboard","Dashboard Cleaning":"Cuci Dashboard","Door Panel":"Cuci Door Panel","Frame Body":"Cuci Frame Kereta","Sanitize":"Sanitasi Dalaman Kereta","Cuci Semua Seat Sedan – tanpa buka":"Cuci Semua Seat Sedan (Tanpa Buka Seat)","Cuci Semua Seat SUV – tanpa buka":"Cuci Semua Seat SUV (Tanpa Buka Seat)","Cuci Semua Seat MPV – tanpa buka":"Cuci Semua Seat MPV (Tanpa Buka Seat)","Cuci Semua Seat (Tanpa Membuka Seat)":"Cuci Semua Seat (Tanpa Buka Seat)","Cuci Semua Seat (Dengan Membuka Seat)":"Cuci Semua Seat (Buka Seat)","Cuci Seat Kulit (Tanpa Membuka Seat)":"Cuci Leather Seat (Tanpa Buka Seat)","Cuci Seat Kulit (Dengan Membuka Seat)":"Cuci Leather Seat (Buka Seat)","Cuci Satu Seat (Tanpa Membuka Seat)":"Cuci Satu Seat (Tanpa Buka Seat)","Cuci Satu Seat (Dengan Membuka Seat)":"Cuci Satu Seat (Buka Seat)","Cuci Karpet Lantai":"Cuci Karpet Lantai","Cuci Karpet Lantai (Satu Bahagian)":"Cuci Karpet Lantai (Satu Bahagian)","Cuci Karpet Alas Kaki":"Cuci Karpet Alas Kaki","Cuci Papan Pemuka & Konsol Tengah":"Cuci Dashboard & Console Tengah","Cuci Panel Pintu":"Cuci Door Panel","Cuci Tali Pinggang Keledar":"Cuci Seat Belt","Cuci Ruang But":"Cuci Ruang But","Cuci Bingkai Badan Kereta":"Cuci Frame Kereta","Cuci Dalaman – Kemasan Wax":"Interior Wax","Cuci Dalaman – Rawatan Bau":"Odor Treatment","Cuci Dalaman – Sanitasi":"Sanitasi Dalaman Kereta","Cuci Dalaman Menggunakan Wap (Steam Cleaning)":"Steam Cleaning (Deep Cleaning)","Cuci Kerusi Keselamatan Kanak-kanak (Baby Car Seat)":"Cuci Baby Car Seat","Cuci Kereta Sorong Bayi (Stroller)":"Cuci Stroller Bayi","Cuci Satu Seat":"Cuci Satu Seat","Cuci Semua Seat Sedan (Tanpa Membuka Seat)":"Cuci Semua Seat Sedan (Tanpa Buka Seat)","Cuci Semua Seat SUV (Tanpa Membuka Seat)":"Cuci Semua Seat SUV (Tanpa Buka Seat)","Cuci Semua Seat MPV (Tanpa Membuka Seat)":"Cuci Semua Seat MPV (Tanpa Buka Seat)","Cuci Karpet Lantai (Tanpa Membuka Seat)":"Cuci Karpet Lantai (Tanpa Buka Seat)","Cuci Karpet Lantai (Dengan Membuka Seat)":"Cuci Karpet Lantai (Buka Seat)","Cuci Dalaman Menyeluruh (Full Interior Detailing)":"Full Interior Detailing","Cuci Kotoran Setempat (Spot Cleaning)":"Cuci Kotoran Setempat (Spot Cleaning)","Cuci Papan Pemuka":"Cuci Dashboard"};
+function serviceCatalogueName(name) {
+  const value=String(name || '').trim();
+  return SERVICE_RECEIPT_NAMES[value] || value;
+}
+function isRetiredService(item) {
+  const name=serviceCatalogueName(typeof item==='string'?item:item.name);
+  return ['Cuci Satu Seat','Cuci Semua Seat Sedan (Tanpa Buka Seat)','Cuci Semua Seat SUV (Tanpa Buka Seat)','Cuci Semua Seat MPV (Tanpa Buka Seat)','Cuci Karpet Lantai (Tanpa Buka Seat)'].includes(name);
+}
 function ensureMasterServices() {
   state.settings ||= {};
+  // Preserve original construction order so legacy IDs remain stable.
+
   if (!Array.isArray(state.settings.masterServices)) {
     state.settings.masterServices = SERVICE_BENCHMARKS.map(s=>({...s}));
     userServices.forEach((name,i)=>{if(!state.settings.masterServices.some(s=>s.name===name)) state.settings.masterServices.push({id:'legacy-service-'+i,name,vehicleCategory:'Any',defaultPrice:null,activeMinutes:null,materialCost:null,occupancy:'Not established',capacityType:'Standard'});});
   }
   for (const [id,name] of [['service-baby-car-seat','Baby Car Seat'],['service-stroller','Stroller']]) {
-    if (!state.settings.masterServices.some(service=>service.name===name)) state.settings.masterServices.push({id,name,vehicleCategory:'Any',defaultPrice:null,activeMinutes:null,materialCost:null,occupancy:'Not established',capacityType:'Standard'});
+    if (!state.settings.masterServices.some(service=>service.name===name || service.name===serviceCatalogueName(name) || service.id===id)) state.settings.masterServices.push({id,name,vehicleCategory:'Any',defaultPrice:null,activeMinutes:null,materialCost:null,occupancy:'Not established',capacityType:'Standard'});
   }
-  userServices = Array.from(new Set([...userServices,...state.settings.masterServices.map(s=>s.name)]));
+  state.settings.masterServices.forEach(item=>{
+    const previous=item.name,next=serviceCatalogueName(previous);
+    if(next!==previous){item.aliases=Array.from(new Set([...(item.aliases || []),previous]));item.name=next;}
+  });
+  userServices = Array.from(new Set([...userServices.map(serviceCatalogueName),...state.settings.masterServices.map(s=>s.name)]));
   state.services = userServices.slice();
   return state.settings.masterServices;
 }
-function masterFor(name) { return ensureMasterServices().find(s=>s.name===name); }
+function masterFor(name) { return ensureMasterServices().find(s=>s.name===serviceCatalogueName(name)); }
 function serviceSnapshot(item) {
   if (item.standardSnapshot) return item;
   const m=masterFor(item.name);
@@ -2715,7 +2754,7 @@ function renderPhase1Metrics() {
     }
 
     function rebuildCustomers() {
-      const byId = new Map();
+      const byId = new Map((state.customers || []).map(c=>[c.id,{...c,vehicles:[...(c.vehicles || [])],plates:[...(c.plates || [])],jobs:[]}]));
       state.bookings.forEach(b => {
         const id = b.customerId || customerIdFor(b.phone, b.id);
         b.customerId = id;
@@ -2738,7 +2777,7 @@ function renderPhase1Metrics() {
     function populateQuickSuggestions() {
       const servicesList = document.getElementById('service-options-list');
       const phoneList = document.getElementById('customer-phones');
-      if (servicesList) servicesList.innerHTML = Array.from(new Set([...QUICK_JOB_SERVICES, ...userServices])).map(s => '<option value="' + escapeHtml(s) + '"></option>').join('');
+      if (servicesList) servicesList.innerHTML = Array.from(new Set([...QUICK_JOB_SERVICES.map(serviceCatalogueName), ...userServices].filter(name=>!isRetiredService(name)))).map(s => '<option value="' + escapeHtml(s) + '"></option>').join('');
       if (phoneList) phoneList.innerHTML = (state.customers || []).filter(c => c.phone).map(c => '<option value="' + escapeHtml(c.phone) + '">' + escapeHtml(c.name) + '</option>').join('');
     }
     function escapeHtml(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[ch]); }
@@ -2796,9 +2835,9 @@ function renderPhase1Metrics() {
       const typed = prompt('This permanently removes local bookings, payments, expenses and stock. Type RESET to continue:');
       if (typed !== 'RESET') return;
       if (!confirm('Final confirmation: clear all app data on this device? Export a backup first if needed.')) return;
-      state.bookings = []; state.expenses = []; state.payments = []; state.customers = []; state.stockItems = []; state.closedDates = [];
+      state.bookings = []; state.expenses = []; state.payments = []; state.customers = []; state.stockItems = []; state.closedDates = []; state.closures = [];
       state.bufferBalance = 0; state.monthlyTarget = 0;
-      [STORE_KEY, EXP_KEY, STOCK_KEY, PAYMENT_KEY, APP_V2_KEY, 'cuci_closed', 'cuci_buffer', 'cuci_target'].forEach(k => localStorage.removeItem(k));
+      [STORE_KEY, EXP_KEY, STOCK_KEY, PAYMENT_KEY, APP_V2_KEY, CLOSURE_KEY, 'cuci_closed', 'cuci_buffer', 'cuci_target'].forEach(k => localStorage.removeItem(k));
       renderAll();
       alert('Local data cleared. Cloud records were not deleted.');
     }
@@ -2850,14 +2889,14 @@ function renderPhase1Metrics() {
       const e = (state.expenses || []).filter(x => x._synced === false).length;
       const s = (state.stockItems || []).filter(x => x._synced === false).length;
       const p = (state.payments || []).filter(x => x._synced === false).length;
-      return b + e + s + p;
+      return b + e + s + p + (state.closures || []).filter(x => x._synced === false).length;
     }
 
     function updateSyncStatus() {
       const badge = document.getElementById('header-sync');
       if (!badge) return;
       const pending = countPending();
-      const conflicts = [...state.bookings, ...(state.expenses || []), ...(state.payments || []), ...(state.stockItems || [])].filter(x => x._syncConflict).length;
+      const conflicts = [...state.bookings, ...(state.expenses || []), ...(state.payments || []), ...(state.stockItems || []), ...(state.closures || [])].filter(x => x._syncConflict).length;
       const offline = !navigator.onLine || !fbReady();
       const syncing = cloudUiLoading || cloudUiSyncing || pendingCloudWrites.size > 0;
       const sharedError=sharedCloudErrors.values().next().value || '';
@@ -2916,7 +2955,7 @@ function renderPhase1Metrics() {
     }
     async function resolveSyncConflicts(automatic = false) {
       if (!fbReady() || !navigator.onLine || cloudUiSyncing || cloudUiLoading || pendingCloudWrites.size) return;
-      const collections = [['bookings', state.bookings], ['payments', state.payments], ['expenses', state.expenses], ['stock', state.stockItems]];
+      const collections = [['bookings', state.bookings], ['payments', state.payments], ['expenses', state.expenses], ['stock', state.stockItems], ['closures', state.closures]];
       const conflicts = collections.flatMap(([coll, records]) => (records || []).filter(x => x._syncConflict).map(local => ({ coll, local })));
       cloudUiSyncing = true;
       updateSyncStatus();
@@ -2924,6 +2963,7 @@ function renderPhase1Metrics() {
       const resolutionErrors = [];
       try {
         for (const { coll, local } of conflicts) {
+          if (automatic && coll === 'closures') continue;
           try {
           const db = firebase.firestore();
           const ref = db.collection(coll).doc(String(local.id));
@@ -3036,6 +3076,12 @@ function renderPhase1Metrics() {
           if (ok) { p._synced = true; pushed++; }
         }
       }
+      for (const closure of (state.closures || [])) {
+        if (closure._synced === false && !closure._syncConflict) {
+          const ok = await fbSet('closures', closure.id, closure);
+          if (ok) { closure._synced = true; pushed++; }
+        }
+      }
       persistLocal();
       if (pendingAtStart > 0 && countPending() === 0 && cloudUiErrorType === 'write' && ![...state.bookings, ...(state.expenses || []), ...(state.payments || []), ...(state.stockItems || [])].some(x => x._syncConflict)) { cloudUiError = ''; cloudUiErrorType = ''; }
       if (manual) alert(countPending() ? '⚠️ '+countPending()+' rekod belum sync. '+(cloudUiError || 'Masih ada konflik; semak panel Cloud Sync.') : cloudUiError || sharedErrorForAlert() ? '⚠️ '+(cloudUiError || sharedErrorForAlert()) : '✅ Semua rekod peranti ini berjaya sync ke cloud.');
@@ -3050,7 +3096,7 @@ function renderPhase1Metrics() {
 
     /* ====== MANUAL BACKUP / RESTORE (safety net) ====== */
     function backupData() {
-      const data = { schemaVersion: 2, bookings: state.bookings, expenses: state.expenses, payments: state.payments || [], customers: state.customers || [], services: userServices, settings: state.settings || {}, stockItems: state.stockItems, closedDates: state.closedDates || [], bufferBalance: state.bufferBalance || 0, monthlyTarget: state.monthlyTarget || 0, exportedAt: new Date().toISOString() };
+      const data = { schemaVersion: 2, bookings: state.bookings, expenses: state.expenses, payments: state.payments || [], customers: state.customers || [], services: userServices, settings: state.settings || {}, stockItems: state.stockItems, closedDates: state.closedDates || [], closures: state.closures || [], bufferBalance: state.bufferBalance || 0, monthlyTarget: state.monthlyTarget || 0, exportedAt: new Date().toISOString() };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       const stamp = new Date().toISOString().slice(0,10);
@@ -3132,13 +3178,15 @@ function renderPhase1Metrics() {
           const exps = validArray('expenses', ['id']);
           const stks = validArray('stockItems', ['id']);
           const pays = Array.isArray(data) ? [] : validArray('payments', ['id', 'jobId', 'amount', 'date']);
-          if (!bks || !exps || !stks || !pays || (data && !Array.isArray(data) && data.services !== undefined && !Array.isArray(data.services))) throw new Error('Invalid backup structure');
-          const cloud = fbReady() ? await fetchCloudRecords() : { bookings: [], payments: [], expenses: [], stockItems: [] };
+           const closures = Array.isArray(data) ? [] : validArray('closures', ['id', 'startDate', 'endDate', 'scope']);
+           if (!bks || !exps || !stks || !pays || !closures || (data && !Array.isArray(data) && data.services !== undefined && !Array.isArray(data.services))) throw new Error('Invalid backup structure');
+           const cloud = fbReady() ? await fetchCloudRecords() : { bookings: [], payments: [], expenses: [], stockItems: [], closures: [] };
           const plans = {
             bookings: prepareRestoreCollection('bookings', state.bookings, cloud.bookings, bks),
             payments: prepareRestoreCollection('payments', state.payments, cloud.payments, pays),
             expenses: prepareRestoreCollection('expenses', state.expenses, cloud.expenses, exps),
-            stockItems: prepareRestoreCollection('stock', state.stockItems, cloud.stockItems, stks)
+             stockItems: prepareRestoreCollection('stock', state.stockItems, cloud.stockItems, stks),
+             closures: prepareRestoreCollection('closures', state.closures, cloud.closures, closures)
           };
           const conflicts = Object.values(plans).flatMap(plan => plan.conflicts);
           if (conflicts.length) {
@@ -3147,7 +3195,7 @@ function renderPhase1Metrics() {
           }
           const summary = Object.entries(plans).map(([key, plan]) => key + ': ' + plan.added + ' baharu').join('\n');
           if (!confirm('Preview Restore (tambah sahaja; tidak padam atau ganti rekod):\n' + summary + '\n\nTetapan dan template sedia ada dikekalkan. ' + countPending() + ' perubahan lokal belum sync dikekalkan. Teruskan?')) return;
-          const before = { bookings: state.bookings, payments: state.payments, expenses: state.expenses, stockItems: state.stockItems };
+           const before = { bookings: state.bookings, payments: state.payments, expenses: state.expenses, stockItems: state.stockItems, closures: state.closures };
           try {
             Object.keys(plans).forEach(key => { state[key] = plans[key].result; });
             persistLocal();
@@ -3215,6 +3263,7 @@ function renderPhase1Metrics() {
       if (isClosed(dateStr)) return 'full';
       const majors = state.bookings.filter(b => ['Booking', 'In Progress'].includes(b.status) && b.jobType === 'major' && bookingDates(b).includes(dateStr));
       if (majors.some(b => b.allowQuickJobsDuringJob === false)) return 'full';
+      if (closuresOn(dateStr).some(c => c.scope === 'major')) return 'limited';
       return majors.length ? 'limited' : 'available';
     }
     function calendarBookedJobs(dateStr) {
@@ -3223,7 +3272,8 @@ function renderPhase1Metrics() {
     function canConfirmBookingCapacity(job, excludeId = job.id) {
       if (!job.date) return { ok:false, reason:'Tarikh servis belum ditetapkan.' };
       for (const day of bookingDates(job)) {
-        if (isClosed(day)) return { ok:false, reason:'Kedai ditutup pada ' + formatDMY(day) + '.' };
+        const closure = closureForJob(day, job.jobType);
+        if (closure) return { ok:false, reason:'Tarikh ' + formatDMY(day) + ' disekat: ' + closure.type + '.' };
         const confirmedMajors = state.bookings.filter(b => String(b.id) !== String(excludeId) && ['Booking', 'In Progress'].includes(b.status) && b.jobType === 'major' && bookingDates(b).includes(day));
         if (job.jobType === 'major' && confirmedMajors.length) return { ok:false, reason:'Full detailing lain sudah disahkan pada ' + formatDMY(day) + '.' };
         if (confirmedMajors.some(b => b.allowQuickJobsDuringJob === false) || (job.jobType !== 'quick' && confirmedMajors.length)) return { ok:false, reason:'Kapasiti tidak tersedia pada ' + formatDMY(day) + '.' };
@@ -3246,6 +3296,8 @@ function renderPhase1Metrics() {
       const end = new Date((endDate || startDate || ymd(new Date())) + 'T00:00:00');
       for (let i = 0; date <= end && i < 90; i++, date.setDate(date.getDate() + 1)) dates.push(ymd(date));
       const full = dates.filter(d => calendarCapacity(d) === 'full');
+      const blocked = dates.find(d => closureForJob(d, jobType));
+      if (blocked) { alert('Tarikh ' + formatDMY(blocked) + ' disekat untuk kerja ini. Ubah sekatan dahulu.'); return false; }
       if (jobType === 'quick' && full.length) { alert('Quick Job tidak boleh ditambah pada tarikh penuh: ' + full.map(formatDMY).join(', ')); return false; }
       const majorOverlap = jobType !== 'quick' && dates.filter(d => state.bookings.some(b => !['Cancelled', 'Completed', 'Complete'].includes(b.status) && b.jobType === 'major' && bookingDates(b).includes(d)));
       if (jobType !== 'quick' && (full.length || majorOverlap.length)) return confirm('This job overlaps a busy/full day (' + Array.from(new Set([...full, ...majorOverlap])).map(formatDMY).join(', ') + '). Save this job anyway? Your details will be kept if you cancel.');
@@ -3263,7 +3315,8 @@ function renderPhase1Metrics() {
       const phone = document.getElementById('quick-phone').value.trim();
       const car = document.getElementById('quick-car').value.trim();
       const plate = document.getElementById('quick-plate').value.trim().toUpperCase();
-      const service = document.getElementById('quick-service').value.trim();
+      const service = serviceCatalogueName(document.getElementById('quick-service').value.trim());
+      if(isRetiredService(service)){alert('Servis ini telah dikeluarkan daripada pilihan booking baharu. Pilih servis aktif.');return;}
       const price = Number(document.getElementById('quick-amount').value) || 0;
       if (!service || price <= 0) { alert('Enter a service and amount greater than RM0.'); return; }
       if(masterFor(service)?.capacityType==='Blocks Capacity') {alert('Servis ini block capacity beberapa hari. Guna New Booking untuk tarikh masuk/keluar.');return;}
@@ -3286,128 +3339,183 @@ function renderPhase1Metrics() {
 
     // ===== Service Checklist (all services visible in a box) =====
     let selectedServiceSnapshots = {};
-    function buildServiceChecklist(selectedItems = []) {
+    // Booking-form state only. Catalogue and historical records are never edited here.
+    const bookingServices = new Map();
+    let serviceFilter = 'Semua', serviceQuery = '', selectedCustomerIdentity = null;
+    const serviceMoney = value => 'RM' + Number(value).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+    function serviceKey(item) {
+      return item.serviceId != null ? 'id:'+item.serviceId : item.id != null ? 'id:'+item.id : 'name:'+item.name;
+    }
+    function servicePrice(raw) {
+      if (raw === null || raw === undefined || String(raw).trim() === '') return null;
+      const n=Number(raw); return Number.isFinite(n) && n>=0 && Number.isSafeInteger(Math.round(n*100)) && Math.abs(n*100-Math.round(n*100))<0.000001 ? n : null;
+    }
+    function serviceFormTotal() {
+      return [...bookingServices.values()].reduce((sum,item)=>sum+Math.round((servicePrice(item.priceRaw) ?? 0)*100),0)/100;
+    }
+    function serviceCatalogue() {
       ensureMasterServices();
-      selectedServiceSnapshots=Object.fromEntries(selectedItems.map(i=>[i.name,i]));
-      const container = document.getElementById('service-checklist');
-      if (!container) return;
-      // Map of preselected name -> price
-      const preset = {};
-      selectedItems.forEach(it => { preset[it.name] = it.price; });
-
-      // Servis custom ("Other") — item yang bukan sebahagian DEFAULT_SERVICES
-      const services = userServices.length ? userServices : DEFAULT_SERVICES;
-      const otherItem = selectedItems.find(it => !services.includes(it.name));
-
-      const rowsHtml = services.map((svc, idx) => {
-        const isChecked = preset.hasOwnProperty(svc);
-        const priceVal = isChecked ? preset[svc] : '';
-        const isFoc = isChecked && (Number(preset[svc]) || 0) === 0;
-        return `
-          <div class="svc-item ${isChecked ? 'selected' : ''} ${isFoc ? 'is-foc' : ''}" style="display: flex; align-items: center; gap: 12px; padding: 12px; ${idx > 0 ? 'border-top: 1px solid #f1f5f9;' : ''}">
-            <input type="checkbox" class="svc-check" data-name="${escapeHtml(svc)}" ${isChecked ? 'checked' : ''} onchange="toggleService(this)">
-            <label class="svc-label" style="flex: 1; font-size: 13.5px; color: #334155; cursor: pointer; line-height: 1.35;" onclick="this.previousElementSibling.click()">${escapeHtml(svc)} <span class="svc-foc-tag">FOC</span></label>
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <span style="font-size: 12px; color: #94a3b8;">RM</span>
-              <input type="number" class="svc-price" placeholder="0" value="${escapeHtml(priceVal)}" ${isChecked ? '' : 'disabled'} oninput="recalcTotal()" style="width: 72px; padding: 9px; border: 1px solid #ddd; border-radius: 6px; text-align: right; font-size: 15px; ${isChecked ? '' : 'background: #f8fafc;'}">
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      // Row "Other" — servis custom mengikut request customer (nama ditaip sendiri)
-      const otherChecked = !!otherItem;
-      const otherName = otherItem ? otherItem.name : '';
-      const otherPrice = otherItem ? otherItem.price : '';
-      const otherRowHtml = `
-        <div class="svc-item svc-other-item ${otherChecked ? 'selected' : ''}" style="display: flex; align-items: center; gap: 12px; padding: 12px; border-top: 1px solid #f1f5f9;">
-          <input type="checkbox" class="svc-check svc-other-check" id="svc-other-check" ${otherChecked ? 'checked' : ''} onchange="toggleOtherService(this)">
-          <input type="text" id="svc-other-name" placeholder="Other: terangkan servis..." value="${escapeHtml(otherName || '')}" ${otherChecked ? '' : 'disabled'} oninput="recalcTotal()" style="flex: 1; padding: 9px; border: 1px solid #ddd; border-radius: 6px; font-size: 13.5px; ${otherChecked ? '' : 'background: #f8fafc;'}">
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <span style="font-size: 12px; color: #94a3b8;">RM</span>
-            <input type="number" id="svc-other-price" class="svc-price" placeholder="0" value="${escapeHtml(otherPrice)}" ${otherChecked ? '' : 'disabled'} oninput="recalcTotal()" style="width: 72px; padding: 9px; border: 1px solid #ddd; border-radius: 6px; text-align: right; font-size: 15px; ${otherChecked ? '' : 'background: #f8fafc;'}">
-          </div>
-        </div>
-      `;
-
-      container.innerHTML = rowsHtml + otherRowHtml;
-      recalcTotal();
-      renderServiceCategories();
+      const master=state.settings.masterServices || [], result=[], used=new Set();
+      for (const m of master) {if(isRetiredService(m))continue;const key=serviceKey(m);if(!used.has(key)){result.push({...m,key,serviceId:m.id});used.add(key);}}
+      for (const name of userServices) if(!isRetiredService(name)&&!master.some(m=>m.name===name)) {const key='name:'+name;if(!used.has(key)){result.push({name,key});used.add(key);}}
+      for (const [key,item] of bookingServices) if(key!=='custom'&&!used.has(key)) {result.push({...item.snapshot,name:item.name,key,historical:true});used.add(key);}
+      return result;
     }
-
-    function toggleOtherService(checkbox) {
-      const nameInput = document.getElementById('svc-other-name');
-      const priceInput = document.getElementById('svc-other-price');
-      const row = checkbox.closest('.svc-item');
-      if (checkbox.checked) {
-        nameInput.disabled = false;
-        priceInput.disabled = false;
-        nameInput.style.background = '';
-        priceInput.style.background = '';
-        row.classList.add('selected');
-        nameInput.focus();
-      } else {
-        nameInput.disabled = true;
-        priceInput.disabled = true;
-        nameInput.value = '';
-        priceInput.value = '';
-        nameInput.style.background = '#f8fafc';
-        priceInput.style.background = '#f8fafc';
-        row.classList.remove('selected');
+    function serviceCategory(item) {
+      if (item.category) return String(item.category);
+      const name=[item.name,...(item.aliases || [])].join(' ');
+      if (/pakej|package|full interior/i.test(name)) return 'Pakej';
+      if (/carpet|karpet/i.test(name)) return 'Carpet';
+      if (/seat|leather/i.test(name)) return 'Seat';
+      if (/interior|bumbung|dashboard|door|boot|frame/i.test(name)) return 'Interior';
+      if (/odor|sanitize|steam|wax/i.test(name)) return 'Add-on';
+      return 'Lain-lain';
+    }
+    function serviceDescription(item) {
+      return [item.description || item.shortDescription, item.vehicleCategory && item.vehicleCategory!=='Any' ? item.vehicleCategory : '', item.occupancy && item.occupancy!=='Not established' ? item.occupancy : ''].filter(Boolean).join(' · ');
+    }
+    function serviceIncludes(item) {
+      const values=item.includedServices || item.includes || item.includedServiceIds;
+      return Array.isArray(values) ? values : [];
+    }
+    function servicePackageWarnings() {
+      const items=collectServices(), warnings=[];
+      for (const pack of items) {
+        const meta=pack.standardSnapshot || {};
+        for (const included of serviceIncludes(meta)) {
+          const token=typeof included==='object' ? included.serviceId ?? included.id ?? included.name : included;
+          const separate=items.find(i=>i!==pack && (String(i.serviceId)===String(token)||i.name===String(token)||serviceCatalogueName(i.name)===serviceCatalogueName(String(token))));
+          if(separate) warnings.push(pack.name+' sudah termasuk '+separate.name+'. Semak kemungkinan caj berganda.');
+        }
       }
-      recalcTotal();
+      return [...new Set(warnings)];
     }
-
+    function buildServiceChecklist(selectedItems = null) {
+      if (selectedItems !== null) {
+        bookingServices.clear();serviceFilter='Semua';serviceQuery='';
+        for (const original of selectedItems) {
+          const snapshot=structuredClone(serviceSnapshot(structuredClone(original)));
+          let key=serviceKey(snapshot); while(bookingServices.has(key))key+=':legacy';
+          bookingServices.set(key,{name:snapshot.name,priceRaw:snapshot.price==null?'':String(snapshot.price),snapshot});
+        }
+      }
+      const container=document.getElementById('service-checklist');if(!container)return;
+      container.replaceChildren();container.tabIndex=0;container.setAttribute('role','region');container.setAttribute('aria-label','Senarai servis, skrol untuk lihat semua');
+      try {
+        const catalogue=serviceCatalogue();
+        for (const [index,item] of catalogue.entries()) {
+          const selected=bookingServices.get(item.key),row=homeNode('div','svc-item service-card'+(selected?' selected':''));row.dataset.serviceKey=item.key;row.dataset.category=serviceCategory(item);row.dataset.search=[item.name,...(item.aliases || []),serviceDescription(item)].join(' ').toLocaleLowerCase();
+          const check=document.createElement('input');check.type='checkbox';check.className='svc-check';check.id='service-choice-'+index;check.dataset.name=item.name;check.checked=!!selected;check.onchange=()=>toggleService(check);
+          const copy=homeNode('div','service-card-copy'),label=homeNode('label','svc-label',selected?.name || item.name);label.htmlFor=check.id;copy.append(label);
+          const desc=serviceDescription(item);if(desc)copy.append(homeNode('p','service-description',desc));
+          const includes=serviceIncludes(item);if(includes.length)copy.append(homeNode('p','service-description','Termasuk: '+includes.map(v=>typeof v==='object'?v.name || v.serviceId || v.id:v).join(', ')));
+          const priceWrap=homeNode('div','service-card-price'),priceLabel=homeNode('label','','Harga (RM)'),price=document.createElement('input');price.type='number';price.className='svc-price';price.id='service-price-'+index;price.min='0';price.step='0.01';price.inputMode='decimal';price.placeholder='Isi harga';price.value=selected?.priceRaw ?? (servicePrice(item.defaultPrice)===null?'':String(item.defaultPrice));price.disabled=!selected;priceLabel.htmlFor=price.id;price.setAttribute('aria-label','Harga '+(selected?.name || item.name)+' dalam RM');
+          price.oninput=()=>{const entry=bookingServices.get(item.key);if(entry)entry.priceRaw=price.value;recalcTotal();};priceWrap.append(priceLabel,price);row.append(check,copy,priceWrap);container.append(row);
+        }
+        const other=bookingServices.get('custom'),row=homeNode('div','svc-item service-card svc-other-item'+(other?' selected':''));row.dataset.serviceKey='custom';row.dataset.category='Lain-lain';row.dataset.search='servis lain custom other';
+        const check=document.createElement('input');check.type='checkbox';check.id='svc-other-check';check.className='svc-check svc-other-check';check.checked=!!other;check.onchange=()=>toggleOtherService(check);
+        const copy=homeNode('div','service-card-copy'),label=homeNode('label','svc-label','Servis lain');label.htmlFor=check.id;const name=document.createElement('input');name.id='svc-other-name';name.placeholder='Terangkan servis';name.setAttribute('aria-label','Nama servis lain');name.value=other?.name || '';name.disabled=!other;name.oninput=()=>{const entry=bookingServices.get('custom');if(entry)entry.name=name.value;recalcTotal();};copy.append(label,name);
+        const wrap=homeNode('div','service-card-price'),pLabel=homeNode('label','','Harga (RM)'),price=document.createElement('input');price.id='svc-other-price';price.className='svc-price';price.type='number';price.min='0';price.step='0.01';price.inputMode='decimal';price.placeholder='Isi harga';price.value=other?.priceRaw || '';price.disabled=!other;price.setAttribute('aria-label','Harga servis lain dalam RM');pLabel.htmlFor=price.id;price.oninput=()=>{const entry=bookingServices.get('custom');if(entry)entry.priceRaw=price.value;recalcTotal();};wrap.append(pLabel,price);row.append(check,copy,wrap);container.append(row);
+        renderServiceCategories();recalcTotal();
+      } catch(error) {container.replaceChildren(homeNode('p','service-error','Senarai servis gagal dimuatkan. Cuba buka semula borang; pilihan semasa dikekalkan.'));console.error('service catalogue',error);}
+    }
     function toggleService(checkbox) {
-      const row = checkbox.closest('.svc-item');
-      const priceInput = row.querySelector('.svc-price');
-      if (checkbox.checked) {
-        priceInput.disabled = false;
-        priceInput.style.background = '';
-        const standard = masterFor(checkbox.dataset.name);
-        priceInput.value = standard?.defaultPrice ?? '';
-        if (standard?.capacityType === 'Blocks Capacity') { document.getElementById('job-type').value = 'major'; document.getElementById('days-at-shop').value = '3'; toggleMajorJobFields(); }
-        row.classList.add('selected');
-        priceInput.focus();
-      } else {
-        priceInput.disabled = true;
-        priceInput.value = '';
-        priceInput.style.background = '#f8fafc';
-        row.classList.remove('selected', 'is-foc');
-      }
-      recalcTotal();
+      const row=checkbox.closest('.svc-item'),key=row.dataset.serviceKey,price=row.querySelector('.svc-price');
+      if(checkbox.checked) {
+        const item=serviceCatalogue().find(i=>i.key===key);if(!item)return;
+        const raw=servicePrice(item.defaultPrice)===null?'':String(item.defaultPrice);
+        const snapshot=structuredClone(serviceSnapshot({name:item.name,serviceId:item.serviceId ?? null,price:servicePrice(raw),standardSnapshot:item.historical?item.standardSnapshot:((state.settings.masterServices || []).find(m=>m.id===item.id) || undefined)}));
+        bookingServices.set(key,{name:item.name,priceRaw:raw,snapshot});price.value=raw;
+      } else bookingServices.delete(key);
+      price.disabled=!checkbox.checked;row.classList.toggle('selected',checkbox.checked);recalcTotal();filterServiceCards();
     }
+    function toggleOtherService(checkbox) {
+      if(checkbox.checked)bookingServices.set('custom',{name:'',priceRaw:'',snapshot:{serviceId:'custom-'+crypto.randomUUID(),standardSnapshot:{activeMinutes:null,materialCost:null,occupancy:'Not established',capacityType:'Standard'}}});else bookingServices.delete('custom');
+      const row=checkbox.closest('.svc-item');row.classList.toggle('selected',checkbox.checked);row.querySelectorAll('input:not([type=checkbox])').forEach(i=>{i.disabled=!checkbox.checked;i.value='';});recalcTotal();filterServiceCards();
+      if(checkbox.checked)document.getElementById('svc-other-name').focus();
+    }
+    function collectServices() {
+      return [...bookingServices.values()].map(item=>serviceSnapshot({...structuredClone(item.snapshot),name:item.name.trim(),price:servicePrice(item.priceRaw)}));
+    }
+    function renderServiceCategories() {
+      const box=document.getElementById('service-categories');if(!box)return;
+      box.replaceChildren();box.removeAttribute('role');box.removeAttribute('aria-label');
+      const label=homeNode('label','service-search-label','Cari servis');label.htmlFor='service-search';
+      const search=document.createElement('input');search.id='service-search';search.type='search';search.placeholder='Cari servis...';search.value=serviceQuery;search.oninput=()=>{serviceQuery=search.value;filterServiceCards();};
+      const chips=homeNode('div','service-category-chips');chips.setAttribute('role','group');chips.setAttribute('aria-label','Kategori servis');
+      const categories=['Semua',...new Set([...serviceCatalogue().map(serviceCategory),'Lain-lain'])];if(!categories.includes(serviceFilter))serviceFilter='Semua';
+      categories.forEach(category=>{const b=homeNode('button','',category);b.type='button';b.dataset.category=category;b.setAttribute('aria-pressed',String(category===serviceFilter));b.onclick=()=>{serviceFilter=category;filterServiceCards();};chips.append(b);});
+      const status=homeNode('p','service-results-status');status.id='service-results-status';status.setAttribute('role','status');box.append(label,search,chips,status);filterServiceCards();
+    }
+    function filterServiceCards() {
+      const query=serviceQuery.trim().toLocaleLowerCase();let count=0;
+      document.querySelectorAll('#service-checklist .service-card').forEach(row=>{const match=(!query||row.dataset.search.includes(query))&&(serviceFilter==='Semua'||row.dataset.category===serviceFilter);row.hidden=!match;if(match)count++;});
+      document.querySelectorAll('#service-categories [data-category]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.category===serviceFilter)));
+      const status=document.getElementById('service-results-status');if(status)status.textContent=count ? count+' servis dipaparkan' : 'Tiada servis sepadan. Cuba kata lain atau kategori Semua.';
+    }
+    function serviceFormIssue() {
+      const items=collectServices();
+      if(!items.length && bookingJourney!=='Enquiry')return 'Pilih sekurang-kurangnya satu servis.';
+      if(items.some(i=>!i.name))return 'Isi nama servis lain.';
+      if(items.some(i=>i.price===null))return 'Isi harga sah (0 atau lebih, maksimum 2 perpuluhan) untuk setiap servis. Taip 0 hanya untuk servis percuma (FOC).';
+      return '';
+    }
+    function renderServiceSummary() {
+      let box=document.getElementById('service-live-summary');if(!box){box=homeNode('section','service-live-summary');box.id='service-live-summary';box.setAttribute('aria-label','Ringkasan servis');document.getElementById('service-checklist')?.after(box);}
+      if(!box)return;box.replaceChildren();const items=collectServices(),missing=items.some(i=>i.price===null),head=homeNode('div','service-summary-head');head.append(homeNode('h3','','Ringkasan servis'),homeNode('strong','service-summary-total',missing?'Harga belum lengkap':serviceMoney(serviceFormTotal())));box.append(head,homeNode('p','service-summary-count',items.length+' servis dipilih'));
+      if(items.length){const list=homeNode('ul','service-summary-list');items.forEach(i=>{const row=homeNode('li','');row.append(homeNode('span','',i.name || 'Servis lain — isi nama'),homeNode('strong','',i.price===null?'Isi harga':i.price===0?'FOC · RM0.00':serviceMoney(i.price)));list.append(row);});box.append(list);}else box.append(homeNode('p','service-description','Belum ada servis dipilih. Cari dan pilih daripada katalog di atas.'));
+      const issue=serviceFormIssue();if(issue&&items.length)box.append(homeNode('p','service-error',issue));
+      const warnings=servicePackageWarnings();if(warnings.length){const warning=homeNode('p','service-warning',warnings.join(' '));warning.setAttribute('role','status');box.append(warning);}
+      const major=items.some(i=>i.standardSnapshot?.capacityType==='Blocks Capacity'),quick=items.length&&items.every(i=>i.standardSnapshot?.capacityType==='Small');
+      if(major||quick){const hint=homeNode('div','service-schedule-hint');hint.append(homeNode('p','',major?'Cadangan: Major Job. Full interior biasanya mengambil 2–3 hari di kedai. Semak tarikh dan kapasiti.':'Cadangan: Quick Job. Semak kapasiti sebelum sahkan.'));const apply=homeNode('button','',major?'Guna Major Job · 3 hari':'Guna Quick Job');apply.type='button';apply.onclick=()=>{document.getElementById('job-type').value=major?'major':'quick';document.getElementById('days-at-shop').value=major?'3':'1';toggleMajorJobFields();updateCapacityPreview();updateBookingReview();};hint.append(apply);box.append(hint);}
+      document.querySelectorAll('#service-checklist .service-card').forEach(row=>{const item=bookingServices.get(row.dataset.serviceKey),price=row.querySelector('.svc-price');row.classList.toggle('is-foc',!!item&&servicePrice(item.priceRaw)===0);if(price)price.setAttribute('aria-invalid',String(!!item&&servicePrice(item.priceRaw)===null));});
+    }
+    function showCustomerMatches(source = 'customer-lookup') {
+      const box=document.getElementById('customer-matches'),input=document.getElementById(source),query=(input?.value||'').trim().toLocaleLowerCase(),digits=query.replace(/\D/g,'');box.replaceChildren();
+      box.setAttribute('aria-live','polite');
+      if(query.length<2)return;
+      const candidates=[...state.bookings].reverse().map(b=>({...b,customerId:b.customerId || customerIdFor(b.phone,b.id)}));
+      for(const c of state.customers || []) {
+        if(candidates.some(b=>String(b.customerId)===String(c.id)))continue;
+        const vehicles=c.vehicles?.length?c.vehicles:[c.car || ''];
+        for(const car of vehicles)candidates.push({...c,customerId:c.id,car,plate:vehicles.length===1?(c.plate || (c.plates?.length===1?c.plates[0]:'')):''});
+      }
+      const seen=new Set();let count=0;
+      for(const c of candidates){const match=[c.name,c.phone,c.plate,c.car].some(v=>String(v||'').toLocaleLowerCase().includes(query))||(digits.length>=3&&(String(c.phone||'').replace(/\D/g,'').includes(digits)||normalizePhone(c.phone).includes(normalizePhone(digits))));if(!match)continue;
+        const key=JSON.stringify([c.customerId,normalizePhone(c.phone),c.car,c.plate]);if(seen.has(key))continue;seen.add(key);if(count++>=8)break;
+        const b=homeNode('button','customer-suggestion');b.type='button';b.append(homeNode('strong','',c.name || 'Customer'),homeNode('span','',[c.phone || 'Telefon belum direkod',c.car,c.plate].filter(Boolean).join(' · ')));b.setAttribute('aria-label','Pilih '+(c.name || 'Customer')+' '+(c.phone || 'ID '+c.customerId)+' '+(c.car || '')+' '+(c.plate || ''));
+        b.onclick=()=>{['name','phone'].forEach(id=>document.getElementById(id).value=c[id]||'');selectedCustomerIdentity={id:c.customerId,phone:normalizePhone(c.phone)};document.getElementById('source-select').value='Repeat Customer';document.getElementById('customer-lookup').value='';box.replaceChildren();updateBookingReview();};box.append(b);
+      }
+      if(!box.children.length)box.append(homeNode('p','service-description',cloudUiLoading?'Rekod customer sedang dimuatkan. Cuba carian lagi selepas sync.':'Tiada customer sepadan. Teruskan isi maklumat untuk customer baharu.'));
+    }
+    function bookingCustomerId(phone,fallback) {
+      const normalized=normalizePhone(phone);
+      if(selectedCustomerIdentity?.phone===normalized && selectedCustomerIdentity.id)return selectedCustomerIdentity.id;
+      const ids=[...new Set([...(state.customers || []).filter(c=>normalized&&normalizePhone(c.phone)===normalized).map(c=>c.id),...state.bookings.filter(b=>normalized&&normalizePhone(b.phone)===normalized).map(b=>b.customerId)].filter(Boolean))];
+      return ids.length===1?ids[0]:customerIdFor(phone,fallback);
+    }
+
+
+
+
+
 
     function recalcTotal() {
-      let total = 0;
-      document.querySelectorAll('#service-checklist .svc-item').forEach(row => {
-        const check = row.querySelector('.svc-check');
-        if (check && check.checked) {
-          const p = Number(row.querySelector('.svc-price').value) || 0;
-          total += p;
-          row.classList.toggle('is-foc', p === 0);
-        } else {
-          row.classList.remove('is-foc');
-        }
-      });
+      const total = serviceFormTotal();
       const totalEl = document.getElementById('form-total');
-      if (totalEl) totalEl.textContent = 'RM ' + total.toLocaleString();
+      if (totalEl) totalEl.textContent = collectServices().some(i=>i.price===null) ? 'Harga belum lengkap' : serviceMoney(total);
       const priceHidden = document.getElementById('price');
       if (priceHidden) priceHidden.value = total;
       recalcBalance();
+      renderServiceSummary();
+      updateBookingReview();
       let info=document.getElementById("service-standard-info");
       if(!info){info=document.createElement("p");info.id="service-standard-info";document.getElementById("booking-other-details")?.appendChild(info);}
       if(info){const items=collectServices();const standards=items.map(i=>i.standardSnapshot);const active=sumKnown(standards.map(s=>s.activeMinutes));const material=sumKnown(standards.map(s=>s.materialCost));info.textContent="Active labour: "+(active===null?"Not established":active+" min")+" · Material: "+(material===null?"Not established":"RM"+material)+" · Occupancy: "+standards.map(s=>s.occupancy).join(" + ")+" · Capacity: "+standards.map(s=>s.capacityType).join(" + ");}
     }
 
     function recalcBalance() {
-      let total = 0;
-      document.querySelectorAll('#service-checklist .svc-item').forEach(row => {
-        const check = row.querySelector('.svc-check');
-        if (check && check.checked) {
-          total += Number(row.querySelector('.svc-price').value) || 0;
-        }
-      });
+      const total = serviceFormTotal();
       const newPayment = editingBookingId === null && ['Booking', 'Pending'].includes(document.getElementById('booking-intent')?.value) ? Number(document.getElementById('deposit-paid')?.value) || 0 : 0;
       const existingPaid = editingBookingId !== null ? paymentTotal(editingBookingId) : 0;
       const paid = existingPaid + newPayment;
@@ -3442,8 +3550,8 @@ function renderPhase1Metrics() {
       document.querySelector('#add-booking form').addEventListener('change', updateBookingReview);
       ['date','days-at-shop','major-end-date','job-type'].forEach(id=>document.getElementById(id).addEventListener('change',updateCapacityPreview));
       const lookup=document.getElementById('customer-lookup');
-      lookup.addEventListener('input', showCustomerMatches);
-      selectBookingJourney('Enquiry');
+      lookup.setAttribute('aria-controls','customer-matches');
+      selectBookingJourney('Booking');
       showBookingStep(1);
       renderServiceCategories();
     }
@@ -3460,8 +3568,8 @@ function renderPhase1Metrics() {
       document.getElementById('booking-intent-section').hidden = journey !== 'Booking';
       document.getElementById('booking-payment-section').hidden = journey !== 'Booking';
       document.getElementById('booking-payment-section').style.display = journey === 'Booking' ? '' : 'none';
-      document.getElementById('service-categories').hidden = journey === 'Enquiry';
-      document.getElementById('service-checklist').hidden = journey === 'Enquiry';
+      document.getElementById('service-categories').hidden = false;
+      document.getElementById('service-checklist').hidden = false;
       document.getElementById('booking-other-details').hidden = journey === 'Enquiry';
       updateBookingReview();
       showBookingStep(bookingStep);
@@ -3481,8 +3589,9 @@ function renderPhase1Metrics() {
           const input=document.getElementById(id); if (!input.reportValidity()) return;
         }
       }
-      if (bookingStep === 2 && bookingJourney !== 'Enquiry' && !collectServices().length) { alert('Pilih sekurang-kurangnya satu servis.'); return; }
-      showBookingStep(bookingJourney === 'Enquiry' && bookingStep === 1 ? 3 : bookingStep + 1);
+      if (bookingStep === 2 && serviceFormIssue()) { alert(serviceFormIssue()); return; }
+      if(bookingStep===2&&bookingJourney==='Booking'){for(const id of ['date','time'])if(!document.getElementById(id).reportValidity())return;}
+      showBookingStep(bookingStep + 1);
     }
     function updateBookingReview() {
       const box=document.getElementById('booking-review'); if (!box) return;
@@ -3490,8 +3599,10 @@ function renderPhase1Metrics() {
       box.replaceChildren();
       field('Customer', document.getElementById('name').value);
       field('Kereta', document.getElementById('car').value);
-      field('Servis', collectServices().map(item=>item.name).join(', '));
-      if (bookingJourney !== 'Booking') field('Harga', document.getElementById('form-service-total').textContent);
+      const selected=collectServices();
+      field('Servis', selected.length ? selected.map(item=>item.name).join(', ') : bookingJourney==='Enquiry' ? 'Belum ditetapkan (Enquiry)' : 'Belum dipilih');
+      selected.forEach(item=>{const row=homeNode('div','review-service-item');row.append(homeNode('span','',item.name||'Servis lain'),homeNode('strong','',item.price===null?'Harga belum diisi':item.price===0?'FOC · RM0.00':serviceMoney(item.price)));box.append(row);});
+      field('Harga', selected.some(i=>i.price===null)?'Harga belum lengkap':serviceMoney(serviceFormTotal()));
       if (bookingJourney === 'Booking') { field('Appointment', [formatBookingDate(document.getElementById('date').value),document.getElementById('time').value].filter(Boolean).join(' · ')); field('Status', document.getElementById('booking-intent').selectedOptions[0].textContent); }
     }
     function updateCapacityPreview() {
@@ -3506,13 +3617,7 @@ function renderPhase1Metrics() {
       box.dataset.available=String(result.ok);
       box.textContent=result.ok ? 'Kapasiti tersedia pada tarikh dipilih. Semakan akhir dibuat sebelum confirmation.' : 'Konflik kapasiti: '+result.reason;
     }
-    function renderServiceCategories() {
-      const box=document.getElementById('service-categories'); if (!box) return;
-      const groups=['Semua','Seat Cleaning','Carpet Cleaning','Full Interior','Odor Treatment & Sanitize','Quick Job','Other Services'];
-      box.replaceChildren();
-      groups.forEach(group => { const button=document.createElement('button'); button.type='button'; button.textContent=group; button.setAttribute('aria-pressed','false'); button.onclick=()=>{ box.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button))); document.querySelectorAll('#service-checklist .svc-item').forEach(row=>{ const name=(row.querySelector('.svc-check')?.dataset.name || '').toLowerCase(); const match=group==='Semua' || (group==='Seat Cleaning' && /seat|leather/i.test(name)) || (group==='Carpet Cleaning' && /carpet/i.test(name)) || (group==='Full Interior' && /interior|dashboard|door|bumbung|boot|frame/i.test(name)) || (group==='Odor Treatment & Sanitize' && /odor|sanitize|steam/i.test(name)) || (group==='Quick Job' && /satu seat|carpet kaki/i.test(name)) || (group==='Other Services' && !/seat|leather|carpet|interior|dashboard|door|bumbung|boot|frame|odor|sanitize|steam/i.test(name)); row.hidden=!match && !row.querySelector('.svc-check')?.checked; }); }; box.appendChild(button); });
-      box.querySelectorAll('button')[1]?.click();
-    }
+
 
     function updateBookingIntent() {
       const intent = document.getElementById('booking-intent').value;
@@ -3528,50 +3633,9 @@ function renderPhase1Metrics() {
       recalcBalance();
     }
 
-    function showCustomerMatches() {
-      const box = document.getElementById('customer-matches');
-      const digits = document.getElementById('phone').value.replace(/\D/g, '');
-      const query = (document.getElementById('customer-lookup')?.value || '').trim().toLowerCase();
-      box.replaceChildren();
-      if (digits.length < 5 && query.length < 2) return;
-      const seen = new Set();
-      state.bookings.filter(b => (digits.length >= 5 && String(b.phone || '').replace(/\D/g, '').includes(digits)) || (query.length >= 2 && [b.name,b.phone,b.plate,b.car].some(value=>String(value || '').toLowerCase().includes(query)))).reverse().forEach(b => {
-        const key = [b.phone, b.car, b.plate].join('|');
-        if (seen.has(key) || seen.size >= 4) return;
-        seen.add(key);
-        const button = document.createElement('button');
-        button.type = 'button'; button.className = 'btn btn-edit';
-        button.style.cssText = 'display:block;width:100%;text-align:left;margin:4px 0';
-        button.textContent = `${b.name} · ${b.phone} · ${b.car}${b.plate ? ' · ' + b.plate : ''}`;
-        button.onclick = () => {
-          if (!confirm('Gunakan maklumat customer lama ini? Rekod lama tidak digabung atau diubah.')) return;
-          ['name','phone','car','plate'].forEach(id => document.getElementById(id).value = b[id] || '');
-          document.getElementById('source-select').value = 'Repeat Customer';
-          document.getElementById('customer-lookup').value = '';
-          box.replaceChildren();
-          updateBookingReview();
-        };
-        box.appendChild(button);
-      });
-    }
 
-    function collectServices() {
-      const items = [];
-      document.querySelectorAll('#service-checklist .svc-item').forEach(row => {
-        const check = row.querySelector('.svc-check');
-        if (check && check.checked) {
-          const price = Number(row.querySelector('.svc-price').value) || 0;
-          if (row.classList.contains('svc-other-item')) {
-            const otherName = (document.getElementById('svc-other-name')?.value || '').trim();
-            if (otherName) items.push({ name: otherName, price });
-          } else {
-            const name = check.getAttribute('data-name');
-            items.push({ name, price });
-          }
-        }
-      });
-      return items.map(i=>serviceSnapshot({...selectedServiceSnapshots[i.name],...i}));
-    }
+
+
 
     function resetServiceRows() {
       updateLabourDuration();
@@ -3585,6 +3649,10 @@ function renderPhase1Metrics() {
     async function saveBooking(e) {
       e.preventDefault();
       if (bookingSaveInFlight) return;
+      for(const id of ['name','phone',...(bookingJourney==='Booking'?['car','date','time']:[])]) {
+        const input=document.getElementById(id); if(!input.value.trim()||!input.checkValidity()){const panel=input.closest('.booking-step-panel');if(panel)showBookingStep(Number(panel.dataset.panel));input.reportValidity();input.focus();alert('Lengkapkan maklumat '+id+' sebelum simpan.');return;}
+      }
+      const serviceIssue=serviceFormIssue();if(serviceIssue){showBookingStep(2);alert(serviceIssue);return;}
       const labour=labourDuration();
       if(labour.error){alert(labour.error);return;}
       const otherCheck = document.getElementById('svc-other-check');
@@ -3597,8 +3665,8 @@ function renderPhase1Metrics() {
         alert('Sila tambah sekurang-kurangnya satu servis');
         return;
       }
-      const total = serviceItems.reduce((s, it) => s + it.price, 0);
-      if (bookingJourney === 'Quotation' && total <= 0) { alert('Quotation memerlukan harga servis.'); return; }
+      const total = serviceFormTotal();
+      if (bookingJourney === 'Quotation' && !serviceItems.length) { alert('Quotation memerlukan harga servis.'); return; }
       const serviceStr = serviceItems.map(it => it.name).join(' + ');
       const intent = editingBookingId !== null ? null : document.getElementById('booking-intent').value;
       const waived = document.getElementById('deposit-waive').checked;
@@ -3632,13 +3700,18 @@ function renderPhase1Metrics() {
       const existing = editingBookingId !== null ? state.bookings.find(b => String(b.id) === String(editingBookingId)) : null;
       const editChanges = existing ? [Number(existing.price)!==total ? 'Harga: RM'+Number(existing.price||0).toFixed(2)+' → RM'+total.toFixed(2) : '', String(existing.date||'')!==startDateStr ? 'Tarikh: '+(existing.date||'-')+' → '+(startDateStr||'-') : ''].filter(Boolean) : [];
       const candidate = { id: editingBookingId, date:startDateStr, endDate:endDateVal, jobType };
-      if (intent === 'Booking' || intent === 'NoDeposit' || (existing && ['Booking','In Progress'].includes(existing.status))) {
+      if (startDateStr && (intent !== 'Enquiry' || existing)) {
+        const blocked = bookingDates(candidate).find(day => closureForJob(day, jobType));
+        if (blocked) { alert('Booking tidak boleh disimpan: ' + formatDMY(blocked) + ' disekat. Ubah sekatan dahulu.'); return; }
+      }
+      if (bookingJourney === 'Booking' || (existing && ['Booking','In Progress'].includes(existing.status))) {
         const capacity = canConfirmBookingCapacity(candidate, editingBookingId);
         if (!capacity.ok) { alert('Booking tidak boleh disahkan: ' + capacity.reason); return; }
       }
       if (existing && existing.status === 'Booking' && !waived && paymentTotal(existing.id) + 0.009 < depositRequested) { alert('Deposit baharu melebihi bayaran diterima. Rekod bayaran dahulu atau kekalkan deposit diminta; status lama tidak diubah secara senyap.'); return; }
       const summary = `${editingBookingId !== null ? 'Kemas kini rekod' : 'Simpan ' + (bookingJourney === 'Quotation' ? 'Quotation' : intent)}\n${document.getElementById('name').value.trim()} · ${document.getElementById('car').value.trim()}\n${startDateStr || 'Tarikh belum ditetapkan'} ${document.getElementById('time').value}\n${serviceStr}\nHarga RM${total.toFixed(2)} · Deposit diminta RM${depositRequested.toFixed(2)}${paidNow ? '\nBayaran diterima RM' + paidNow.toFixed(2) + ' (' + method + ', ' + paymentDate + ')' : ''}${editChanges.length ? '\nPERUBAHAN:\n' + editChanges.join('\n') : ''}\n\nSahkan maklumat ini?`;
-      if (!confirm(summary)) return;
+      const packageWarnings=servicePackageWarnings();
+      if (!confirm(summary+(packageWarnings.length?'\n\n'+packageWarnings.join('\n'):''))) return;
       bookingSaveInFlight = true;
       const saveButton = document.getElementById('save-booking-btn');
       saveButton.disabled = true;
@@ -3702,7 +3775,7 @@ function renderPhase1Metrics() {
         depositWaived: waived,
         jobType,
         allowQuickJobsDuringJob,
-        customerId: customerIdFor(document.getElementById('phone').value, Date.now()),
+        customerId: bookingCustomerId(document.getElementById('phone').value, Date.now()),
         totalPaid: 0,
         paymentStatus: 'Belum Bayar',
         source: 'Manual',
@@ -4008,6 +4081,8 @@ function renderPhase1Metrics() {
         button.setAttribute('aria-pressed', String(date === homeSelectedDay));
         button.append(homeNode('span', 'upcoming-day-date', homeDateLabel(date)), homeNode('strong', 'upcoming-day-count', complete || confirmed.length ? String(confirmed.length) : '—'), homeNode('span', 'upcoming-day-note', confirmed.length ? 'confirmed' : pending.length ? 'Belum confirmed' : complete ? 'Tiada booking' : homeBookingDataState === 'loading' ? 'Memuatkan' : 'Belum tersedia'));
         if (pending.length) button.appendChild(homeNode('span', 'upcoming-pending-marker', pending.length + ' pending'));
+        if (isClosed(date)) button.appendChild(homeNode('span','upcoming-pending-marker','Kedai tutup'));
+        else if (closuresOn(date).some(c => c.scope === 'major')) button.appendChild(homeNode('span','upcoming-pending-marker','Kerja besar disekat'));
         button.onclick = () => { homeSelectedDay = date; renderHomeUpcoming(today, bookings); };
         strip.appendChild(button);
       });
@@ -4054,6 +4129,8 @@ function renderPhase1Metrics() {
     function renderHomeDashboard() {
       if (!document.getElementById('owner-home')) return;
       const today = malaysiaDay();
+      const homeTag = document.querySelector('#owner-home .home-tag');
+      if (homeTag) homeTag.textContent = isClosed(today) ? 'Kedai Tutup Hari Ini' : closuresOn(today).some(c => c.scope === 'major') ? 'Kerja besar disekat hari ini' : 'Hari ini';
       const bookings = state.bookings || [];
       const newToday = bookings.filter(b => isBookedStatus(b) && String(b.date || '').slice(0, 10) === today);
       const progress = bookings.filter(b => b.status === 'In Progress');
@@ -5089,8 +5166,8 @@ function renderPhase1Metrics() {
       document.getElementById('booking-other-details').open = false;
       document.getElementById('deposit-date').value = ymd(new Date());
       updateBookingIntent();
-      bookingJourney='Enquiry';
-      selectBookingJourney('Enquiry');
+      bookingJourney='Booking'; selectedCustomerIdentity=null;
+      selectBookingJourney('Booking');
       showBookingStep(1);
       goToPage('add-booking');
     }
@@ -5155,8 +5232,8 @@ function renderPhase1Metrics() {
         document.querySelectorAll('[data-journey]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.journey===bookingJourney)));
         document.getElementById('booking-intent-section').hidden = bookingJourney !== 'Booking';
         document.getElementById('booking-payment-section').hidden = bookingJourney !== 'Booking';
-        document.getElementById('service-checklist').hidden = bookingJourney === 'Enquiry';
-        document.getElementById('service-categories').hidden = bookingJourney === 'Enquiry';
+        document.getElementById('service-checklist').hidden = false;
+        document.getElementById('service-categories').hidden = false;
         document.getElementById('booking-other-details').hidden = bookingJourney === 'Enquiry';
         document.getElementById('car').required = bookingJourney === 'Booking';
         document.getElementById('car-label').textContent = bookingJourney === 'Booking' ? 'Car Model *' : 'Car Model (jika diketahui)';
@@ -5668,7 +5745,69 @@ function renderPhase1Metrics() {
     }
 
     // ===== Kedai tutup (closed days) =====
-    function isClosed(d) { return (state.closedDates || []).indexOf(d) !== -1; }
+    function closuresOn(day) { return (state.closures || []).filter(c => c.active !== false && c.startDate <= day && c.endDate >= day); }
+    function closureForJob(day, jobType) {
+      if ((state.closedDates || []).includes(day)) return { type:'Kedai tutup', scope:'full' };
+      return closuresOn(day).find(c => c.scope === 'full' || (c.scope === 'major' && jobType === 'major')) || null;
+    }
+    function isClosed(d) { return !!closureForJob(d, 'quick'); }
+    function closureAffectedJobs(start, end) {
+      return (state.bookings || []).filter(b => !['Cancelled','Completed','Complete','Postponed','Enquiry'].includes(b.status) && bookingDates(b).some(day => day >= start && day <= end));
+    }
+    let editingClosureId = null;
+    function openClosureDialog(id = null) {
+      const closure = (state.closures || []).find(c => String(c.id) === String(id));
+      editingClosureId = closure ? closure.id : null;
+      const day = selectedCalendarDate || ymd(new Date());
+      document.getElementById('closure-title').textContent = closure ? 'Edit Block Date' : 'Block Date / Tutup Kedai';
+      document.getElementById('closure-type').value = closure?.type || 'Emergency';
+      document.getElementById('closure-start').value = closure?.startDate || day;
+      document.getElementById('closure-end').value = closure?.endDate || day;
+      document.getElementById('closure-scope').value = closure?.scope || 'full';
+      document.getElementById('closure-reason').value = closure?.reason || '';
+      document.getElementById('closure-unblock').hidden = !closure;
+      updateClosureConflictPreview();
+      document.getElementById('closure-dialog').showModal();
+    }
+    function updateClosureConflictPreview() {
+      const start = document.getElementById('closure-start').value, end = document.getElementById('closure-end').value;
+      const jobs = start && end && end >= start ? closureAffectedJobs(start, end) : [];
+      const box = document.getElementById('closure-conflicts');
+      box.replaceChildren(); box.hidden = !jobs.length;
+      if (jobs.length) {
+        box.append(homeNode('strong','',jobs.length + ' booking sedia ada bertindih. Tiada booking akan dibatalkan atau dijadual semula.'));
+        jobs.forEach(job => {
+          const row = homeNode('div','cal-detail-actions');
+          row.append(homeNode('span','',(job.name || 'Customer') + ' · ' + (job.car || 'Kereta') + ' · ' + formatBookingDate(job.date)));
+          const wa = homeNode('button','','WhatsApp'); wa.type='button'; wa.disabled=!job.phone; wa.onclick=()=>openBookingQuickReply(job.id);
+          row.append(wa); box.append(row);
+        });
+      }
+    }
+    ['closure-start','closure-end','closure-scope'].forEach(id => document.getElementById(id).addEventListener('change', updateClosureConflictPreview));
+    async function saveClosure(event) {
+      event.preventDefault();
+      const startDate=document.getElementById('closure-start').value, endDate=document.getElementById('closure-end').value;
+      if (!startDate || !endDate || endDate < startDate) { alert('Tarikh tamat mesti sama atau selepas tarikh mula.'); return; }
+      const existing=(state.closures || []).find(c => String(c.id) === String(editingClosureId));
+      if (existing?._syncConflict) { alert('Konflik sync. Semak cloud sebelum mengedit sekatan ini.'); return; }
+      const now=new Date().toISOString();
+      const record={...(existing || {}), id:existing?.id || 'closure-' + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2)), startDate,endDate,
+        startTime:null,endTime:null,allDay:true,type:document.getElementById('closure-type').value,scope:document.getElementById('closure-scope').value,
+        reason:document.getElementById('closure-reason').value.trim(),active:true,createdAt:existing?.createdAt || now,updatedAt:now,_synced:false};
+      const prior = existing ? {...existing} : null;
+      if (existing) Object.assign(existing,record); else state.closures.push(record);
+      try { persistLocal(); } catch (e) { if (existing) Object.assign(existing,prior); else state.closures.pop(); alert('Sekatan gagal disimpan secara lokal.'); return; }
+      document.getElementById('closure-dialog').close(); renderAll(); updateSyncStatus();
+      if (fbReady()) { const ok=await fbSet('closures',record.id,existing || record); if (ok) { (existing || record)._synced=true; persistLocal(); updateSyncStatus(); } }
+    }
+    async function unblockClosure() {
+      const record=(state.closures || []).find(c => String(c.id) === String(editingClosureId));
+      if (!record || record._syncConflict || !confirm('Unblock tarikh ini? Booking baharu boleh diterima semula.')) return;
+      record.active=false;record.updatedAt=new Date().toISOString();record._synced=false;
+      persistLocal();document.getElementById('closure-dialog').close();renderAll();updateSyncStatus();
+      if (fbReady()) { const ok=await fbSet('closures',record.id,record); if (ok) { record._synced=true;persistLocal();updateSyncStatus(); } }
+    }
     async function toggleClosed(d) {
       state.closedDates = state.closedDates || [];
       const i = state.closedDates.indexOf(d);
@@ -5697,8 +5836,12 @@ function renderPhase1Metrics() {
       const inp = prompt('Berapa HARI kereta ' + b.name + ' ada di kedai?\n(1 = sehari sahaja, 3 = tiga hari berturut)', String(cur));
       if (inp === null) return;
       const days = Math.max(1, parseInt(inp) || 1);
-      if (days <= 1) { delete b.endDate; }
-      else { const s = new Date(b.date.slice(0, 10) + 'T00:00:00'); s.setDate(s.getDate() + days - 1); b.endDate = ymd(s); }
+      const candidate = {...b};
+      if (days <= 1) { delete candidate.endDate; }
+      else { const s = new Date(b.date.slice(0, 10) + 'T00:00:00'); s.setDate(s.getDate() + days - 1); candidate.endDate = ymd(s); }
+      const blocked = bookingDates(candidate).find(day => closureForJob(day, candidate.jobType));
+      if (blocked) { alert('Tempoh ini bertindih dengan Block Date pada ' + formatDMY(blocked) + '. Ubah sekatan dahulu.'); return; }
+      b.endDate = candidate.endDate;
       b._synced = false; persistLocal(); renderCalendar(); showCalDay(b.date.slice(0, 10));
       fbSet('bookings', b.id, b).then(ok => { b._synced = ok; persistLocal(); updateSyncStatus(); });
     }
@@ -5951,6 +6094,7 @@ function renderPhase1Metrics() {
       if (holiday) { const tag=homeNode('span','cal-holiday-label','Cuti umum');tag.title=holiday;cell.append(tag); }
       if (school) { const tag=homeNode('span','cal-school-label','Cuti sekolah');tag.title=school;cell.append(tag); }
       if (data.closed) cell.append(homeNode('span','cal-calendar-label cal-closed-note','Kedai tutup'));
+      else if (data.majorBlocked) cell.append(homeNode('span','cal-calendar-label','Kerja besar disekat'));
       else if (data.conflict) cell.append(homeNode('span','cal-calendar-label cal-conflict-note','Jadual bertindih'));
       calendarDaySummary(data).forEach(label=>cell.append(homeNode('span','cal-calendar-label',label)));
       const jobs=[...data.arrivals,...data.occupied,...data.pending,...data.completed];
@@ -5978,7 +6122,7 @@ function renderPhase1Metrics() {
       const pickup = active.filter(b => b.status === 'In Progress' && String(b.endDate || '').slice(0,10) === date && String(b.date || '').slice(0,10) < date);
       const completed = active.filter(b => isComplete(b) && bookingDates(b).includes(date));
       const majors = active.filter(b => ['Booking','In Progress'].includes(b.status) && b.jobType === 'major' && bookingDates(b).includes(date));
-      return { arrivals,pending,occupied,pickup,completed,conflict:majors.length > 1,capacity:calendarCapacity(date),closed:isClosed(date) };
+      return { arrivals,pending,occupied,pickup,completed,conflict:majors.length > 1,capacity:calendarCapacity(date),closed:isClosed(date),majorBlocked:closuresOn(date).some(c => c.scope === 'major') };
     }
     function calendarDayTone(data) {
       if (data.closed) return 'is-closed';
@@ -5988,6 +6132,7 @@ function renderPhase1Metrics() {
       if (data.arrivals.length) return 'has-confirmed';
       if (data.pending.length) return 'has-pending';
       if (data.completed.length) return 'has-completed';
+      if (data.majorBlocked) return 'has-major-block';
       return '';
     }
     function calendarDaySummary(data) {
@@ -5996,7 +6141,7 @@ function renderPhase1Metrics() {
       if (data.pending.length) labels.push(data.pending.length+' pending');
       if (data.occupied.length) labels.push(data.occupied.length+' aktif');
       if (data.completed.length) labels.push(data.completed.length+' siap');
-      return labels.length ? labels : [data.closed ? 'Kedai tutup' : data.capacity === 'full' ? 'Kapasiti penuh' : data.capacity === 'limited' ? 'Quick job boleh' : 'Tersedia'];
+      return labels.length ? labels : [data.closed ? 'Kedai tutup' : data.majorBlocked ? 'Kerja besar disekat' : data.capacity === 'full' ? 'Kapasiti penuh' : data.capacity === 'limited' ? 'Quick job boleh' : 'Tersedia'];
     }
     function renderCalendar() {
       const grid=document.getElementById('cal-grid'); if (!grid) return;
@@ -6057,6 +6202,16 @@ function renderPhase1Metrics() {
       const capacity=data.conflict ? 'Jadual bertindih: lebih daripada satu full detailing aktif' : isClosed(date) ? 'Kedai tutup' : data.capacity==='full' ? 'Kapasiti penuh' : data.capacity==='limited' ? 'Full detailing aktif · quick job boleh jika sesuai' : 'Masih boleh menerima booking';
       const capacityNote=homeNode('div','cal-capacity',date<ymd(new Date()) && !data.conflict && !data.closed ? 'Sejarah booking · '+formatBookingDate(date) : capacity);
       capacityNote.classList.toggle('is-warning',data.conflict);panel.append(capacityNote);
+      if ((state.closedDates || []).includes(date)) panel.append(homeNode('div','closure-day','Kedai tutup · sekatan lama'));
+      closuresOn(date).forEach(closure => {
+        const box=homeNode('div','closure-day'+(closure.scope==='major'?' major-only':''));
+        box.append(homeNode('strong','',closure.scope==='full'?'Kedai tutup':'Kerja besar disekat'),homeNode('div','',closure.type+' · '+formatBookingDate(closure.startDate)+' hingga '+formatBookingDate(closure.endDate)));
+        if (closure.reason) box.append(homeNode('p','',closure.reason));
+        const edit=homeNode('button','closure-button','Edit / Unblock');edit.type='button';edit.onclick=()=>openClosureDialog(closure.id);box.append(edit);
+        const affected=closureAffectedJobs(closure.startDate,closure.endDate);
+        if (affected.length) { box.append(homeNode('p','closure-warning',affected.length+' booking sedia ada bertindih.')); affected.forEach(job=>{const row=homeNode('div','cal-detail-actions');row.append(homeNode('span','',(job.name||'Customer')+' · '+(job.car||'Kereta')));const wa=homeNode('button','','WhatsApp');wa.type='button';wa.disabled=!job.phone;wa.onclick=()=>openBookingQuickReply(job.id);row.append(wa);box.append(row);}); }
+        panel.append(box);
+      });
       if (!data.arrivals.length&&!data.pending.length&&!data.occupied.length&&!data.pickup.length&&!data.completed.length) panel.append(homeNode('p','home-empty','Tiada booking atau kerja pada tarikh ini.'));
       const groups=[['Booking masuk',data.arrivals],['Kerja sedang dicuci',data.occupied],['Pending Deposit',data.pending],['Pickup dijangka',data.pickup],['Booking dah siap',data.completed]];
       groups.forEach(([title,jobs])=>{
@@ -6076,7 +6231,8 @@ function renderPhase1Metrics() {
       const actions=homeNode('div','cal-day-actions');
       const add=homeNode('button','','+ Booking'); add.type='button'; add.onclick=()=>newBookingForDate(date);
       const quick=homeNode('button','','Quick Job'); quick.type='button'; quick.onclick=()=>openQuickJob(date);
-      actions.append(add,quick); panel.append(actions);
+      const block=homeNode('button','','🚫 Block Date');block.type='button';block.onclick=()=>openClosureDialog();
+      actions.append(add,quick,block); panel.append(actions);
       if (rerender) renderCalendar();
     }
 
@@ -6625,6 +6781,22 @@ function renderPhase1Metrics() {
     #calendar .section-subtitle { font-size:14px; margin-bottom:22px; }
     .calendar-workspace { grid-template-columns:minmax(0,1fr) 350px; gap:24px; }
     .calendar-main,#cal-day-detail { padding:24px; border-radius:14px; border-color:#e1e3ee; box-shadow:0 3px 18px #29304705; }
+    .closure-toolbar { display:flex; justify-content:flex-end; margin:12px 0; }
+    .closure-button,.closure-actions button { min-height:44px; border:1px solid #d4d0e5; border-radius:8px; background:#fff; color:#493e75; font:inherit; font-weight:600; padding:8px 14px; cursor:pointer; }
+    .closure-button:hover,.closure-actions button:hover { background:#f3f0fa; }
+    .closure-dialog { border:0; border-radius:12px; width:min(560px,calc(100vw - 24px)); max-height:calc(100vh - 24px); overflow:auto; padding:24px; box-shadow:0 20px 70px #18203245; }
+    .closure-dialog::backdrop { background:#1720338c; }
+    .closure-dialog form { display:grid; gap:14px; }
+    .closure-dialog label { display:grid; gap:5px; font-weight:600; }
+    .closure-dialog input,.closure-dialog select,.closure-dialog textarea { width:100%; min-width:0; padding:10px; border:1px solid #cdd2df; border-radius:7px; font:inherit; }
+    .closure-dates { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .closure-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+    .closure-actions .primary { background:#584a91; color:#fff; }
+    .closure-warning { border-left:3px solid #c77c20; padding:8px 12px; background:#fff8ed; }
+    .closure-day { border-left:3px solid #a65535; padding:10px 12px; background:#fff5f0; margin:8px 0; }
+    .closure-day.major-only { border-color:#bc8028; background:#fffaf0; }
+    .cal-cell.has-major-block,.cal-five-day.has-major-block { border-color:#e8bf7c; background:#fffaf0; }
+    @media(max-width:480px) { .closure-dialog { padding:16px; } .closure-dates { grid-template-columns:1fr; } }
     #cal-day-detail { position:sticky; top:100px; }
     .calendar-main .cal-month { font-size:22px; font-weight:800; }
     .calendar-main .cal-head { margin-bottom:18px; }
@@ -6698,6 +6870,61 @@ function renderPhase1Metrics() {
   </style>
 <style id="payment-correction-ui">
 .payment-history-hint{font-size:13px;line-height:1.5;color:#676c7f}.payment-history-row{padding:14px 0;border-top:1px solid #e5e4ed}.payment-history-row>strong,.payment-history-row>small{display:block;line-height:1.5}.payment-history-row>small{color:#767b8d;font-size:12px}.payment-history-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.payment-history-actions button{min-height:44px;padding:9px 12px;border:1px solid #d7d3e5;border-radius:7px;background:#fff;color:#55468e;font:inherit;font-size:13px;font-weight:700}.payment-history-actions button.primary{background:#7663b0;color:white}.payment-history-row.is-voided{color:#74798b;background:#f7f7fa}.payment-correction-overlay{position:fixed;inset:0;z-index:11000;background:#20253688;display:flex;justify-content:center;align-items:center;padding:16px}.payment-correction-form{width:min(480px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:12px;padding:22px;box-shadow:0 20px 70px #20253644}.payment-correction-form h3{font-size:21px;margin:0 0 10px}.payment-correction-form label{display:block;margin-top:14px;font-size:13px;font-weight:700}.payment-correction-form input{display:block;width:100%;box-sizing:border-box;min-height:44px;font-size:16px;border:1px solid #d7d3e5;border-radius:7px;padding:10px;margin-top:5px}.payment-correction-preview{background:#f3f0fb;padding:12px;border-radius:7px;line-height:1.5}.payment-correction-error{color:#a3283e;font-size:13px}.payment-correction-form input[readonly]{background:#f4f5f8;color:#60667b}
+</style>
+<style id="service-selection-v2">
+/* Service Selection V2, scoped to the existing booking form. */
+#add-booking .service-section{padding:22px;background:#fff;border:1px solid #e6e4ed;border-radius:16px}
+#add-booking .service-heading{font-size:23px;font-weight:750;letter-spacing:-.5px;text-transform:none;margin-bottom:5px;color:#272936}
+#add-booking .service-heading:before{display:none}
+#add-booking #service-categories{display:block;margin:18px 0 12px}
+#add-booking .service-search-label{display:block;font-size:12px;color:#676575;margin-bottom:7px}
+#add-booking #service-search{width:100%;box-sizing:border-box;min-height:48px;border:1px solid #dfdce8;border-radius:24px;padding:11px 18px;font:inherit;font-size:16px;background:#faf9fc}
+#add-booking .service-category-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+#add-booking .service-category-chips button{min-height:40px;padding:8px 15px;border:1px solid #e3e0eb;border-radius:22px;background:white;color:#666272;font:inherit;font-size:13px}
+#add-booking .service-category-chips button[aria-pressed=true]{background:#7763ae;border-color:#7763ae;color:white}
+#add-booking .service-results-status{font-size:12px;color:#777181;margin:10px 3px}
+#add-booking #service-checklist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;border:0;background:transparent;padding:3px 4px 5px 3px;max-height:min(58vh,560px);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#c5bbd9 transparent}
+#add-booking .service-card{display:grid;grid-template-columns:24px minmax(0,1fr) 105px;gap:11px;align-items:center;min-height:94px;padding:14px;border:1px solid #e9e6ef;border-radius:13px;background:#fff;box-sizing:border-box;min-width:0;transition:border-color .15s,background .15s}
+#add-booking .service-card[hidden]{display:none!important}
+#add-booking .service-card.selected{border-color:#a999ca;background:#f8f6fd;box-shadow:0 0 0 1px #c9bfdf33}
+#add-booking .service-card .svc-check{width:23px;height:23px;min-height:0;margin:0;accent-color:#7763ae;cursor:pointer}
+#add-booking .service-card-copy{min-width:0}
+#add-booking .service-card .svc-label{font-size:14px;line-height:1.45;font-weight:650;color:#30303c;cursor:pointer;display:block;margin:0;overflow-wrap:anywhere}
+#add-booking .service-description{font-size:12px;line-height:1.5;color:#777181;margin:5px 0 0;overflow-wrap:anywhere}
+#add-booking .service-card-price label{font-size:10px;font-weight:500;color:#777181;display:block;margin:0 0 5px}
+#add-booking .service-card .svc-price{width:100%;min-width:0;min-height:42px;box-sizing:border-box;margin:0;padding:8px 10px;border:1px solid #dfdce7;border-radius:21px;background:white;font:inherit;font-size:16px;color:#30303c;text-align:right}
+#add-booking .service-card .svc-price:disabled{background:#fafafa;color:#9b96a3}
+#add-booking .service-card .svc-price[aria-invalid=true]{border-color:#b96a41;background:#fffaf5}
+#add-booking #service-search{border-radius:24px!important}
+#add-booking .service-card .svc-price{border-radius:21px!important}
+#add-booking .service-card .svc-price[aria-invalid=true]{border-color:#b96a41!important}
+#add-booking #service-checklist .svc-check{appearance:auto!important;-webkit-appearance:checkbox!important;width:24px!important;height:24px!important;min-width:24px;background:none!important;border:initial!important;box-shadow:none!important;flex-shrink:0}
+#add-booking #service-checklist .svc-check::after{display:none}
+#add-booking .booking-form-actions{position:static;bottom:auto;margin:20px 0 0;padding:14px 0;border-top:1px solid #e5e4ec;background:transparent}
+#add-booking #svc-other-name{box-sizing:border-box;width:100%;font-size:14px;min-height:40px;margin-top:5px;padding:7px;border:1px solid #dfdce7;border-radius:7px}
+#add-booking .service-live-summary{position:static;margin-top:20px;padding:17px;background:#f5f2fa;border:1px solid #e8e2f2;border-radius:12px}
+#add-booking .service-summary-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+#add-booking .service-summary-head h3{font-size:14px;font-weight:700;margin:0;color:#34303f}
+#add-booking .service-summary-total{font-size:23px;line-height:1.15;letter-spacing:-.5px;color:#43365f;text-align:right}
+#add-booking .service-summary-count{font-size:12px;color:#777181;margin:7px 0}
+#add-booking .service-summary-list{list-style:none;margin:12px 0 0;padding:0}
+#add-booking .service-summary-list li{display:flex;justify-content:space-between;align-items:baseline;gap:14px;font-size:13px;line-height:1.5;padding:8px 0;border-top:1px solid #e5dfed}
+#add-booking .service-summary-list li span{overflow-wrap:anywhere;min-width:0}
+#add-booking .service-summary-list strong{white-space:nowrap;font-size:12px}
+#add-booking .service-error{font-size:13px;color:#a4472f;line-height:1.5}
+#add-booking .service-warning{padding:12px;border:1px solid #ead8ac;border-radius:8px;background:#fff8e8;color:#7f5a17;font-size:13px;line-height:1.5}
+#add-booking .service-schedule-hint{padding-top:10px;margin-top:10px;border-top:1px solid #e5dfed;font-size:12px;line-height:1.5;color:#655b76}
+#add-booking .service-schedule-hint button{min-height:42px;border:1px solid #cfc5df;border-radius:8px;padding:8px 12px;background:white;color:#625083;font:inherit;font-size:12px;font-weight:650}
+#add-booking .service-section .booking-price-total{display:none}
+#add-booking .customer-suggestion{display:block;width:100%;min-height:56px;margin:6px 0;padding:11px 13px;text-align:left;border:1px solid #d9d0e8;border-radius:9px;background:#faf8fe;color:#393141;font:inherit}
+#add-booking .customer-suggestion strong,#add-booking .customer-suggestion span{display:block;overflow-wrap:anywhere}
+#add-booking .customer-suggestion span{font-size:12px;margin-top:4px;color:#756c80}
+#add-booking :is(button,input):focus-visible{outline:3px solid #9e8bc9;outline-offset:3px}
+#add-booking #booking-review .review-service-item{grid-column:1/-1;display:flex;justify-content:space-between;gap:15px}
+#add-booking #booking-review .review-service-item strong{font-size:13px}
+@media(max-width:1100px){#add-booking #service-checklist{grid-template-columns:1fr}}
+@media(max-width:480px){#add-booking .service-section{padding:16px 13px}#add-booking .service-card{grid-template-columns:23px minmax(0,1fr) 83px;gap:9px;padding:12px 10px;min-height:94px}#add-booking .service-card .svc-label{font-size:13px}#add-booking .service-card .svc-price{padding:8px;font-size:16px}#add-booking .service-summary-total{font-size:21px}#add-booking .service-live-summary{padding:13px}#add-booking .service-category-chips{gap:6px}#add-booking .service-category-chips button{min-height:42px;padding:8px 12px}}
+
 </style>
 </body></html>
 
