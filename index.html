@@ -3359,7 +3359,10 @@ function renderPhase1Metrics() {
       for (const m of master) {if(isRetiredService(m))continue;const key=serviceKey(m);if(!used.has(key)){result.push({...m,key,serviceId:m.id});used.add(key);}}
       for (const name of userServices) if(!isRetiredService(name)&&!master.some(m=>m.name===name)) {const key='name:'+name;if(!used.has(key)){result.push({name,key});used.add(key);}}
       for (const [key,item] of bookingServices) if(key!=='custom'&&!used.has(key)) {result.push({...item.snapshot,name:item.name,key,historical:true});used.add(key);}
-      return result;
+      // Prioritize popular choices in the form without changing master order or IDs.
+      const popular=['Cuci Semua Seat (Tanpa Buka Seat)','Cuci Semua Seat (Buka Seat)'];
+      const rank=item=>{const index=popular.indexOf(serviceCatalogueName(item.name));return index<0?popular.length:index;};
+      return result.sort((a,b)=>rank(a)-rank(b));
     }
     function serviceCategory(item) {
       if (item.category) return String(item.category);
