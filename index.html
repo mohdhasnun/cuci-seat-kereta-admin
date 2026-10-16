@@ -3553,7 +3553,7 @@ function renderPhase1Metrics() {
       const sections = Array.from(form.querySelectorAll(':scope > .form-section'));
       const panels = [1,2,3].map(n => { const el=document.createElement('div'); el.className='booking-step-panel'; el.dataset.panel=String(n); form.insertBefore(el, form.querySelector('#booking-review')); return el; });
       panels[0].append(sections[2]);
-      panels[1].append(sections[4], sections[3], sections[1]);
+      panels[1].append(sections[3], sections[4], sections[1]);
       panels[2].append(sections[0], document.getElementById('booking-review'), sections[5], document.getElementById('booking-edit-history'), sections[6]);
       document.getElementById('booking-intent').closest('.form-section').id='booking-intent-section';
       document.querySelector('#add-booking form').addEventListener('input', updateBookingReview);
@@ -3585,6 +3585,7 @@ function renderPhase1Metrics() {
       showBookingStep(bookingStep);
     }
     function showBookingStep(step) {
+      const previousStep=bookingStep;
       bookingStep = Math.min(3, Math.max(1, step));
       document.querySelectorAll('.booking-step-panel').forEach(panel => panel.hidden = Number(panel.dataset.panel) !== bookingStep);
       document.querySelectorAll('[data-booking-step]').forEach(button => button.setAttribute('aria-current', Number(button.dataset.bookingStep) === bookingStep ? 'step' : 'false'));
@@ -3592,6 +3593,15 @@ function renderPhase1Metrics() {
       document.getElementById('booking-next-btn').hidden = bookingStep === 3;
       document.getElementById('save-booking-btn').hidden = bookingStep !== 3;
       updateBookingReview();
+      if(previousStep!==bookingStep) {
+        const panel=document.querySelector('.booking-step-panel[data-panel="'+bookingStep+'"]');
+        if(panel) {
+          if(document.activeElement instanceof HTMLElement)document.activeElement.blur();
+          const header=document.querySelector('.header');
+          const inset=header?Math.max(0,header.getBoundingClientRect().bottom):0;
+          window.scrollTo({top:Math.max(0,window.scrollY+panel.getBoundingClientRect().top-inset-12),behavior:'instant'});
+        }
+      }
     }
     function nextBookingStep() {
       if (bookingStep === 1) {
