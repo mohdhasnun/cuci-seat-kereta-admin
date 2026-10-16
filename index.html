@@ -3516,7 +3516,7 @@ function renderPhase1Metrics() {
 
     function recalcBalance() {
       const total = serviceFormTotal();
-      const newPayment = editingBookingId === null && ['Booking', 'Pending'].includes(document.getElementById('booking-intent')?.value) ? Number(document.getElementById('deposit-paid')?.value) || 0 : 0;
+      const newPayment = editingBookingId === null && ['Booking', 'Pending', 'NoDeposit'].includes(document.getElementById('booking-intent')?.value) ? Number(document.getElementById('deposit-paid')?.value) || 0 : 0;
       const existingPaid = editingBookingId !== null ? paymentTotal(editingBookingId) : 0;
       const paid = existingPaid + newPayment;
       const requested = document.getElementById('deposit-waive')?.checked ? 0 : Number(document.getElementById('deposit')?.value) || 0;
@@ -3526,11 +3526,18 @@ function renderPhase1Metrics() {
 
     function updateDepositWaiver() {
       const waived = document.getElementById('deposit-waive').checked;
+      const intent=document.getElementById('booking-intent');
+      if(editingBookingId===null && ['Pending','Booking','NoDeposit'].includes(intent.value)) {
+        if(waived)intent.value='NoDeposit';else if(intent.value==='NoDeposit')intent.value='Pending';
+        document.getElementById('booking-intent-hint').textContent=waived?'Pengecualian admin memerlukan sebab dan tidak mencipta bayaran.':'Tarikh diminta; deposit belum cukup. Rekod bayaran separa jika sudah diterima.';
+      }
       const reason = document.getElementById('deposit-waiver-reason');
       reason.hidden = !waived;
       reason.required = waived;
       document.getElementById('deposit-request-fields').hidden = waived;
+      document.getElementById('deposit-payment-fields').style.display=editingBookingId===null && ['Pending','Booking','NoDeposit'].includes(intent.value)?'block':'none';
       recalcBalance();
+      updateBookingReview();
     }
 
     function bookingFormSnapshot() {
@@ -3668,11 +3675,11 @@ function renderPhase1Metrics() {
       const total = serviceFormTotal();
       if (bookingJourney === 'Quotation' && !serviceItems.length) { alert('Quotation memerlukan harga servis.'); return; }
       const serviceStr = serviceItems.map(it => it.name).join(' + ');
-      const intent = editingBookingId !== null ? null : document.getElementById('booking-intent').value;
+      const intent = editingBookingId !== null ? null : document.getElementById('deposit-waive').checked ? 'NoDeposit' : document.getElementById('booking-intent').value;
       const waived = document.getElementById('deposit-waive').checked;
       const waiverReason = document.getElementById('deposit-waiver-reason').value.trim();
       const depositRequested = intent === 'Enquiry' || waived ? 0 : Number(document.getElementById('deposit').value) || 0;
-      const paidNow = ['Booking','Pending'].includes(intent) ? Number(document.getElementById('deposit-paid').value) || 0 : 0;
+      const paidNow = ['Booking','Pending','NoDeposit'].includes(intent) ? Number(document.getElementById('deposit-paid').value) || 0 : 0;
       const method = document.getElementById('deposit-method').value;
       const paymentDate = document.getElementById('deposit-date').value;
       if (!Number.isFinite(depositRequested) || depositRequested < 0 || depositRequested > total) { alert('Deposit diminta mesti antara RM0 dan jumlah servis.'); return; }
@@ -3680,7 +3687,7 @@ function renderPhase1Metrics() {
       if (intent === 'Booking' && !waived && (paidNow <= 0 || paidNow + 0.009 < depositRequested || !method || !paymentDate)) {
         alert('Untuk Confirmed, rekod bayaran sebenar sekurang-kurangnya deposit diminta, bersama kaedah dan tarikh bayaran.'); return;
       }
-      if (intent === 'Pending' && depositRequested <= 0) { alert('Isi jumlah deposit yang diminta untuk status Pending Deposit.'); return; }
+      if (intent === 'Pending' && !waived && depositRequested <= 0) { alert('Isi jumlah deposit yang diminta untuk status Pending Deposit.'); return; }
       if (paidNow > 0 && (!method || !paymentDate)) { alert('Bayaran sebenar memerlukan kaedah dan tarikh bayaran.'); return; }
 
       // Berapa hari kereta di kedai → kira endDate
