@@ -3885,6 +3885,7 @@ function renderPhase1Metrics() {
         const details=homeNode('button','','Butiran'); details.type='button'; details.onclick=()=>openCustomerDetails(group.id);
         const whatsapp=homeNode('button','','WhatsApp'); whatsapp.type='button'; whatsapp.disabled=!group.contact; whatsapp.title=group.contact ? 'Pilih template WhatsApp untuk customer ini' : 'Nombor telefon tiada'; whatsapp.onclick=()=>openBookingQuickReply(group.contact.id);
         actions.append(details,whatsapp);
+        if(isComplete(job)){const receipt=homeNode('button','','Resit');receipt.type='button';receipt.onclick=()=>showReceipt(job.id);actions.append(receipt);}
         const footer=homeNode('div','customer-card-footer'); footer.append(actions);
         card.append(footer); list.appendChild(card);
       });
@@ -4471,6 +4472,7 @@ function renderPhase1Metrics() {
       add('p','booking-detail-meta',[booking.car,booking.plate,booking.phone,bookingStatusLabel(booking)].filter(Boolean).join(' · '));
       const actions=add('div','booking-detail-actions','');
       const action=(label,fn)=>{ const button=add('button','booking-detail-action',label,actions); button.type='button'; button.onclick=fn; };
+      if(isComplete(booking))action('Resit',()=>{closeBookingDetails();showReceipt(booking.id);});
       action('WhatsApp',()=>openBookingQuickReply(booking.id));
       action('Edit',()=>{closeBookingDetails();editBooking(booking.id);});
       action('Tambah bayaran baru',()=>addPaymentForBooking(booking.id));
@@ -4624,7 +4626,9 @@ function renderPhase1Metrics() {
         const primary=bookingCardPrimary(job);const primaryButton=homeNode('button','primary',primary[0]);primaryButton.type='button';primaryButton.onclick=primary[1];
         const wa=homeNode('button','','WhatsApp');wa.type='button';wa.disabled=!job.phone;wa.onclick=()=>openBookingQuickReply(job.id);
         const details=homeNode('button','','Details');details.type='button';details.onclick=()=>openBookingDetails(job.id);
-        actions.append(primaryButton,wa,details);card.append(actions);list.append(card);
+        actions.append(primaryButton,wa,details);
+        if(isComplete(job)){const receipt=homeNode('button','','Resit');receipt.type='button';receipt.onclick=()=>showReceipt(job.id);actions.append(receipt);}
+        card.append(actions);list.append(card);
       });
     }
 
