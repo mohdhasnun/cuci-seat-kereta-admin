@@ -3475,6 +3475,7 @@ function renderPhase1Metrics() {
     }
     function showCustomerMatches(source = 'customer-lookup') {
       const box=document.getElementById('customer-matches'),input=document.getElementById(source),query=(input?.value||'').trim().toLocaleLowerCase(),digits=query.replace(/\D/g,'');box.replaceChildren();
+      if(input)input.insertAdjacentElement('afterend',box);
       box.setAttribute('aria-live','polite');
       if(query.length<2)return;
       const candidates=[...state.bookings].reverse().map(b=>({...b,customerId:b.customerId || customerIdFor(b.phone,b.id)}));
