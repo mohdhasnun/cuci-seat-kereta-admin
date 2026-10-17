@@ -1677,7 +1677,7 @@
           <div class="booking-form-actions"><button type="button" id="booking-back-btn" onclick="showBookingStep(bookingStep - 1)">Kembali</button><button type="button" id="booking-cancel-btn" onclick="cancelBookingEdit()" hidden>Batal edit</button><button type="button" id="booking-next-btn" onclick="nextBookingStep()">Teruskan</button><button type="submit" id="save-booking-btn" class="form-submit-btn">Simpan</button></div>
         </form>
       </section>
-      <div id="booking-reply-modal" class="booking-reply-modal" hidden><div class="booking-reply-panel" role="dialog" aria-modal="true" aria-label="WhatsApp Quick Reply"><div class="booking-reply-top"><h3>WhatsApp</h3><button type="button" onclick="closeBookingQuickReply()" aria-label="Tutup">×</button></div><label for="booking-reply-template">Template asal</label><select id="booking-reply-template" onchange="previewBookingReply()"></select><label for="booking-reply-message">Preview mesej</label><textarea id="booking-reply-message" rows="12"></textarea><p>Membuka WhatsApp tidak menandakan mesej dihantar atau bayaran diterima.</p><div class="booking-reply-actions"><button type="button" onclick="closeBookingQuickReply()">Batal</button><button type="button" onclick="sendBookingQuickReply()">Open WhatsApp</button></div></div></div>
+      <div id="booking-reply-modal" class="booking-reply-modal" hidden><div class="booking-reply-panel" role="dialog" aria-modal="true" aria-label="WhatsApp Quick Reply"><div class="booking-reply-top"><h3>WhatsApp</h3><button type="button" onclick="closeBookingQuickReply()" aria-label="Tutup">×</button></div><label for="booking-reply-template">Jenis mesej</label><select id="booking-reply-template" onchange="previewBookingReply()"></select><label for="booking-reply-message">Preview mesej</label><textarea id="booking-reply-message" rows="12"></textarea><p>Membuka WhatsApp tidak menandakan mesej dihantar atau bayaran diterima.</p><div class="booking-reply-actions"><button type="button" onclick="closeBookingQuickReply()">Batal</button><button type="button" onclick="sendBookingQuickReply()">Buka WhatsApp</button></div></div></div>
       <div id="booking-detail-modal" class="booking-reply-modal" hidden><div class="booking-reply-panel booking-detail-panel" role="dialog" aria-modal="true" aria-label="Booking Details"><div class="booking-reply-top"><h3>Booking Details</h3><button type="button" onclick="closeBookingDetails()" aria-label="Tutup">×</button></div><div id="booking-detail-content"></div></div></div>
       <div id="customer-detail-modal" class="booking-reply-modal" hidden><div class="booking-reply-panel booking-detail-panel" role="dialog" aria-modal="true" aria-label="Customer Details"><div class="booking-reply-top"><h3>Customer Details</h3><button type="button" onclick="closeCustomerDetails()" aria-label="Tutup">×</button></div><div id="customer-detail-content"></div></div></div>
 
@@ -2843,6 +2843,12 @@ function renderPhase1Metrics() {
       alert('Local data cleared. Cloud records were not deleted.');
     }
 
+    function bookingConfirmationIssue(job) {
+      if (!job.date || !job.time) return 'Bayaran direkod; lengkapkan tarikh dan masa sebelum mengesahkan booking.';
+      if (!(Number(job.price)>0) || !(job.serviceItems?.length || String(job.service||'').trim())) return 'Bayaran direkod; lengkapkan servis dan harga sebelum mengesahkan booking.';
+      if (paymentTotal(job.id)<=0 || paymentTotal(job.id)+0.009<depositRequiredFor(job)) return 'Bayaran direkod; deposit masih belum mencukupi untuk mengesahkan booking.';
+      const capacity=canConfirmBookingCapacity(job,job.id);return capacity.ok?'':'Bayaran direkod; booking belum disahkan: '+capacity.reason;
+    }
     async function recordPayment(job, amount, method, date, source = 'manual') {
       const value = Number(amount) || 0;
       if (!job || value <= 0) return null;
@@ -2852,7 +2858,7 @@ function renderPhase1Metrics() {
       job.paymentMethod = method || job.paymentMethod;
       job.paymentStatus = outstandingFor(job) <= 0.009 ? 'Sudah Bayar' : (job.totalPaid > 0 ? 'Terima Deposit' : 'Belum Bayar');
       const requiredDeposit = depositRequiredFor(job);
-      if (job.status === 'Pending' && job.date && job.totalPaid + 0.009 >= requiredDeposit && canConfirmBookingCapacity(job, job.id).ok) {
+      if (['Enquiry','Pending'].includes(job.status) && !bookingConfirmationIssue(job)) {
         job.status = 'Booking';
         job.depositPaid = true;
       }
@@ -4679,11 +4685,12 @@ function renderPhase1Metrics() {
       if (waPhone(phone).length < 10) { alert('Isi nombor WhatsApp customer yang sah dahulu.'); return; }
       bookingReplyId = id;
       const select=document.getElementById('booking-reply-template');
-      const choices=[['quotation','Quotation asal'],['deposit','Minta deposit asal']];
-      if (booking?.status === 'Booking' || booking?.status === 'In Progress') choices.push(['confirmed','Pengesahan booking asal']);
+      const choices=[['quotation','Quotation'],['deposit','Minta deposit']];
+      if (booking?.status === 'Booking' || booking?.status === 'In Progress') choices.push(['confirmed','Pengesahan booking']);
       if (booking?.status === 'Postponed') choices.push(['postponed','Atur semula asal']);
       if (booking?.pickupReadyAt) choices.push(['pickup','Pickup asal']);
       select.replaceChildren(); choices.forEach(([value,label])=>select.add(new Option(label,value)));
+      if (choices.some(choice=>choice[0]==='confirmed')) select.value='confirmed';
       document.getElementById('booking-reply-modal').hidden=false;
       previewBookingReply();
     }
@@ -4991,27 +4998,45 @@ function renderPhase1Metrics() {
     }
 
     async function addPaymentForBooking(id) {
-      const booking = state.bookings.find(b => String(b.id) === String(id));
-      if (!booking) return;
-      const due = outstandingFor(booking);
-      const depositDue = Math.max(0, depositRequiredFor(booking) - paymentTotal(id));
-      const suggested = ['Enquiry', 'Pending'].includes(booking.status) && depositDue > 0 ? Math.min(depositDue, due) : due;
-      const amountInput = prompt('Tambah BAYARAN BARU sahaja. Untuk betulkan rekod lama, gunakan Edit bayaran dalam Sejarah bayaran.\n\nAmaun diterima sekarang (RM). Baki: RM'+due.toFixed(2), '');
-      if (amountInput === null) return;
-      const amount = Number(amountInput);
-      if (!Number.isFinite(amount) || amount <= 0) { alert('Enter a payment amount greater than RM0.'); return; }
-      if (amount > due + 0.009 && !confirm('Bayaran melebihi baki RM' + due.toFixed(2) + '. Rekod lebihan untuk refund?')) return;
-      const method = prompt('Payment method: QR, Cash, Transfer, Other', 'QR');
-      if (method === null) return;
-      const date = prompt('Payment date (YYYY-MM-DD):', ymd(new Date()));
-      if (date === null) return;
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(new Date(date + 'T00:00:00').getTime()) || ymd(new Date(date + 'T00:00:00')) !== date) { alert('Enter a valid payment date.'); return; }
-      if (!method.trim()) { alert('Kaedah bayaran wajib diisi.'); return; }
-      const paidBefore=paymentTotal(id);
-      const samePayment=(state.payments||[]).some(payment=>!payment.voided && String(payment.jobId)===String(id) && Math.abs(Number(payment.amount)-amount)<0.009 && payment.date===date && payment.method===method.trim());
-      if (!confirm((samePayment?'AMARAN: transaksi dengan amaun, tarikh dan kaedah sama sudah ada. Teruskan hanya jika ini bayaran tambahan yang berasingan.\n\n':'')+'Tambah transaksi baru RM'+amount.toFixed(2)+'?\nDiterima sekarang: RM'+paidBefore.toFixed(2)+'\nJumlah selepas tambah: RM'+(paidBefore+amount).toFixed(2)+'\n\nIni bukan edit bayaran lama.')) return;
-      await recordPayment(booking, amount, method.trim(), date, 'manual');
-      renderAll();
+      const booking=state.bookings.find(b=>String(b.id)===String(id)); if(!booking)return;
+      if(document.getElementById('receive-payment-modal'))return;
+      return new Promise(resolve=>{
+        const overlay=document.createElement('div');overlay.id='receive-payment-modal';overlay.className='booking-reply-modal';overlay.style.zIndex='10030';
+        const panel=homeNode('div','booking-reply-panel');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','Rekod bayaran diterima');overlay.append(panel);
+        panel.append(homeNode('h3','','Rekod bayaran diterima'),homeNode('p','',booking.name||'Customer'));
+        const summary=homeNode('p','','Sudah direkod: RM'+paymentTotal(id).toFixed(2)+' · Baki: RM'+outstandingFor(booking).toFixed(2));panel.append(summary);
+        const form=document.createElement('form');panel.append(form);
+        const field=(title,type)=>{const label=homeNode('label','',title),input=document.createElement('input');input.type=type;input.required=true;input.style.marginBottom='14px';label.append(input);form.append(label);return input;};
+        const amount=field('Amaun yang diterima (RM)','number');amount.min='0.01';amount.step='0.01';amount.inputMode='decimal';
+        const method=field('Kaedah bayaran','text');method.placeholder='Transfer / QR / Cash';
+        const date=field('Tarikh bayaran','date');date.value=malaysiaDay();
+        form.append(homeNode('p','','Isi bayaran yang benar-benar diterima sahaja. Bayaran sedia ada tidak perlu dimasukkan semula.'));
+        const error=homeNode('p','');error.setAttribute('role','alert');error.style.color='#b91c1c';form.append(error);
+        const buttons=homeNode('div','booking-reply-actions'),cancel=homeNode('button','','Batal'),save=homeNode('button','','Simpan bayaran');cancel.type='button';save.type='submit';buttons.append(cancel,save);form.append(buttons);
+        cancel.onclick=()=>{overlay.remove();resolve();};let saving=false,recordAttempted=false;
+        form.onsubmit=async event=>{
+          event.preventDefault();if(saving||recordAttempted)return;if(!form.reportValidity())return;
+          const value=Number(amount.value),paymentDate=date.value,paymentMethod=method.value.trim();
+          if(!Number.isFinite(value)||value<=0||Math.abs(value*100-Math.round(value*100))>0.000001){error.textContent='Masukkan amaun sah sehingga dua tempat perpuluhan.';return;}
+          if(!paymentMethod||!/^\d{4}-\d{2}-\d{2}$/.test(paymentDate)||!Number.isFinite(new Date(paymentDate+'T00:00:00').getTime())||ymd(new Date(paymentDate+'T00:00:00'))!==paymentDate){error.textContent='Lengkapkan kaedah dan tarikh bayaran yang sah.';return;}
+          const duplicate=(state.payments||[]).some(p=>!p.voided&&String(p.jobId)===String(id)&&Math.abs(Number(p.amount)-value)<0.009&&p.date===paymentDate&&p.method===paymentMethod);
+          if(duplicate&&!confirm('Bayaran dengan amaun, tarikh dan kaedah sama sudah direkod. Teruskan hanya jika ini transaksi tambahan yang berasingan.'))return;
+          if(value>outstandingFor(booking)+0.009&&!confirm('Bayaran melebihi baki. Rekod lebihan untuk refund?'))return;
+          saving=true;save.disabled=true;cancel.disabled=true;error.textContent='Menyimpan...';recordAttempted=true;
+          try{
+            await recordPayment(booking,value,paymentMethod,paymentDate,'manual');
+            panel.replaceChildren(homeNode('h3','','Bayaran direkod'),homeNode('p','','Jumlah diterima: RM'+paymentTotal(id).toFixed(2)+' · Baki: RM'+outstandingFor(booking).toFixed(2)));
+            const pending=(state.payments||[]).some(p=>String(p.jobId)===String(id)&&p._synced===false)||booking._synced===false;
+            if(pending)panel.append(homeNode('p','','Rekod pada peranti ini sedang menunggu sync cloud. Semak status sync sebelum menutup aplikasi.'));
+            const confirmed=['Booking','In Progress'].includes(booking.status);
+            panel.append(homeNode('p','',confirmed?'Booking disahkan. Anda boleh hantar pengesahan melalui WhatsApp.':bookingConfirmationIssue(booking)||'Booking belum disahkan. Semak butiran tempahan.'));
+            const actions=homeNode('div','booking-reply-actions'),done=homeNode('button','','Tutup');done.type='button';done.onclick=()=>overlay.remove();actions.append(done);
+            if(confirmed){const wa=homeNode('button','','WhatsApp Pengesahan');wa.type='button';wa.onclick=()=>{overlay.remove();closeBookingDetails();openBookingQuickReply(id);};actions.append(wa);}
+            panel.append(actions);resolve();
+          }catch(err){error.textContent='Penyimpanan belum dapat disahkan. Semak Sejarah bayaran dan status sync sebelum merekod semula. '+(err.message||'');cancel.textContent='Tutup';cancel.disabled=false;resolve();}
+        };
+        document.body.append(overlay);amount.focus();
+      });
     }
 
     function showPaymentLinkModal(booking, url, amount) {
@@ -5068,7 +5093,7 @@ function renderPhase1Metrics() {
         '🚗 Vehicle   : ' + booking.car + '\n' +
         '🔢 No. Plat  : ' + (booking.plate || '-') + '\n' +
         '📱 Phone     : ' + (booking.phone || '-') + '\n' +
-        '💺 Servis    :\n' + serviceListText(booking, true) + '\n' +
+        '💺 Servis    :\n' + serviceListText(booking, false, true) + '\n' +
         '📅 Tarikh    : ' + formatDMY(booking.date) + '\n' +
         '🕐 Masa      : ' + (booking.time || '-') + '\n' +
         '💳 Harga     : RM' + price + '\n' +
