@@ -3568,7 +3568,13 @@ function renderPhase1Metrics() {
       renderServiceCategories();
     }
     function selectBookingJourney(journey) {
-      if (editingBookingId !== null) return;
+      if (editingBookingId !== null) {
+        if (journey === 'Booking') {
+          if (bookingEditSnapshot && bookingFormSnapshot() !== bookingEditSnapshot) { alert('Simpan perubahan borang dahulu, kemudian tekan Booking untuk semak deposit dan sahkan tempahan.'); return; }
+          openBookingDetails(editingBookingId);
+        } else { alert('Untuk rekod sedia ada, gunakan Booking untuk semak bayaran dan pengesahan.'); }
+        return;
+      }
       bookingJourney = journey;
       document.getElementById('booking-intent').value = journey === 'Booking' ? 'Pending' : 'Enquiry';
       updateBookingIntent();
@@ -4476,7 +4482,12 @@ function renderPhase1Metrics() {
       if(isComplete(booking)||booking.status==='Enquiry')action(isComplete(booking)?'Resit':'Quotation',()=>{closeBookingDetails();showReceipt(booking.id);});
       action('WhatsApp',()=>openBookingQuickReply(booking.id));
       action('Edit',()=>{closeBookingDetails();editBooking(booking.id);});
-      action('Tambah bayaran baru',()=>addPaymentForBooking(booking.id));
+      action('Tambah bayaran baru',async()=>{await addPaymentForBooking(booking.id);openBookingDetails(booking.id);});
+      if (['Enquiry','Pending'].includes(booking.status)) action('Sahkan Booking / Rekod Deposit',async()=>{
+        if (!confirm('Sahkan booking ini? Sistem akan semak bayaran yang sudah direkod. Jika deposit belum direkod, masukkan bayaran sebenar yang diterima.')) return;
+        await updateStatus(booking.id,'Booking');
+        openBookingDetails(booking.id);
+      });
       if (['Enquiry','Pending'].includes(booking.status)) action('Minta deposit',()=>{openBookingQuickReply(booking.id);const select=document.getElementById('booking-reply-template');select.value='deposit';previewBookingReply();});
       if (booking.status==='Postponed') action('Atur semula',()=>{closeBookingDetails();editBooking(booking.id);});
       if (booking.status==='Postponed') action('Sahkan semula',()=>{if(confirm('Sahkan semula tarikh dan deposit booking ini?')) updateStatus(booking.id,'Booking');});
@@ -4732,13 +4743,13 @@ function renderPhase1Metrics() {
 
     // Format service list as a clean numbered list (with per-item price when available)
     // instead of one long "A + B + C" run-on line — used across all WhatsApp messages.
-    function serviceListText(booking, withPrice) {
+    function serviceListText(booking, withPrice, plainNames = false) {
       const items = (booking.serviceItems && booking.serviceItems.length)
         ? booking.serviceItems
         : (booking.service || '-').split('+').map((s, i) => ({ name: s.trim(), price: i === 0 ? booking.price : 0 }));
       return items.map((it, i) => {
         const priceTag = withPrice ? '  (' + ((Number(it.price) || 0) > 0 ? 'RM' + it.price : 'FOC') + ')' : '';
-        return (i + 1) + '. ' + it.name + priceTag;
+        return plainNames ? (items.length > 1 ? '• ' : '') + it.name : (i + 1) + '. ' + it.name + priceTag;
       }).join('\n');
     }
 
@@ -4837,7 +4848,7 @@ function renderPhase1Metrics() {
         line + '\n' +
         '🚗 Vehicle   : ' + booking.car + '\n' +
         '🔢 No. Plat  : ' + (booking.plate || '-') + '\n' +
-        '💺 Servis    :\n' + serviceListText(booking, true) + '\n' +
+        '💺 Servis    :\n' + serviceListText(booking, false, true) + '\n' +
         '📅 Tarikh    : ' + formatDMY(booking.date) + '\n' +
         '🕐 Masa      : ' + (booking.time || '-') + '\n' +
         '💳 Harga     : RM' + price + '\n' +
