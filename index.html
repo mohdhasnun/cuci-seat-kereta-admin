@@ -1355,7 +1355,7 @@
           <div class="home-metrics">
             <button type="button" class="home-metric" id="home-today" onclick="goToPage('calendar')"><span>📅</span><strong>0</strong><small>Booking Hari Ini</small></button>
             <button type="button" class="home-metric" id="home-progress" onclick="filterByStatus('In Progress')"><span>🧽</span><strong>0</strong><small>Kerja Sedang Berjalan</small></button>
-            <button type="button" class="home-metric" id="home-followup" onclick="goToPage('bookings')"><span>💬</span><strong>0</strong><small>Perlu Follow-up</small></button>
+            <button type="button" class="home-metric" id="home-followup" onclick="openFollowupBookings()"><span>💬</span><strong>0</strong><small>Perlu Follow-up</small></button>
             <button type="button" class="home-metric" id="home-deposit" onclick="filterByStatus('Pending')"><span>💳</span><strong>0</strong><small>Menunggu Deposit</small></button>
           </div>
           <section class="home-block"><div class="home-block-heading"><h4>📆 Booking Akan Datang</h4><span>Hari ini + 4 hari</span></div><div id="home-upcoming" class="home-upcoming"></div></section>
@@ -1482,6 +1482,7 @@
         <input type="search" id="search-box" placeholder="Cari nama, telefon, plat atau kereta" oninput="renderBookings()" aria-label="Cari booking">
         <div class="booking-filters" id="booking-filters" aria-label="Tapis booking">
           <button type="button" data-view="Aktif" onclick="setBookingView('Aktif')">Aktif</button>
+          <button type="button" data-view="Follow-up" onclick="setBookingView('Follow-up')">Perlu Follow-up</button>
           <button type="button" data-view="Enquiry" onclick="setBookingView('Enquiry')">Enquiry</button>
           <button type="button" data-view="Pending" onclick="setBookingView('Pending')">Pending Deposit</button>
           <button type="button" data-view="Booking" onclick="setBookingView('Booking')">Confirmed</button>
@@ -4156,7 +4157,7 @@ function renderPhase1Metrics() {
       const bookings = state.bookings || [];
       const newToday = bookings.filter(b => isBookedStatus(b) && String(b.date || '').slice(0, 10) === today);
       const progress = bookings.filter(b => b.status === 'In Progress');
-      const followups = bookings.filter(b => ['Enquiry', 'Postponed'].includes(b.status));
+      const followups = bookings.filter(needsBookingFollowup);
       const pending = bookings.filter(b => b.status === 'Pending');
       document.getElementById('home-revenue').textContent = homeHasPaymentData() ? 'RM' + Number(actualRevenue(today.slice(0, 7)) || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
       const dataStatus = document.getElementById('home-data-status');
@@ -4563,7 +4564,16 @@ function renderPhase1Metrics() {
       list.querySelectorAll('.booking-status-select').forEach(select => { select.onchange = () => updateStatus(select.dataset.bookingId, select.value); });
     }
 
+    function needsBookingFollowup(job) { return ['Enquiry', 'Postponed'].includes(job.status); }
+    function openFollowupBookings() {
+      calendarBookingFocusId = null;
+      const searchBox = document.getElementById('search-box');
+      if (searchBox) searchBox.value = '';
+      bookingView = 'Follow-up';
+      goToPage('bookings');
+    }
     function bookingViewMatches(job, view) {
+      if (view==='Follow-up') return needsBookingFollowup(job);
       const label=bookingStatusLabel(job);
       if (view==='Aktif') return ['Pending','Booking','In Progress','Postponed'].includes(job.status);
       if (view==='Completed') return isComplete(job);
@@ -4596,7 +4606,7 @@ function renderPhase1Metrics() {
       });
       document.querySelectorAll('#booking-filters [data-view]').forEach(button=>{
         const view=button.dataset.view,count=state.bookings.filter(job=>bookingViewMatches(job,view)).length;
-        button.textContent=({Pending:'Pending Deposit',Booking:'Confirmed'}[view]||view)+' '+count;
+        button.textContent=({Pending:'Pending Deposit',Booking:'Confirmed','Follow-up':'Perlu Follow-up'}[view]||view)+' '+count;
         button.classList.toggle('active',view===bookingView);
         button.setAttribute('aria-pressed',String(view===bookingView));
       });
@@ -6952,5 +6962,6 @@ function renderPhase1Metrics() {
 
 </style>
 </body></html>
+
 
 
