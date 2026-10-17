@@ -1482,7 +1482,6 @@
         <input type="search" id="search-box" placeholder="Cari nama, telefon, plat atau kereta" oninput="renderBookings()" aria-label="Cari booking">
         <div class="booking-filters" id="booking-filters" aria-label="Tapis booking">
           <button type="button" data-view="Aktif" onclick="setBookingView('Aktif')">Aktif</button>
-          <button type="button" data-view="Follow-up" onclick="setBookingView('Follow-up')">Perlu Follow-up</button>
           <button type="button" data-view="Enquiry" onclick="setBookingView('Enquiry')">Enquiry</button>
           <button type="button" data-view="Pending" onclick="setBookingView('Pending')">Pending Deposit</button>
           <button type="button" data-view="Booking" onclick="setBookingView('Booking')">Confirmed</button>
@@ -1492,6 +1491,7 @@
           <button type="button" data-view="Completed" onclick="setBookingView('Completed')">Completed</button>
           <button type="button" data-view="Cancelled" onclick="setBookingView('Cancelled')">Cancelled</button>
         </div>
+        <p id="followup-context" class="field-note" hidden style="margin:0 0 16px;color:#645185">Perlu follow-up: pelanggan Enquiry dan Postponed. Pilih status di atas untuk tukar paparan.</p>
         <div id="bookings-list" class="cards-list"></div>
       </section>
 
@@ -4610,6 +4610,7 @@ function renderPhase1Metrics() {
         button.classList.toggle('active',view===bookingView);
         button.setAttribute('aria-pressed',String(view===bookingView));
       });
+      document.getElementById('followup-context').hidden = bookingView !== 'Follow-up';
       const list=document.getElementById('bookings-list');list.replaceChildren();
       if (!jobs.length) {list.append(homeNode('p','home-empty','Tiada booking untuk carian atau status ini.'));return;}
       jobs.forEach((job,index)=>{
